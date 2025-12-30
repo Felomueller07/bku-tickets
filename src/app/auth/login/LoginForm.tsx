@@ -1,14 +1,17 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { signIn } from 'next-auth/react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Eye, EyeOff, ArrowLeft } from 'lucide-react';
 
-export default function RegisterPage() {
+export default function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const registered = searchParams?.get('registered');
+
   const [email, setEmail] = useState('');
-  const [name, setName] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
@@ -20,18 +23,16 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      const response = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, name, password }),
+      const result = await signIn('credentials', {
+        email,
+        password,
+        redirect: false,
       });
 
-      const data = await response.json();
-
-      if (response.ok) {
-        router.push('/auth/login?registered=true');
+      if (result?.error) {
+        setError('Ungültige E-Mail oder Passwort');
       } else {
-        setError(data.error || 'Registrierung fehlgeschlagen');
+        router.push('/dashboard');
       }
     } catch (err) {
       setError('Ein Fehler ist aufgetreten');
@@ -93,7 +94,7 @@ export default function RegisterPage() {
             marginBottom: '0.5rem',
             textAlign: 'center',
           }}>
-            Registrierung
+            Anmelden
           </h1>
 
           <p style={{
@@ -104,6 +105,24 @@ export default function RegisterPage() {
           }}>
             Josefi Konzert 2026
           </p>
+
+          {registered && (
+            <div style={{
+              padding: '1rem',
+              backgroundColor: 'rgba(74, 222, 128, 0.1)',
+              border: '1px solid rgba(74, 222, 128, 0.3)',
+              borderRadius: '0.75rem',
+              marginBottom: '1.5rem',
+            }}>
+              <p style={{
+                color: '#4ade80',
+                fontSize: '0.875rem',
+                margin: 0,
+              }}>
+                ✅ Registrierung erfolgreich! Du kannst dich jetzt anmelden.
+              </p>
+            </div>
+          )}
 
           {error && (
             <div style={{
@@ -124,34 +143,6 @@ export default function RegisterPage() {
           )}
 
           <form onSubmit={handleSubmit}>
-            <div style={{ marginBottom: '1.5rem' }}>
-              <label style={{
-                display: 'block',
-                color: 'rgba(255, 255, 255, 0.8)',
-                fontSize: '0.875rem',
-                fontWeight: '500',
-                marginBottom: '0.5rem',
-              }}>
-                Name
-              </label>
-              <input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                required
-                style={{
-                  width: '100%',
-                  padding: '0.75rem 1rem',
-                  backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                  border: '1px solid rgba(255, 255, 255, 0.1)',
-                  borderRadius: '0.5rem',
-                  color: 'white',
-                  fontSize: '1rem',
-                  outline: 'none',
-                }}
-              />
-            </div>
-
             <div style={{ marginBottom: '1.5rem' }}>
               <label style={{
                 display: 'block',
@@ -196,7 +187,6 @@ export default function RegisterPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  minLength={6}
                   style={{
                     width: '100%',
                     padding: '0.75rem 3rem 0.75rem 1rem',
@@ -231,12 +221,29 @@ export default function RegisterPage() {
                   )}
                 </button>
               </div>
+            </div>
+
+            <div style={{
+              padding: '0.75rem',
+              backgroundColor: 'rgba(139, 92, 246, 0.1)',
+              border: '1px solid rgba(139, 92, 246, 0.2)',
+              borderRadius: '0.5rem',
+              marginBottom: '1.5rem',
+            }}>
+              <p style={{
+                color: 'rgba(255, 255, 255, 0.6)',
+                fontSize: '0.75rem',
+                margin: 0,
+                marginBottom: '0.25rem',
+              }}>
+                <strong>Demo Login:</strong>
+              </p>
               <p style={{
                 color: 'rgba(255, 255, 255, 0.5)',
                 fontSize: '0.75rem',
-                marginTop: '0.5rem',
+                margin: 0,
               }}>
-                Mindestens 6 Zeichen
+                Admin: admin@bku.com / admin123
               </p>
             </div>
 
@@ -260,13 +267,13 @@ export default function RegisterPage() {
                 marginBottom: '1rem',
               }}
             >
-              {loading ? 'Wird registriert...' : 'Registrieren'}
+              {loading ? 'Wird angemeldet...' : 'Anmelden'}
             </motion.button>
 
             <div style={{ textAlign: 'center', marginBottom: '1rem' }}>
               <button
                 type="button"
-                onClick={() => router.push('/auth/login')}
+                onClick={() => router.push('/auth/register')}
                 style={{
                   background: 'none',
                   border: 'none',
@@ -276,7 +283,7 @@ export default function RegisterPage() {
                   textDecoration: 'underline',
                 }}
               >
-                Bereits registriert? Jetzt anmelden
+                Noch kein Konto? Jetzt registrieren
               </button>
             </div>
 

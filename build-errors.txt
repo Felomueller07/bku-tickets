@@ -1,0 +1,28 @@
+
+> bku-tickets@0.1.0 build
+> next build
+
+▲ Next.js 16.1.1 (Turbopack)
+- Environments: .env.local, .env
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 1339.3ms
+  Running TypeScript ...
+  Collecting page data using 9 workers ...
+  Generating static pages using 9 workers (0/18) ...
+  Generating static pages using 9 workers (4/18) 
+  Generating static pages using 9 workers (8/18) 
+⨯ useSearchParams() should be wrapped in a suspense boundary at page "/auth/login". Read more: https://nextjs.org/docs/messages/missing-suspense-with-csr-bailout
+    at Q (/Users/felixmuller/Desktop/BKU-Projekt/bku-tickets/.next/server/chunks/ssr/node_modules_3d59fddf._.js:2:2111)
+    at o (/Users/felixmuller/Desktop/BKU-Projekt/bku-tickets/.next/server/chunks/ssr/node_modules_3d59fddf._.js:4:5284)
+    at n (/Users/felixmuller/Desktop/BKU-Projekt/bku-tickets/.next/server/chunks/ssr/[root-of-the-server]__9a417d8e._.js:1:2288)
+    at an (/Users/felixmuller/Desktop/BKU-Projekt/bku-tickets/node_modules/next/dist/compiled/next-server/app-page-turbo.runtime.prod.js:2:84360)
+    at ai (/Users/felixmuller/Desktop/BKU-Projekt/bku-tickets/node_modules/next/dist/compiled/next-server/app-page-turbo.runtime.prod.js:2:86179)
+    at al (/Users/felixmuller/Desktop/BKU-Projekt/bku-tickets/node_modules/next/dist/compiled/next-server/app-page-turbo.runtime.prod.js:2:107953)
+    at as (/Users/felixmuller/Desktop/BKU-Projekt/bku-tickets/node_modules/next/dist/compiled/next-server/app-page-turbo.runtime.prod.js:2:105368)
+    at aa (/Users/felixmuller/Desktop/BKU-Projekt/bku-tickets/node_modules/next/dist/compiled/next-server/app-page-turbo.runtime.prod.js:2:84712)
+    at ai (/Users/felixmuller/Desktop/BKU-Projekt/bku-tickets/node_modules/next/dist/compiled/next-server/app-page-turbo.runtime.prod.js:2:86228)
+    at ai (/Users/felixmuller/Desktop/BKU-Projekt/bku-tickets/node_modules/next/dist/compiled/next-server/app-page-turbo.runtime.prod.js:2:104708)
+Error occurred prerendering page "/auth/login". Read more: https://nextjs.org/docs/messages/prerender-error
+Export encountered an error on /auth/login/page: /auth/login, exiting the build.
+⨯ Next.js build worker exited with code: 1 and signal: null

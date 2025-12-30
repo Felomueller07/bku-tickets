@@ -1,129 +1,166 @@
 'use client';
 
-import { motion } from 'framer-motion';
-import { ArrowLeft } from 'lucide-react';
+import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { useSession } from 'next-auth/react';
+import { useEffect } from 'react';
+import { motion } from 'framer-motion';
+import { LogOut, User } from 'lucide-react';
 import SeatMap from '@/components/SeatMap';
-import AuthButtons from '@/components/AuthButtons';
-import UserMenu from '@/components/UserMenu';
 
-export default function Dashboard() {
-  const router = useRouter();
+export default function DashboardPage() {
   const { data: session, status } = useSession();
+  const router = useRouter();
 
-  // Check if user is admin
-  const isAdmin = session?.user && (session.user as any).role === 'admin';
-  const userId = session?.user ? parseInt((session.user as any).id || '0') : 0;
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      router.push('/auth/login');
+    }
+  }, [status, router]);
+
+  if (status === 'loading') {
+    return (
+      <div style={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: 'linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%)',
+      }}>
+        <div style={{ color: 'white', fontSize: '1.5rem' }}>Lädt...</div>
+      </div>
+    );
+  }
+
+  if (!session) {
+    return null;
+  }
+
+  const isAdmin = (session.user as any)?.role === 'admin';
 
   return (
-    <div 
-      style={{
-        position: 'relative',
-        minHeight: '100vh',
-        width: '100%',
-        overflow: 'auto',
-        backgroundColor: '#5a4a42',
-      }}
-    >
-      {/* Gradient Overlay */}
-      <div 
-        style={{
-          position: 'absolute',
-          inset: 0,
-          background: 'linear-gradient(135deg, rgba(107, 90, 80, 0.5) 0%, transparent 50%, rgba(74, 58, 50, 0.5) 100%)',
-        }}
-      />
-
-      {/* Content */}
-      <div style={{ position: 'relative', zIndex: 10, maxWidth: '1400px', margin: '0 auto', padding: '2rem 1.5rem' }}>
-        {/* TOP BAR: Back Button + Auth */}
-        <div style={{ 
-          display: 'flex', 
-          justifyContent: 'space-between', 
+    <div style={{
+      minHeight: '100vh',
+      background: 'linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%)',
+    }}>
+      {/* HEADER */}
+      <div style={{
+        backgroundColor: 'rgba(0, 0, 0, 0.4)',
+        backdropFilter: 'blur(20px)',
+        borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+        padding: '1rem 2rem',
+      }}>
+        <div style={{
+          maxWidth: '1800px',
+          margin: '0 auto',
+          display: 'flex',
+          justifyContent: 'space-between',
           alignItems: 'center',
-          marginBottom: '2rem'
         }}>
-          {/* Back Button */}
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5 }}
-          >
-            <button
-              onClick={() => router.push('/')}
+          <div>
+            <h1 style={{
+              color: 'white',
+              fontSize: '1.5rem',
+              fontWeight: '700',
+              margin: 0,
+            }}>
+              Josefi Konzert 2026
+            </h1>
+            <p style={{
+              color: 'rgba(255, 255, 255, 0.5)',
+              fontSize: '0.875rem',
+              margin: 0,
+            }}>
+              {isAdmin ? 'Admin Dashboard' : 'Ticketverkauf'}
+            </p>
+          </div>
+
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '1rem',
+          }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              padding: '0.5rem 1rem',
+              backgroundColor: 'rgba(212, 175, 55, 0.1)',
+              border: '1px solid rgba(212, 175, 55, 0.3)',
+              borderRadius: '0.5rem',
+            }}>
+              <User style={{ width: '16px', height: '16px', color: '#d4af37' }} />
+              <span style={{ color: '#d4af37', fontSize: '0.875rem', fontWeight: '500' }}>
+                {session.user?.name || session.user?.email}
+              </span>
+              {isAdmin && (
+                <span style={{
+                  padding: '0.125rem 0.5rem',
+                  backgroundColor: 'rgba(139, 92, 246, 0.2)',
+                  color: '#a78bfa',
+                  fontSize: '0.75rem',
+                  fontWeight: '600',
+                  borderRadius: '0.25rem',
+                  marginLeft: '0.5rem',
+                }}>
+                  ADMIN
+                </span>
+              )}
+            </div>
+
+            <motion.button
+              onClick={() => signOut({ callbackUrl: '/' })}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
               style={{
-                display: 'inline-flex',
+                padding: '0.5rem 1rem',
+                backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                border: '1px solid rgba(239, 68, 68, 0.3)',
+                borderRadius: '0.5rem',
+                color: '#ef4444',
+                fontSize: '0.875rem',
+                fontWeight: '500',
+                cursor: 'pointer',
+                display: 'flex',
                 alignItems: 'center',
                 gap: '0.5rem',
-                color: 'rgba(255, 255, 255, 0.8)',
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                fontSize: '1rem',
-                transition: 'color 0.3s',
               }}
-              onMouseEnter={(e) => e.currentTarget.style.color = 'rgb(255, 255, 255)'}
-              onMouseLeave={(e) => e.currentTarget.style.color = 'rgba(255, 255, 255, 0.8)'}
             >
-              <ArrowLeft style={{ width: '20px', height: '20px' }} />
-              <span>Zurück</span>
-            </button>
-          </motion.div>
+              <LogOut style={{ width: '16px', height: '16px' }} />
+              Abmelden
+            </motion.button>
+          </div>
+        </div>
+      </div>
 
-          {/* Auth Buttons / User Menu */}
+      {/* CONTENT */}
+      <div style={{ padding: '2rem' }}>
+        <div style={{ maxWidth: '1800px', margin: '0 auto' }}>
           <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
           >
-            {status === 'loading' ? (
-              <div style={{ color: 'white' }}>Lädt...</div>
-            ) : session ? (
-              <UserMenu />
-            ) : (
-              <AuthButtons />
-            )}
+            <h2 style={{
+              color: 'white',
+              fontSize: '2rem',
+              fontWeight: '700',
+              marginBottom: '0.5rem',
+              textAlign: 'center',
+            }}>
+              {isAdmin ? 'Admin Dashboard' : 'Sitzplatzauswahl'}
+            </h2>
+            <p style={{
+              color: 'rgba(255, 255, 255, 0.6)',
+              fontSize: '1.125rem',
+              marginBottom: '2rem',
+              textAlign: 'center',
+            }}>
+              Kursaal Meran
+            </p>
+
+            <SeatMap />
           </motion.div>
         </div>
-
-        {/* Title */}
-        <motion.div
-          style={{ textAlign: 'center', marginBottom: '2rem' }}
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.2 }}
-        >
-          <h1 style={{
-            fontSize: 'clamp(2rem, 6vw, 4rem)',
-            fontWeight: 'bold',
-            color: 'white',
-            marginBottom: '1rem',
-          }}>
-            {isAdmin ? 'Admin Dashboard' : 'Sitzplatzauswahl'}
-          </h1>
-          <p style={{
-            fontSize: '1.125rem',
-            color: 'rgba(255, 255, 255, 0.7)',
-          }}>
-            {isAdmin ? 'Verwaltung & Reservierungen' : 'Wähle deine Sitzplätze'}
-          </p>
-        </motion.div>
-
-        {/* Sitzplan */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5, delay: 0.4 }}
-        >
-          {status === 'loading' ? (
-            <div style={{ textAlign: 'center', color: 'white', padding: '4rem' }}>
-              Lädt Sitzplan...
-            </div>
-          ) : (
-            <SeatMap isAdmin={isAdmin || false} userId={userId} />
-          )}
-        </motion.div>
       </div>
     </div>
   );

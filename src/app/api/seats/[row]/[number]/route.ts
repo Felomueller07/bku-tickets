@@ -1,35 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
-// PATCH - Sitz-Daten aktualisieren
 export async function PATCH(
   request: NextRequest,
   context: { params: Promise<{ row: string; number: string }> }
 ) {
   try {
-    const body = await request.json();
-    const { firstName, lastName, note } = body;
-    
-    // WICHTIG: params ist ein Promise in Next.js 15+
     const params = await context.params;
+    const { row, number } = params;
+    const body = await request.json();
     
-    const updated = await prisma.seat.update({
+    const seat = await prisma.seat.update({
       where: {
-        row_number: { 
-          row: params.row, 
-          number: parseInt(params.number) 
-        }
+        row_number: { row, number: parseInt(number) }
       },
       data: {
-        firstName: firstName || null,
-        lastName: lastName || null,
-        note: note || null,
-      },
+        firstName: body.firstName,
+        lastName: body.lastName,
+        note: body.note,
+      }
     });
     
-    return NextResponse.json(updated);
+    return NextResponse.json(seat);
   } catch (error) {
-    console.error('PATCH Error:', error);
     return NextResponse.json({ error: 'Fehler beim Aktualisieren' }, { status: 500 });
   }
 }
