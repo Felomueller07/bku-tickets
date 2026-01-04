@@ -4,6 +4,9 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Lock, Check, Trash2, BarChart3, Plus } from 'lucide-react';
 import DeleteAllConfirmModal from './DeleteAllConfirmModal';
+import FreeTicketGenerator from './FreeTicketGenerator';
+
+<FreeTicketGenerator />
 
 interface SeatData {
   row: string;

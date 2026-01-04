@@ -27,16 +27,18 @@ export default function LoginForm() {
         email,
         password,
         redirect: false,
+        callbackUrl: '/dashboard',
       });
 
       if (result?.error) {
         setError('Ungültige E-Mail oder Passwort');
-      } else {
-        router.push('/dashboard');
+        setLoading(false);
+      } else if (result?.ok) {
+        // Erfolgreich - redirect zum Dashboard
+        window.location.href = '/dashboard';
       }
     } catch (err) {
       setError('Ein Fehler ist aufgetreten');
-    } finally {
       setLoading(false);
     }
   };
@@ -50,7 +52,6 @@ export default function LoginForm() {
       position: 'relative',
       overflow: 'hidden',
     }}>
-      {/* HINTERGRUNDBILD */}
       <div style={{
         position: 'absolute',
         inset: 0,
@@ -61,7 +62,6 @@ export default function LoginForm() {
         opacity: 0.3,
       }} />
 
-      {/* GRADIENT OVERLAY */}
       <div style={{
         position: 'absolute',
         inset: 0,
@@ -158,6 +158,7 @@ export default function LoginForm() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
+                disabled={loading}
                 style={{
                   width: '100%',
                   padding: '0.75rem 1rem',
@@ -187,6 +188,7 @@ export default function LoginForm() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
+                  disabled={loading}
                   style={{
                     width: '100%',
                     padding: '0.75rem 3rem 0.75rem 1rem',
@@ -201,6 +203,7 @@ export default function LoginForm() {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
+                  disabled={loading}
                   style={{
                     position: 'absolute',
                     right: '1rem',
@@ -274,12 +277,13 @@ export default function LoginForm() {
               <button
                 type="button"
                 onClick={() => router.push('/auth/register')}
+                disabled={loading}
                 style={{
                   background: 'none',
                   border: 'none',
                   color: '#d4af37',
                   fontSize: '0.875rem',
-                  cursor: 'pointer',
+                  cursor: loading ? 'not-allowed' : 'pointer',
                   textDecoration: 'underline',
                 }}
               >
@@ -291,12 +295,13 @@ export default function LoginForm() {
               <button
                 type="button"
                 onClick={() => router.push('/')}
+                disabled={loading}
                 style={{
                   background: 'none',
                   border: 'none',
                   color: 'rgba(255, 255, 255, 0.5)',
                   fontSize: '0.875rem',
-                  cursor: 'pointer',
+                  cursor: loading ? 'not-allowed' : 'pointer',
                   display: 'inline-flex',
                   alignItems: 'center',
                   gap: '0.25rem',

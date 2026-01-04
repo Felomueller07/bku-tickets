@@ -40,3 +40,7 @@ prisma/dev.db-journal
 # IDE
 .vscode
 .idea
+
+# Environment variables
+.env
+.env*.local
