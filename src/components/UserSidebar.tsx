@@ -1,32 +1,35 @@
 'use client';
 
 import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { ShoppingCart, CreditCard, Trash2, Loader2, Ticket, Gift } from 'lucide-react';
+import { X, ShoppingCart, Ticket } from 'lucide-react';
+import { toast } from 'sonner';
+import Link from 'next/link';
 
 interface UserSidebarProps {
-  selectedSeats: Array<{ row: string; number: number }>;
-  onDeselectSeat: (row: string, number: number) => void;
-  onCheckout: () => void;
+  selectedSeats: any[];
+  onRemoveSeat: (row: string, number: number) => void;
 }
 
-const PRICE_PER_SEAT = 20.00;
+export default function UserSidebar({ selectedSeats, onRemoveSeat }: UserSidebarProps) {
+  const [agbAccepted, setAgbAccepted] = useState(false);
+  const [privacyAccepted, setPrivacyAccepted] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
 
-export default function UserSidebar({
-  selectedSeats,
-  onDeselectSeat,
-}: UserSidebarProps) {
-  
-  const totalPrice = selectedSeats.length * PRICE_PER_SEAT;
-  const [loading, setLoading] = useState(false);
-  const [freeTicketCode, setFreeTicketCode] = useState('');
-  const [showFreeTicket, setShowFreeTicket] = useState(false);
-  const [freeTicketLoading, setFreeTicketLoading] = useState(false);
+  const ticketPrice = 20.0;
+  const totalPrice = selectedSeats.length * ticketPrice;
 
   const handleCheckout = async () => {
-    if (selectedSeats.length === 0) return;
-    
-    setLoading(true);
+    if (!agbAccepted || !privacyAccepted) {
+      toast.error('Bitte akzeptieren Sie die AGB und Datenschutzerklärung');
+      return;
+    }
+
+    if (selectedSeats.length === 0) {
+      toast.error('Bitte wählen Sie mindestens einen Sitzplatz aus');
+      return;
+    }
+
+    setIsProcessing(true);
 
     try {
       const response = await fetch('/api/checkout', {
@@ -35,456 +38,237 @@ export default function UserSidebar({
         body: JSON.stringify({ seats: selectedSeats }),
       });
 
-      if (!response.ok) {
-        const error = await response.json();
-        alert('Fehler: ' + (error.error || 'Checkout fehlgeschlagen'));
-        setLoading(false);
-        return;
-      }
-
-      const { url } = await response.json();
-
-      if (url) {
-        window.location.href = url;
-      } else {
-        alert('Keine Checkout-URL erhalten');
-        setLoading(false);
-      }
-    } catch (error) {
-      console.error('Checkout Error:', error);
-      alert('Ein Fehler ist aufgetreten');
-      setLoading(false);
-    }
-  };
-
-  const handleFreeTicket = async () => {
-    if (!freeTicketCode.trim()) {
-      alert('Bitte gib einen Code ein');
-      return;
-    }
-
-    if (selectedSeats.length === 0) {
-      alert('Bitte wähle zuerst Sitze aus');
-      return;
-    }
-
-    setFreeTicketLoading(true);
-
-    try {
-      console.log('🎟️ Prüfe Freikarten-Code:', freeTicketCode);
-
-      const response = await fetch('/api/free-ticket', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          code: freeTicketCode,
-          seats: selectedSeats 
-        }),
-      });
-
       const data = await response.json();
 
-      if (response.ok) {
-        alert('✅ Freikarte eingelöst! Deine Sitze wurden reserviert.');
-        window.location.href = '/dashboard';
+      if (data.url) {
+        window.location.href = data.url;
       } else {
-        alert('❌ ' + (data.error || 'Ungültiger Code'));
+        toast.error('Fehler beim Erstellen der Zahlung');
+        setIsProcessing(false);
       }
     } catch (error) {
-      console.error('Free Ticket Error:', error);
-      alert('Ein Fehler ist aufgetreten');
-    } finally {
-      setFreeTicketLoading(false);
+      console.error('Checkout error:', error);
+      toast.error('Ein Fehler ist aufgetreten');
+      setIsProcessing(false);
     }
   };
 
   return (
-    <motion.div
-      style={{
-        width: '340px',
-        backgroundColor: 'rgba(0, 0, 0, 0.4)',
-        backdropFilter: 'blur(20px)',
-        borderRadius: '1.5rem',
-        padding: '2rem',
-        border: '1px solid rgba(255, 255, 255, 0.1)',
-        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)',
-        position: 'sticky',
-        top: '2rem',
-        maxHeight: 'calc(100vh - 4rem)',
-        overflowY: 'auto',
-        display: 'flex',
-        flexDirection: 'column',
-      }}
-      initial={{ opacity: 0, x: 50 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ duration: 0.5 }}
-    >
-      {/* HEADER */}
-      <div style={{ marginBottom: '2rem' }}>
-        <h3 style={{ 
-          color: 'white', 
-          fontSize: '1.5rem', 
-          fontWeight: '700', 
-          margin: 0,
-          letterSpacing: '-0.025em',
-        }}>
-          Warenkorb
-        </h3>
-        <p style={{ 
-          color: 'rgba(255, 255, 255, 0.5)', 
-          fontSize: '0.875rem', 
-          margin: 0,
-          marginTop: '0.25rem',
-        }}>
-          Josefi Konzert 2026
+    <div style={{
+      width: '350px',
+      backgroundColor: 'rgba(0, 0, 0, 0.8)',
+      backdropFilter: 'blur(20px)',
+      borderLeft: '1px solid rgba(212, 175, 55, 0.3)',
+      padding: '2rem',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '1.5rem',
+      height: '100vh',
+      overflowY: 'auto',
+    }}>
+      <div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
+          <ShoppingCart style={{ width: '24px', height: '24px', color: '#d4af37' }} />
+          <h2 style={{ color: 'white', fontSize: '1.5rem', fontWeight: '700', margin: 0 }}>
+            Warenkorb
+          </h2>
+        </div>
+        <p style={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: '0.875rem', margin: 0 }}>
+          {selectedSeats.length} {selectedSeats.length === 1 ? 'Ticket' : 'Tickets'} ausgewählt
         </p>
       </div>
 
-      {/* AUSGEWÄHLTE SITZE */}
-      {selectedSeats.length > 0 ? (
-        <>
-          <div style={{ marginBottom: '2rem' }}>
-            <h4 style={{ 
-              color: 'white', 
-              fontSize: '0.9375rem', 
-              fontWeight: '600', 
-              marginBottom: '1rem',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem',
-            }}>
-              <ShoppingCart style={{ width: '16px', height: '16px' }} />
-              Ausgewählte Sitze
-              <span style={{ 
-                color: 'rgba(255, 255, 255, 0.5)', 
-                fontSize: '0.8125rem',
-                fontWeight: '500',
-              }}>
-                ({selectedSeats.length})
-              </span>
-            </h4>
-            
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-              {selectedSeats.map(({ row, number }, index) => (
-                <motion.div
-                  key={`${row}${number}-${index}`}
-                  style={{
-                    backgroundColor: 'rgba(74, 222, 128, 0.15)',
-                    border: '1px solid rgba(74, 222, 128, 0.3)',
-                    borderRadius: '0.75rem',
-                    padding: '0.875rem 1rem',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                  }}
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                >
-                  <div>
-                    <span style={{ 
-                      color: '#fff',
-                      fontWeight: '600', 
-                      fontSize: '1rem',
-                      fontVariantNumeric: 'tabular-nums',
-                    }}>
-                      Sitz {row}{number}
-                    </span>
-                    <div style={{ 
-                      color: 'rgba(255, 255, 255, 0.6)',
-                      fontSize: '0.8125rem',
-                      marginTop: '0.125rem',
-                    }}>
-                      {PRICE_PER_SEAT.toFixed(2)} €
-                    </div>
-                  </div>
-                  
-                  <motion.button
-                    onClick={() => onDeselectSeat(row, number)}
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
-                    disabled={loading || freeTicketLoading}
-                    style={{
-                      background: 'rgba(239, 68, 68, 0.2)',
-                      border: '1px solid rgba(239, 68, 68, 0.3)',
-                      borderRadius: '0.5rem',
-                      padding: '0.5rem',
-                      cursor: (loading || freeTicketLoading) ? 'not-allowed' : 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      opacity: (loading || freeTicketLoading) ? 0.5 : 1,
-                    }}
-                  >
-                    <Trash2 style={{ width: '14px', height: '14px', color: '#ef4444' }} />
-                  </motion.button>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-
-          {/* PREIS-ZUSAMMENFASSUNG */}
-          <div style={{ 
-            marginBottom: '2rem',
-            padding: '1.25rem',
-            background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.1) 0%, rgba(212, 175, 55, 0.05) 100%)',
-            borderRadius: '1rem',
-            border: '1px solid rgba(212, 175, 55, 0.2)',
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+        {selectedSeats.length === 0 ? (
+          <div style={{
+            padding: '2rem',
+            textAlign: 'center',
+            color: 'rgba(255, 255, 255, 0.5)',
+            fontSize: '0.875rem',
           }}>
-            <div style={{ marginBottom: '0.75rem' }}>
-              <div style={{ 
-                display: 'flex', 
-                justifyContent: 'space-between',
-                color: 'rgba(255, 255, 255, 0.7)',
-                fontSize: '0.875rem',
-                marginBottom: '0.5rem',
-              }}>
-                <span>{selectedSeats.length} × {PRICE_PER_SEAT.toFixed(2)} €</span>
-                <span>{totalPrice.toFixed(2)} €</span>
-              </div>
-            </div>
-            
-            <div style={{ 
-              borderTop: '1px solid rgba(212, 175, 55, 0.3)',
-              paddingTop: '0.75rem',
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-            }}>
-              <span style={{ 
-                color: 'rgba(255, 255, 255, 0.8)',
-                fontSize: '0.875rem',
-                fontWeight: '500',
-              }}>
-                Gesamtpreis
-              </span>
-              <div style={{ 
-                color: '#d4af37',
-                fontSize: '1.75rem',
-                fontWeight: '700',
-                fontVariantNumeric: 'tabular-nums',
-                display: 'flex',
-                alignItems: 'baseline',
-                gap: '0.25rem',
-              }}>
-                <span>{totalPrice.toFixed(2)}</span>
-                <span style={{ fontSize: '1.25rem' }}>€</span>
-              </div>
-            </div>
+            <Ticket style={{ width: '48px', height: '48px', margin: '0 auto 1rem', opacity: 0.3 }} />
+            <p style={{ margin: 0 }}>Keine Tickets ausgewählt</p>
           </div>
-
-          {/* ZUR KASSA BUTTON */}
-          <motion.button
-            onClick={handleCheckout}
-            disabled={loading || freeTicketLoading}
-            whileHover={{ scale: (loading || freeTicketLoading) ? 1 : 1.02 }}
-            whileTap={{ scale: (loading || freeTicketLoading) ? 1 : 0.98 }}
-            style={{
-              width: '100%',
-              padding: '1rem',
-              background: (loading || freeTicketLoading)
-                ? 'rgba(212, 175, 55, 0.5)' 
-                : 'linear-gradient(135deg, #d4af37 0%, #f4e7c3 100%)',
-              color: '#000',
-              border: 'none',
-              borderRadius: '0.75rem',
-              fontSize: '1rem',
-              fontWeight: '600',
-              cursor: (loading || freeTicketLoading) ? 'not-allowed' : 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '0.5rem',
-              boxShadow: (loading || freeTicketLoading) ? 'none' : '0 4px 12px rgba(212, 175, 55, 0.3)',
-              marginBottom: '1rem',
-            }}
-          >
-            {loading ? (
-              <>
-                <Loader2 style={{ width: '18px', height: '18px', animation: 'spin 1s linear infinite' }} />
-                Wird geladen...
-              </>
-            ) : (
-              <>
-                <CreditCard style={{ width: '18px', height: '18px' }} />
-                Zur Kassa ({totalPrice.toFixed(2)} €)
-              </>
-            )}
-          </motion.button>
-
-          {/* FREIKARTE BUTTON/FELD */}
-          <motion.button
-            onClick={() => setShowFreeTicket(!showFreeTicket)}
-            disabled={loading || freeTicketLoading}
-            whileHover={{ scale: (loading || freeTicketLoading) ? 1 : 1.02 }}
-            whileTap={{ scale: (loading || freeTicketLoading) ? 1 : 0.98 }}
-            style={{
-              width: '100%',
-              padding: '0.875rem',
-              background: showFreeTicket 
-                ? 'rgba(139, 92, 246, 0.2)' 
-                : 'rgba(139, 92, 246, 0.1)',
-              color: '#a78bfa',
-              border: '1px solid rgba(139, 92, 246, 0.3)',
-              borderRadius: '0.75rem',
-              fontSize: '0.9375rem',
-              fontWeight: '600',
-              cursor: (loading || freeTicketLoading) ? 'not-allowed' : 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '0.5rem',
-              marginBottom: showFreeTicket ? '1rem' : 0,
-            }}
-          >
-            <Gift style={{ width: '18px', height: '18px' }} />
-            Freikarte einlösen
-          </motion.button>
-
-          {/* FREIKARTEN EINGABEFELD */}
-          <AnimatePresence>
-            {showFreeTicket && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
+        ) : (
+          selectedSeats.map((seat: any) => (
+            <div
+              key={`${seat.row}-${seat.number}`}
+              style={{
+                backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                borderRadius: '0.75rem',
+                padding: '1rem',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+              }}
+            >
+              <div>
+                <p style={{ color: 'white', fontWeight: '600', margin: '0 0 0.25rem 0' }}>
+                  Reihe {seat.row}, Platz {seat.number}
+                </p>
+                <p style={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: '0.875rem', margin: 0 }}>
+                  {seat.firstName} {seat.lastName}
+                </p>
+                <p style={{ color: '#d4af37', fontSize: '0.875rem', fontWeight: '600', margin: '0.5rem 0 0 0' }}>
+                  {ticketPrice.toFixed(2)} €
+                </p>
+              </div>
+              <button
+                onClick={() => onRemoveSeat(seat.row, seat.number)}
                 style={{
-                  overflow: 'hidden',
+                  background: 'rgba(239, 68, 68, 0.2)',
+                  border: '1px solid rgba(239, 68, 68, 0.5)',
+                  borderRadius: '0.5rem',
+                  padding: '0.5rem',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
                 }}
               >
-                <div style={{
-                  padding: '1.25rem',
-                  background: 'rgba(139, 92, 246, 0.1)',
-                  border: '1px solid rgba(139, 92, 246, 0.2)',
-                  borderRadius: '0.75rem',
-                }}>
-                  <label style={{
-                    display: 'block',
-                    color: 'rgba(255, 255, 255, 0.8)',
-                    fontSize: '0.875rem',
-                    fontWeight: '500',
-                    marginBottom: '0.5rem',
-                  }}>
-                    Freikarten-Code
-                  </label>
-                  
-                  <div style={{ position: 'relative', marginBottom: '1rem' }}>
-                    <Ticket style={{
-                      position: 'absolute',
-                      left: '1rem',
-                      top: '50%',
-                      transform: 'translateY(-50%)',
-                      width: '16px',
-                      height: '16px',
-                      color: 'rgba(255, 255, 255, 0.4)',
-                    }} />
-                    <input
-                      type="text"
-                      value={freeTicketCode}
-                      onChange={(e) => setFreeTicketCode(e.target.value.toUpperCase())}
-                      placeholder="JOSEFI2026-ABC123"
-                      disabled={freeTicketLoading}
-                      style={{
-                        width: '100%',
-                        padding: '0.75rem 1rem 0.75rem 2.75rem',
-                        backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                        border: '1px solid rgba(255, 255, 255, 0.1)',
-                        borderRadius: '0.5rem',
-                        color: '#fff',
-                        fontSize: '0.9375rem',
-                        fontWeight: '600',
-                        letterSpacing: '0.05em',
-                        outline: 'none',
-                        textTransform: 'uppercase',
-                      }}
-                    />
-                  </div>
+                <X style={{ width: '16px', height: '16px', color: '#ef4444' }} />
+              </button>
+            </div>
+          ))
+        )}
+      </div>
 
-                  <motion.button
-                    onClick={handleFreeTicket}
-                    disabled={freeTicketLoading}
-                    whileHover={{ scale: freeTicketLoading ? 1 : 1.02 }}
-                    whileTap={{ scale: freeTicketLoading ? 1 : 0.98 }}
-                    style={{
-                      width: '100%',
-                      padding: '0.875rem',
-                      background: freeTicketLoading
-                        ? 'rgba(139, 92, 246, 0.5)'
-                        : 'linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%)',
-                      color: '#fff',
-                      border: 'none',
-                      borderRadius: '0.5rem',
-                      fontSize: '0.9375rem',
-                      fontWeight: '600',
-                      cursor: freeTicketLoading ? 'not-allowed' : 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '0.5rem',
-                    }}
-                  >
-                    {freeTicketLoading ? (
-                      <>
-                        <Loader2 style={{ width: '16px', height: '16px', animation: 'spin 1s linear infinite' }} />
-                        Prüfe Code...
-                      </>
-                    ) : (
-                      <>
-                        <Gift style={{ width: '16px', height: '16px' }} />
-                        Code einlösen
-                      </>
-                    )}
-                  </motion.button>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* SICHERE ZAHLUNG HINWEIS */}
-          <div style={{
-            marginTop: '1rem',
-            padding: '0.75rem',
-            backgroundColor: 'rgba(74, 222, 128, 0.1)',
-            border: '1px solid rgba(74, 222, 128, 0.2)',
-            borderRadius: '0.5rem',
-            textAlign: 'center',
-          }}>
-            <p style={{
-              color: 'rgba(255, 255, 255, 0.6)',
-              fontSize: '0.75rem',
-              margin: 0,
-            }}>
-              🔒 Sichere Zahlung via Stripe
-            </p>
-          </div>
-        </>
-      ) : (
-        <div style={{ 
-          marginBottom: 'auto', 
-          textAlign: 'center', 
-          padding: '2rem 0',
+      {selectedSeats.length > 0 && (
+        <div style={{
+          backgroundColor: 'rgba(212, 175, 55, 0.1)',
+          border: '1px solid rgba(212, 175, 55, 0.3)',
+          borderRadius: '0.75rem',
+          padding: '1rem',
         }}>
-          <ShoppingCart style={{ 
-            width: '48px', 
-            height: '48px', 
-            color: 'rgba(255, 255, 255, 0.2)',
-            margin: '0 auto 1rem',
-          }} />
-          <p style={{ 
-            color: 'rgba(255, 255, 255, 0.4)', 
-            fontSize: '0.875rem',
-            margin: 0,
+          <label style={{
+            display: 'flex',
+            alignItems: 'flex-start',
+            gap: '0.75rem',
+            cursor: 'pointer',
+            marginBottom: '0.75rem',
           }}>
-            Keine Sitze ausgewählt
+            <input
+              type="checkbox"
+              checked={agbAccepted}
+              onChange={(e) => setAgbAccepted(e.target.checked)}
+              style={{
+                width: '18px',
+                height: '18px',
+                marginTop: '2px',
+                cursor: 'pointer',
+                accentColor: '#d4af37',
+              }}
+            />
+            <span style={{ color: 'rgba(255, 255, 255, 0.9)', fontSize: '0.875rem', lineHeight: '1.5' }}>
+              Ich akzeptiere die{' '}
+              <Link
+                href="/agb"
+                target="_blank"
+                style={{ color: '#d4af37', textDecoration: 'underline' }}
+              >
+                AGB
+              </Link>
+              {' '}*
+            </span>
+          </label>
+
+          <label style={{
+            display: 'flex',
+            alignItems: 'flex-start',
+            gap: '0.75rem',
+            cursor: 'pointer',
+          }}>
+            <input
+              type="checkbox"
+              checked={privacyAccepted}
+              onChange={(e) => setPrivacyAccepted(e.target.checked)}
+              style={{
+                width: '18px',
+                height: '18px',
+                marginTop: '2px',
+                cursor: 'pointer',
+                accentColor: '#d4af37',
+              }}
+            />
+            <span style={{ color: 'rgba(255, 255, 255, 0.9)', fontSize: '0.875rem', lineHeight: '1.5' }}>
+              Ich akzeptiere die{' '}
+              <Link
+                href="/datenschutz"
+                target="_blank"
+                style={{ color: '#d4af37', textDecoration: 'underline' }}
+              >
+                Datenschutzerklärung
+              </Link>
+              {' '}*
+            </span>
+          </label>
+
+          <p style={{
+            color: 'rgba(255, 255, 255, 0.5)',
+            fontSize: '0.625rem',
+            margin: '0.75rem 0 0 0',
+          }}>
+            * Pflichtfelder
           </p>
         </div>
       )}
 
-      <style jsx>{`
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-      `}</style>
-    </motion.div>
+      {selectedSeats.length > 0 && (
+        <>
+          <div style={{
+            borderTop: '1px solid rgba(255, 255, 255, 0.1)',
+            paddingTop: '1rem',
+          }}>
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '1rem',
+            }}>
+              <span style={{ color: 'rgba(255, 255, 255, 0.8)', fontSize: '1rem' }}>
+                Gesamtpreis:
+              </span>
+              <span style={{ color: '#d4af37', fontSize: '1.5rem', fontWeight: '700' }}>
+                {totalPrice.toFixed(2)} €
+              </span>
+            </div>
+
+            <button
+              onClick={handleCheckout}
+              disabled={!agbAccepted || !privacyAccepted || isProcessing}
+              style={{
+                width: '100%',
+                padding: '1rem',
+                background: (agbAccepted && privacyAccepted && !isProcessing)
+                  ? 'linear-gradient(135deg, #d4af37 0%, #f4e7c3 100%)'
+                  : 'rgba(255, 255, 255, 0.1)',
+                border: 'none',
+                borderRadius: '0.75rem',
+                color: (agbAccepted && privacyAccepted && !isProcessing) ? '#000' : 'rgba(255, 255, 255, 0.3)',
+                fontSize: '1rem',
+                fontWeight: '700',
+                cursor: (agbAccepted && privacyAccepted && !isProcessing) ? 'pointer' : 'not-allowed',
+                transition: 'all 0.3s',
+                opacity: isProcessing ? 0.7 : 1,
+              }}
+            >
+              {isProcessing ? 'Wird verarbeitet...' : `Zur Kassa (${totalPrice.toFixed(2)} €)`}
+            </button>
+
+            {(!agbAccepted || !privacyAccepted) && (
+              <p style={{
+                color: 'rgba(239, 68, 68, 0.8)',
+                fontSize: '0.75rem',
+                textAlign: 'center',
+                margin: '0.75rem 0 0 0',
+              }}>
+                Bitte akzeptieren Sie die AGB und Datenschutzerklärung
+              </p>
+            )}
+          </div>
+        </>
+      )}
+    </div>
   );
 }
