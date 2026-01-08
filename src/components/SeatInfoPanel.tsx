@@ -10,6 +10,8 @@ interface SeatInfoPanelProps {
   seatLabel: string;
   firstName?: string;
   lastName?: string;
+  email?: string;
+  createdAt?: string;
   note?: string;
 }
 
@@ -20,6 +22,8 @@ export default function SeatInfoPanel({
   seatLabel,
   firstName,
   lastName,
+  email,
+  createdAt,
   note,
 }: SeatInfoPanelProps) {
   

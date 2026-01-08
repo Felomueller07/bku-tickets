@@ -7,8 +7,8 @@ import { X, User, FileText } from 'lucide-react';
 interface SeatDetailsModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (data: { firstName: string; lastName: string; note: string; applyToAll: boolean }) => void;
-  initialData?: { firstName?: string; lastName?: string; note?: string };
+  onSave: (data: { firstName: string; lastName: string; email: string; applyToAll: boolean }) => void;
+  initialData?: { firstName?: string; lastName?: string; email?: string };
   seatLabel: string;
   hasMultipleSeats?: boolean;
 }
@@ -23,20 +23,20 @@ export default function SeatDetailsModal({
 }: SeatDetailsModalProps) {
   const [firstName, setFirstName] = useState(initialData?.firstName || '');
   const [lastName, setLastName] = useState(initialData?.lastName || '');
-  const [note, setNote] = useState(initialData?.note || '');
+  const [email, setEmail] = useState(initialData?.email || '');
   const [applyToAll, setApplyToAll] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
       setFirstName(initialData?.firstName || '');
       setLastName(initialData?.lastName || '');
-      setNote(initialData?.note || '');
+      setEmail(initialData?.email || '');
       setApplyToAll(false);
     }
   }, [isOpen, initialData]);
 
   const handleSave = () => {
-    onSave({ firstName, lastName, note, applyToAll });
+    onSave({ firstName, lastName, email, applyToAll });
     onClose();
   };
 
@@ -180,8 +180,8 @@ export default function SeatDetailsModal({
                   Notiz (optional)
                 </label>
                 <textarea
-                  value={note}
-                  onChange={(e) => setNote(e.target.value)}
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   placeholder="z.B. Telefonnummer, Bemerkungen..."
                   rows={3}
                   style={{
