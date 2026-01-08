@@ -12,10 +12,10 @@ import UserSidebar from './UserSidebar';
 // ========================================
 // SITZPLATZ-KOMPONENTE (SVG-STUHL)
 // ========================================
-function SeatChair({ 
-  row, 
-  number, 
-  rotation = 0, 
+function SeatChair({
+  row,
+  number,
+  rotation = 0,
   isOccupied,
   isSelected,
   isAdmin,
@@ -53,7 +53,7 @@ function SeatChair({
       height="32"
       viewBox="0 0 50 50"
       onClick={handleClick}
-      style={{ 
+      style={{
         cursor: isOccupied && !isAdmin ? 'not-allowed' : 'pointer',
         marginLeft: rotation === 0 ? '-6px' : '0',
         marginRight: rotation === 0 ? '-6px' : '0',
@@ -71,7 +71,7 @@ function SeatChair({
         stroke="#000"
         strokeWidth="2.5"
       />
-      
+
       {/* Sitzfläche */}
       <rect
         x="10"
@@ -131,17 +131,23 @@ export default function SeatMap() {
 
   // State für ausgewählte Sitze
   const [selectedSeats, setSelectedSeats] = useState<Array<{ row: string; number: number }>>([]);
-  
-// State für reservierte Sitze (ca. Zeile 51)
-const [occupiedSeats, setOccupiedSeats] = useState<Array<{
-  row: string;
-  number: number;
-  firstName?: string;
-  lastName?: string;
-  email?: string;
-  note?: string;
-  createdAt?: string;
-}>>([]);
+
+  // State für reservierte Sitze (ca. Zeile 51)
+  const [occupiedSeats, setOccupiedSeats] = useState<Array<{
+    row: string;
+    number: number;
+    firstName?: string;
+    lastName?: string;
+    email?: string;
+    note?: string;
+    createdAt?: string;
+    userId?: number;           // ⭐ NEU
+    user?: {                   // ⭐ NEU
+      id: number;
+      email: string;
+      name: string;
+    };
+  }>>([]);
 
   // Loading State
   const [loading, setLoading] = useState(true);
@@ -162,61 +168,63 @@ const [occupiedSeats, setOccupiedSeats] = useState<Array<{
     loadSeats();
   }, []);
 
-const loadSeats = async () => {
-  console.log('🔄 loadSeats gestartet...');
-  try {
-    const response = await fetch('/api/seats');
-    console.log('📡 API Response:', response.ok, response.status);
-    
-    if (response.ok) {
-      const data = await response.json();
-      console.log('📦 Rohdaten von API:', data);
-      
-      const mappedSeats = data.map((seat: any) => ({
-        row: seat.row,
-        number: seat.number,
-        firstName: seat.firstName || '',
-        lastName: seat.lastName || '',
-        email: seat.email || '',
-        note: seat.note || '',
-        createdAt: seat.createdAt,
-      }));
-      
-      console.log('🎯 Mapped Sitze:', mappedSeats);
-      console.log('📊 Anzahl Sitze:', mappedSeats.length);
-      
-      setOccupiedSeats(mappedSeats);
-      console.log('✅ setOccupiedSeats aufgerufen!');
-      setLoading(false);  // ⭐ NEU!
-    } else {
-      console.error('❌ API Fehler:', response.status);
+  const loadSeats = async () => {
+    console.log('🔄 loadSeats gestartet...');
+    try {
+      const response = await fetch('/api/seats');
+      console.log('📡 API Response:', response.ok, response.status);
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log('📦 Rohdaten von API:', data);
+
+        const mappedSeats = data.map((seat: any) => ({
+          row: seat.row,
+          number: seat.number,
+          firstName: seat.firstName || '',
+          lastName: seat.lastName || '',
+          email: seat.email || '',
+          note: seat.note || '',
+          createdAt: seat.createdAt,
+          userId: seat.userId,       // ⭐ NEU
+          user: seat.user,           // ⭐ NEU
+        }));
+
+        console.log('🎯 Mapped Sitze:', mappedSeats);
+        console.log('📊 Anzahl Sitze:', mappedSeats.length);
+
+        setOccupiedSeats(mappedSeats);
+        console.log('✅ setOccupiedSeats aufgerufen!');
+        setLoading(false);  // ⭐ NEU!
+      } else {
+        console.error('❌ API Fehler:', response.status);
+        setLoading(false);  // ⭐ NEU!
+      }
+    } catch (error) {
+      console.error('❌ Fehler beim Laden:', error);
       setLoading(false);  // ⭐ NEU!
     }
-  } catch (error) {
-    console.error('❌ Fehler beim Laden:', error);
-    setLoading(false);  // ⭐ NEU!
-  }
-};
+  };
 
   // Toggle Auswahl - MIT USER-SCHUTZ!
   const handleToggleSelect = (row: string, number: number) => {
     const isCurrentlySelected = selectedSeats.some(s => s.row === row && s.number === number);
     const isOcc = isSeatOccupied(row, number);
-    
+
     // USER: Belegte Sitze NICHT anklickbar!
     if (isOcc && !isAdmin) {
       console.log('❌ Sitz ist bereits belegt!');
       toast.error(`Sitz ${row}${number} ist bereits reserviert`, { duration: 2000 });
       return; // Früher Exit!
     }
-    
+
     // ADMIN: Klick auf ROTEN Sitz → Info-Panel öffnen
     if (isOcc && isAdmin && !isCurrentlySelected) {
       setInfoPanelSeat({ row, number });
       setInfoPanelOpen(true);
       return;
     }
-    
+
     if (isCurrentlySelected) {
       setSelectedSeats(selectedSeats.filter(s => !(s.row === row && s.number === number)));
       toast.info(`Sitz ${row}${number} abgewählt`, { duration: 1500 });
@@ -249,7 +257,7 @@ const loadSeats = async () => {
     }
 
     const freeSeats = selectedSeats.filter(s => !isSeatOccupied(s.row, s.number));
-    
+
     if (freeSeats.length === 0) {
       toast.error('Nur besetzte Sitze ausgewählt');
       return;
@@ -286,51 +294,51 @@ const loadSeats = async () => {
   // ========================================
   // DATEN SPEICHERN (UPDATE IN DATENBANK)
   // ========================================
-const handleModalSave = async (data: { firstName: string; lastName: string; email: string; applyToAll: boolean }) => {  // ⭐ GEÄNDERT: note → email
-  if (modalMode === 'edit' && currentEditSeat) {
-    try {
-      if (data.applyToAll && selectedSeats.length > 1) {
-        const updates = selectedSeats
-          .filter(s => isSeatOccupied(s.row, s.number))
-          .map(seat =>
-            fetch(`/api/seats/${seat.row}/${seat.number}`, {
-              method: 'PATCH',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                firstName: data.firstName,
-                lastName: data.lastName,
-                email: data.email,  // ⭐ GEÄNDERT: note → email
+  const handleModalSave = async (data: { firstName: string; lastName: string; email: string; applyToAll: boolean }) => {  // ⭐ GEÄNDERT: note → email
+    if (modalMode === 'edit' && currentEditSeat) {
+      try {
+        if (data.applyToAll && selectedSeats.length > 1) {
+          const updates = selectedSeats
+            .filter(s => isSeatOccupied(s.row, s.number))
+            .map(seat =>
+              fetch(`/api/seats/${seat.row}/${seat.number}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  firstName: data.firstName,
+                  lastName: data.lastName,
+                  email: data.email,  // ⭐ GEÄNDERT: note → email
+                })
               })
-            })
-          );
-        
-        await Promise.all(updates);
-        await loadSeats();
-        toast.success(`Daten auf ${updates.length} Sitze angewendet`, { duration: 2000 });
-      } else {
-        const response = await fetch(`/api/seats/${currentEditSeat.row}/${currentEditSeat.number}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            firstName: data.firstName,
-            lastName: data.lastName,
-            email: data.email,  // ⭐ GEÄNDERT: note → email
-          })
-        });
+            );
 
-        if (response.ok) {
+          await Promise.all(updates);
           await loadSeats();
-          toast.success('Details aktualisiert', { duration: 2000 });
+          toast.success(`Daten auf ${updates.length} Sitze angewendet`, { duration: 2000 });
         } else {
-          toast.error('Fehler beim Speichern');
+          const response = await fetch(`/api/seats/${currentEditSeat.row}/${currentEditSeat.number}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              firstName: data.firstName,
+              lastName: data.lastName,
+              email: data.email,  // ⭐ GEÄNDERT: note → email
+            })
+          });
+
+          if (response.ok) {
+            await loadSeats();
+            toast.success('Details aktualisiert', { duration: 2000 });
+          } else {
+            toast.error('Fehler beim Speichern');
+          }
         }
+      } catch (error) {
+        console.error('Fehler:', error);
+        toast.error('Fehler beim Speichern');
       }
-    } catch (error) {
-      console.error('Fehler:', error);
-      toast.error('Fehler beim Speichern');
     }
-  }
-};
+  };
 
   // ========================================
   // ADMIN: FREIGEBEN (LÖSCHT AUS DATENBANK)
@@ -342,7 +350,7 @@ const handleModalSave = async (data: { firstName: string; lastName: string; emai
     }
 
     const occupiedSelected = selectedSeats.filter(s => isSeatOccupied(s.row, s.number));
-    
+
     if (occupiedSelected.length === 0) {
       toast.error('Nur freie Sitze ausgewählt');
       return;
@@ -433,11 +441,11 @@ const handleModalSave = async (data: { firstName: string; lastName: string; emai
 
   // REIHEN-DEFINITIONEN
   const mainRowLetters = ['E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y'];
-  
+
   const mainRows = mainRowLetters.map(letter => ({
     letter,
-    leftSeats: Array.from({length: 12}, (_, i) => i + 4),
-    rightSeats: Array.from({length: 12}, (_, i) => i + 16)
+    leftSeats: Array.from({ length: 12 }, (_, i) => i + 4),
+    rightSeats: Array.from({ length: 12 }, (_, i) => i + 16)
   }));
 
   const backRows = [
@@ -514,13 +522,17 @@ const handleModalSave = async (data: { firstName: string; lastName: string; emai
   email={getInfoPanelData()?.email}
   note={getInfoPanelData()?.note}
   createdAt={getInfoPanelData()?.createdAt}
+  reservedByUserId={getInfoPanelData()?.userId}
+  reservedByUser={getInfoPanelData()?.user}
+  currentUserId={Number((session?.user as any)?.id)}      // ✅ Number!
+
 />
 
       <div style={{ maxWidth: '1800px', margin: '0 auto', display: 'flex', gap: '2rem', alignItems: 'flex-start', paddingBottom: '2rem' }}>
-        
+
         {/* SITZPLAN */}
         <div style={{ flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.3)', backdropFilter: 'blur(10px)', borderRadius: '1rem', padding: '2rem', border: '1px solid rgba(255, 255, 255, 0.2)' }}>
-          
+
           <p style={{ color: 'white', marginBottom: '1.5rem', fontSize: '1.125rem', textAlign: 'center' }}>
             Sitzplan {isAdmin && <span style={{ color: '#d4af37' }}>(Admin-Modus)</span>}
           </p>
@@ -534,19 +546,19 @@ const handleModalSave = async (data: { firstName: string; lastName: string; emai
 
           {/* HAUPT-CONTAINER */}
           <div style={{ position: 'relative' }}>
-            
+
             {/* GALERIE-EBENE */}
             <div style={{ position: 'absolute', top: '-230px', left: 0, right: 0, bottom: 0 }}>
-              
+
               {/* LINKE GALERIE (BA, BB) */}
               <div style={{ position: 'absolute', top: 0, left: 0, bottom: 0, width: '150px', border: '2px solid rgba(255, 255, 255, 0.3)', borderRadius: '1rem', backgroundColor: 'rgba(0, 0, 0, 0.2)', padding: '1.5rem 1rem', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                 <div style={{ color: '#d4af37', fontSize: '14px', fontWeight: 'bold', marginBottom: '1rem', letterSpacing: '1px' }}>GALERIE</div>
-                
+
                 <div style={{ display: 'flex', gap: '0.5rem' }}>
                   {['BA', 'BB'].map(col => (
                     <div key={col} style={{ display: 'flex', flexDirection: 'column' }}>
                       <div style={{ color: 'white', fontSize: '14px', fontWeight: 'bold', textAlign: 'center', marginBottom: '0.5rem', width: '32px' }}>{col}</div>
-                      
+
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '3rem' }}>
                         {sideRowsLeft.map((group, groupIdx) => (
                           <div key={groupIdx} style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
@@ -565,7 +577,7 @@ const handleModalSave = async (data: { firstName: string; lastName: string; emai
                           </div>
                         ))}
                       </div>
-                      
+
                       <div style={{ color: 'white', fontSize: '14px', fontWeight: 'bold', textAlign: 'center', marginTop: '0.5rem', width: '32px' }}>{col}</div>
                     </div>
                   ))}
@@ -575,7 +587,7 @@ const handleModalSave = async (data: { firstName: string; lastName: string; emai
               {/* RECHTE GALERIE (BC, BD) */}
               <div style={{ position: 'absolute', top: 0, right: 0, bottom: 0, width: '150px', border: '2px solid rgba(255, 255, 255, 0.3)', borderRadius: '1rem', backgroundColor: 'rgba(0, 0, 0, 0.2)', padding: '1.5rem 1rem', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                 <div style={{ color: '#d4af37', fontSize: '14px', fontWeight: 'bold', marginBottom: '1rem', letterSpacing: '1px' }}>GALERIE</div>
-                
+
                 <div style={{ display: 'flex', gap: '0.5rem' }}>
                   {['BC', 'BD'].map(col => (
                     <div key={col} style={{ display: 'flex', flexDirection: 'column' }}>
@@ -608,12 +620,12 @@ const handleModalSave = async (data: { firstName: string; lastName: string; emai
               <div style={{ position: 'absolute', bottom: '20px', left: '200px', right: '200px', border: '2px solid rgba(255, 255, 255, 0.3)', borderRadius: '1rem', backgroundColor: 'rgba(0, 0, 0, 0.2)', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.75rem' }}>
                   <div style={{ color: 'white', fontSize: '14px', fontWeight: 'bold' }}>BM</div>
-                  
+
                   <div style={{ display: 'flex', gap: '0px' }}>
                     {[1, 2, 3, 4].map(num => (
-                      <SeatChair 
-                        key={`BM-${num}`} 
-                        row="BM" 
+                      <SeatChair
+                        key={`BM-${num}`}
+                        row="BM"
                         number={num}
                         isOccupied={isSeatOccupied('BM', num)}
                         isSelected={isSeatSelected('BM', num)}
@@ -622,12 +634,12 @@ const handleModalSave = async (data: { firstName: string; lastName: string; emai
                       />
                     ))}
                   </div>
-                  
+
                   <div style={{ display: 'flex', gap: '0px' }}>
                     {[5, 6, 7, 8, 9, 10, 11, 12].map(num => (
-                      <SeatChair 
-                        key={`BM-${num}`} 
-                        row="BM" 
+                      <SeatChair
+                        key={`BM-${num}`}
+                        row="BM"
                         number={num}
                         isOccupied={isSeatOccupied('BM', num)}
                         isSelected={isSeatSelected('BM', num)}
@@ -636,12 +648,12 @@ const handleModalSave = async (data: { firstName: string; lastName: string; emai
                       />
                     ))}
                   </div>
-                  
+
                   <div style={{ display: 'flex', gap: '0px' }}>
                     {[13, 14, 15, 16].map(num => (
-                      <SeatChair 
-                        key={`BM-${num}`} 
-                        row="BM" 
+                      <SeatChair
+                        key={`BM-${num}`}
+                        row="BM"
                         number={num}
                         isOccupied={isSeatOccupied('BM', num)}
                         isSelected={isSeatSelected('BM', num)}
@@ -650,17 +662,17 @@ const handleModalSave = async (data: { firstName: string; lastName: string; emai
                       />
                     ))}
                   </div>
-                  
+
                   <div style={{ color: 'white', fontSize: '14px', fontWeight: 'bold' }}>BM</div>
                 </div>
-                
+
                 <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.75rem' }}>
                   <div style={{ color: 'white', fontSize: '14px', fontWeight: 'bold' }}>BM</div>
                   <div style={{ display: 'flex', gap: '0px' }}>
                     {[17, 18, 19, 20, 21, 22].map(num => (
-                      <SeatChair 
-                        key={`BM-${num}`} 
-                        row="BM" 
+                      <SeatChair
+                        key={`BM-${num}`}
+                        row="BM"
                         number={num}
                         isOccupied={isSeatOccupied('BM', num)}
                         isSelected={isSeatSelected('BM', num)}
@@ -677,18 +689,18 @@ const handleModalSave = async (data: { firstName: string; lastName: string; emai
             {/* PARKETT-EBENE */}
             <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '2rem 10rem 9rem 10rem', pointerEvents: 'none' }}>
               <div style={{ pointerEvents: 'auto' }}>
-                
+
                 {/* HAUPTREIHEN E-Y */}
                 {mainRows.map(({ letter, leftSeats, rightSeats }) => (
                   <Fragment key={letter}>
                     <div style={{ display: 'flex', alignItems: 'center', marginBottom: '2px', gap: '20px' }}>
                       <div style={{ color: 'white', fontSize: '16px', fontWeight: 'bold', width: '22px', textAlign: 'center', flexShrink: 0 }}>{letter}</div>
-                      
+
                       <div style={{ display: 'flex', gap: '0px' }}>
                         {leftSeats.map(number => (
-                          <SeatChair 
-                            key={`${letter}-${number}`} 
-                            row={letter} 
+                          <SeatChair
+                            key={`${letter}-${number}`}
+                            row={letter}
                             number={number}
                             isOccupied={isSeatOccupied(letter, number)}
                             isSelected={isSeatSelected(letter, number)}
@@ -697,14 +709,14 @@ const handleModalSave = async (data: { firstName: string; lastName: string; emai
                           />
                         ))}
                       </div>
-                      
+
                       <div style={{ color: 'white', fontSize: '20px', fontWeight: 'bold', width: '35px', textAlign: 'center', flexShrink: 0, padding: '0 12px' }}>{letter}</div>
-                      
+
                       <div style={{ display: 'flex', gap: '0px' }}>
                         {rightSeats.map(number => (
-                          <SeatChair 
-                            key={`${letter}-${number}`} 
-                            row={letter} 
+                          <SeatChair
+                            key={`${letter}-${number}`}
+                            row={letter}
                             number={number}
                             isOccupied={isSeatOccupied(letter, number)}
                             isSelected={isSeatSelected(letter, number)}
@@ -713,10 +725,10 @@ const handleModalSave = async (data: { firstName: string; lastName: string; emai
                           />
                         ))}
                       </div>
-                      
+
                       <div style={{ color: 'white', fontSize: '16px', fontWeight: 'bold', width: '22px', textAlign: 'center', flexShrink: 0 }}>{letter}</div>
                     </div>
-                    
+
                     {letter === 'N' && <div style={{ height: '2rem' }}></div>}
                   </Fragment>
                 ))}
@@ -726,13 +738,13 @@ const handleModalSave = async (data: { firstName: string; lastName: string; emai
                   {backRows.map(({ letter, leftRange, leftActual, rightRange, rightActual }) => (
                     <div key={letter} style={{ display: 'flex', alignItems: 'center', marginBottom: '2px', gap: '20px' }}>
                       <div style={{ color: 'white', fontSize: '16px', fontWeight: 'bold', width: '22px', textAlign: 'center', flexShrink: 0 }}>{letter}</div>
-                      
+
                       <div style={{ display: 'flex', gap: '0px' }}>
-                        {Array.from({length: leftRange.end - leftRange.start + 1}, (_, i) => leftRange.start + i).map(number => (
+                        {Array.from({ length: leftRange.end - leftRange.start + 1 }, (_, i) => leftRange.start + i).map(number => (
                           <div key={`${letter}-${number}`}>
                             {leftActual.includes(number) ? (
-                              <SeatChair 
-                                row={letter} 
+                              <SeatChair
+                                row={letter}
                                 number={number}
                                 isOccupied={isSeatOccupied(letter, number)}
                                 isSelected={isSeatSelected(letter, number)}
@@ -745,15 +757,15 @@ const handleModalSave = async (data: { firstName: string; lastName: string; emai
                           </div>
                         ))}
                       </div>
-                      
+
                       <div style={{ color: 'white', fontSize: '20px', fontWeight: 'bold', width: '35px', textAlign: 'center', flexShrink: 0, padding: '0 12px' }}>{letter}</div>
-                      
+
                       <div style={{ display: 'flex', gap: '0px' }}>
-                        {Array.from({length: rightRange.end - rightRange.start + 1}, (_, i) => rightRange.start + i).map(number => (
+                        {Array.from({ length: rightRange.end - rightRange.start + 1 }, (_, i) => rightRange.start + i).map(number => (
                           <div key={`${letter}-${number}`}>
                             {rightActual.includes(number) ? (
-                              <SeatChair 
-                                row={letter} 
+                              <SeatChair
+                                row={letter}
                                 number={number}
                                 isOccupied={isSeatOccupied(letter, number)}
                                 isSelected={isSeatSelected(letter, number)}
@@ -766,7 +778,7 @@ const handleModalSave = async (data: { firstName: string; lastName: string; emai
                           </div>
                         ))}
                       </div>
-                      
+
                       <div style={{ color: 'white', fontSize: '16px', fontWeight: 'bold', width: '22px', textAlign: 'center', flexShrink: 0 }}>{letter}</div>
                     </div>
                   ))}
@@ -785,16 +797,16 @@ const handleModalSave = async (data: { firstName: string; lastName: string; emai
                 <div style={{ marginTop: '0px', position: 'relative' }}>
                   {veryBackRows.map(({ letter, leftActual, rightActual }) => (
                     <div key={letter} style={{ display: 'flex', alignItems: 'center', marginBottom: '2px', position: 'relative', height: '32px' }}>
-                      
+
                       <div style={{ position: 'absolute', left: '0px', color: 'white', fontSize: '16px', fontWeight: 'bold', width: '22px', textAlign: 'center' }}>{letter}</div>
-                      
+
                       <div style={{ display: 'flex', alignItems: 'center', marginLeft: '130px', gap: '5px' }}>
                         <div style={{ display: 'flex', gap: '0px' }}>
                           {[10, 11].map(number => (
                             leftActual.includes(number) ? (
-                              <SeatChair 
-                                key={`${letter}-${number}`} 
-                                row={letter} 
+                              <SeatChair
+                                key={`${letter}-${number}`}
+                                row={letter}
                                 number={number}
                                 isOccupied={isSeatOccupied(letter, number)}
                                 isSelected={isSeatSelected(letter, number)}
@@ -806,15 +818,15 @@ const handleModalSave = async (data: { firstName: string; lastName: string; emai
                             )
                           ))}
                         </div>
-                        
+
                         <div style={{ width: '20px' }}></div>
-                        
+
                         <div style={{ display: 'flex', gap: '0px' }}>
                           {[12, 13, 14, 15].map(number => (
                             leftActual.includes(number) ? (
-                              <SeatChair 
-                                key={`${letter}-${number}`} 
-                                row={letter} 
+                              <SeatChair
+                                key={`${letter}-${number}`}
+                                row={letter}
                                 number={number}
                                 isOccupied={isSeatOccupied(letter, number)}
                                 isSelected={isSeatSelected(letter, number)}
@@ -827,15 +839,15 @@ const handleModalSave = async (data: { firstName: string; lastName: string; emai
                           ))}
                         </div>
                       </div>
-                      
+
                       <div style={{ position: 'absolute', left: '300px', color: 'white', fontSize: '20px', fontWeight: 'bold', width: '35px', textAlign: 'center', padding: '0 12px' }}>{letter}</div>
-                      
+
                       <div style={{ position: 'absolute', left: '360px', display: 'flex', gap: '0px' }}>
                         {[16, 17, 18, 19].map(number => (
                           rightActual.includes(number) ? (
-                            <SeatChair 
-                              key={`${letter}-${number}`} 
-                              row={letter} 
+                            <SeatChair
+                              key={`${letter}-${number}`}
+                              row={letter}
                               number={number}
                               isOccupied={isSeatOccupied(letter, number)}
                               isSelected={isSeatSelected(letter, number)}
@@ -847,7 +859,7 @@ const handleModalSave = async (data: { firstName: string; lastName: string; emai
                           )
                         ))}
                       </div>
-                      
+
                       <div style={{ position: 'absolute', right: '0px', color: 'white', fontSize: '16px', fontWeight: 'bold', width: '22px', textAlign: 'center' }}>{letter}</div>
                     </div>
                   ))}
@@ -858,25 +870,25 @@ const handleModalSave = async (data: { firstName: string; lastName: string; emai
         </div>
 
         {/* SIDEBAR - Admin oder User */}
-{isAdmin ? (
-  <AdminSidebar
-    selectedSeats={selectedSeats}
-    occupiedSeats={occupiedSeats}
-    isSeatOccupied={isSeatOccupied}
-    onReserve={handleReserveClick}
-    onRelease={handleAdminRelease}
-    onReleaseAll={handleAdminReleaseAll}
-    onSeatClick={handleSidebarSeatClick}
-    onAddDataClick={handleAddDataClick}
-  />
-) : (
-  <UserSidebar
-    selectedSeats={selectedSeats}
-    onRemoveSeat={(row: string, number: number) => {
-      setSelectedSeats(prev => prev.filter(s => !(s.row === row && s.number === number)));
-    }}
-  />
-)}
+        {isAdmin ? (
+          <AdminSidebar
+            selectedSeats={selectedSeats}
+            occupiedSeats={occupiedSeats}
+            isSeatOccupied={isSeatOccupied}
+            onReserve={handleReserveClick}
+            onRelease={handleAdminRelease}
+            onReleaseAll={handleAdminReleaseAll}
+            onSeatClick={handleSidebarSeatClick}
+            onAddDataClick={handleAddDataClick}
+          />
+        ) : (
+          <UserSidebar
+            selectedSeats={selectedSeats}
+            onRemoveSeat={(row: string, number: number) => {
+              setSelectedSeats(prev => prev.filter(s => !(s.row === row && s.number === number)));
+            }}
+          />
+        )}
       </div>
     </>
   );
