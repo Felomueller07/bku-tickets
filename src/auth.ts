@@ -19,7 +19,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           return null;
         }
 
-        try {
+        try { 
+          // User aus Datenbank laden
           console.log('🔍 Suche User in DB...');
           const user = await prisma.user.findUnique({
             where: { email: credentials.email as string },
@@ -31,8 +32,15 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           }
 
           console.log('✅ User gefunden! ID:', user.id, 'Role:', user.role);
+
+          // ⭐ EMAIL-VERIFIZIERUNG PRÜFEN
+          if (!user.emailVerified) {
+            console.log('❌ Email nicht verifiziert');
+            throw new Error('Bitte bestätige zuerst deine Email-Adresse');
+          }
+
+          // Passwort prüfen
           console.log('🔐 Prüfe Passwort...');
-          
           const isValid = await bcrypt.compare(
             credentials.password as string,
             user.password
@@ -46,10 +54,11 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           console.log('✅ Passwort korrekt!');
           console.log('✅ Login erfolgreich für:', user.email);
 
+          // User-Objekt zurückgeben
           return {
             id: user.id.toString(),
             email: user.email,
-            name: user.name,
+            name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email,
             role: user.role,
           };
         } catch (error) {
@@ -62,19 +71,25 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
+        token.id = user.id;
+        token.email = user.email;
+        token.name = user.name;
         token.role = (user as any).role;
       }
       return token;
     },
     async session({ session, token }) {
       if (session.user) {
+        (session.user as any).id = token.id;
+        (session.user as any).email = token.email;
+        (session.user as any).name = token.name;
         (session.user as any).role = token.role;
       }
       return session;
     },
   },
   pages: {
-    signIn: '/login',
+    signIn: '/auth/login',
     error: '/auth/error',
   },
   session: {

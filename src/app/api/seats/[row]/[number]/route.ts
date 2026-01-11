@@ -9,7 +9,10 @@ export async function PATCH(
     const params = await context.params;
     const { row, number } = params;
     const body = await request.json();
-    
+
+    console.log('📝 PATCH Seat:', row, number);
+    console.log('📧 Daten:', body);  // ⭐ Debug Log
+
     const seat = await prisma.seat.update({
       where: {
         row_number: { row, number: parseInt(number) }
@@ -17,12 +20,15 @@ export async function PATCH(
       data: {
         firstName: body.firstName,
         lastName: body.lastName,
-        note: body.note,
+        email: body.email,        // ⭐ WICHTIG: email statt note
       }
     });
-    
+
+    console.log('✅ Gespeichert!', seat);
+
     return NextResponse.json(seat);
   } catch (error) {
+    console.error('❌ Fehler beim Aktualisieren:', error);
     return NextResponse.json({ error: 'Fehler beim Aktualisieren' }, { status: 500 });
   }
 }

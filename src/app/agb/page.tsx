@@ -308,9 +308,9 @@ export default function AGBPage() {
             <div style={{ color: 'rgba(255, 255, 255, 0.8)', fontSize: '0.875rem', lineHeight: '1.8' }}>
               <p style={{ margin: 0 }}>
                 Die Verarbeitung personenbezogener Daten erfolgt gemäß unserer{' '}
-                
+                <a
                   href="/datenschutz"
-                  style={{ color: '#d4af37', textDecoration: 'underline' }}
+                  style={{ color: '#d4af37', textDecoration: 'underline', cursor: 'pointer' }}
                   onClick={(e) => {
                     e.preventDefault();
                     router.push('/datenschutz');

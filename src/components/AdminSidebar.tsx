@@ -2,18 +2,19 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Lock, Check, Trash2, BarChart3, Plus } from 'lucide-react';
+import { Lock, Check, Trash2, BarChart3, Plus, User, Mail, Calendar, Info } from 'lucide-react';
 import DeleteAllConfirmModal from './DeleteAllConfirmModal';
 import FreeTicketGenerator from './FreeTicketGenerator';
-
-<FreeTicketGenerator />
 
 interface SeatData {
   row: string;
   number: number;
   firstName?: string;
   lastName?: string;
+  email?: string;
   note?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 interface AdminSidebarProps {
@@ -37,9 +38,9 @@ export default function AdminSidebar({
   onSeatClick,
   onAddDataClick,
 }: AdminSidebarProps) {
-  
+
   const [confirmModalOpen, setConfirmModalOpen] = useState(false);
-  
+
   const selectedFreeCount = selectedSeats.filter(s => !isSeatOccupied(s.row, s.number)).length;
   const selectedOccupiedCount = selectedSeats.filter(s => isSeatOccupied(s.row, s.number)).length;
 
@@ -48,305 +49,323 @@ export default function AdminSidebar({
   };
 
   const hasSeatData = (row: string, number: number) => {
-    const details = getSeatDetails(row, number);
-    return details && (details.firstName || details.lastName || details.note);
+    const seat = getSeatDetails(row, number);
+    return seat && (seat.firstName || seat.lastName || seat.note);
   };
 
-  const handleDeleteAllClick = () => {
-    setConfirmModalOpen(true);
-  };
-
-  const handleConfirmDeleteAll = () => {
-    onReleaseAll();
-    setConfirmModalOpen(false);
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return 'Unbekannt';
+    const date = new Date(dateString);
+    return date.toLocaleString('de-DE', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
   };
 
   return (
     <>
-      {/* CONFIRMATION MODAL */}
-      <DeleteAllConfirmModal
-        isOpen={confirmModalOpen}
-        onClose={() => setConfirmModalOpen(false)}
-        onConfirm={handleConfirmDeleteAll}
-        seatCount={occupiedSeats.length}
-      />
-
-      <motion.div
-        style={{
-          width: '340px',
-          backgroundColor: 'rgba(0, 0, 0, 0.4)',
-          backdropFilter: 'blur(20px)',
-          borderRadius: '1.5rem',
-          padding: '2rem',
-          border: '1px solid rgba(255, 255, 255, 0.1)',
-          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)',
-          position: 'sticky',
-          top: '2rem',
-          maxHeight: 'calc(100vh - 4rem)',
-          overflowY: 'auto',
-          display: 'flex',
-          flexDirection: 'column',
-        }}
-        initial={{ opacity: 0, x: 50 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ duration: 0.5 }}
-      >
+      <div style={{
+        width: '400px',
+        backgroundColor: 'rgba(0, 0, 0, 0.9)',
+        backdropFilter: 'blur(20px)',
+        borderLeft: '1px solid rgba(212, 175, 55, 0.3)',
+        padding: '2rem',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '1.5rem',
+        height: '100vh',
+        overflowY: 'auto',
+      }}>
         {/* HEADER */}
-        <div style={{ marginBottom: '2rem' }}>
-          <h3 style={{ 
-            color: 'white', 
-            fontSize: '1.5rem', 
-            fontWeight: '700', 
-            margin: 0,
-            letterSpacing: '-0.025em',
-          }}>
-            Verwaltung
-          </h3>
-          <p style={{ 
-            color: 'rgba(255, 255, 255, 0.5)', 
-            fontSize: '0.875rem', 
-            margin: 0,
-            marginTop: '0.25rem',
-          }}>
-            Administrator-Bereich
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
+            <Lock style={{ width: '24px', height: '24px', color: '#d4af37' }} />
+            <h2 style={{ color: 'white', fontSize: '1.5rem', fontWeight: '700', margin: 0 }}>
+              Admin Panel
+            </h2>
+          </div>
+          <p style={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: '0.875rem', margin: 0 }}>
+            {selectedSeats.length} {selectedSeats.length === 1 ? 'Sitzplatz' : 'Sitzplätze'} ausgewählt
           </p>
         </div>
 
-        {/* ACTION BUTTONS */}
-        <div style={{ marginBottom: '2rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-          
-          {/* RESERVIEREN BUTTON */}
-          {selectedFreeCount > 0 && (
-            <motion.button
-              onClick={onReserve}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              style={{
-                width: '100%',
-                padding: '1rem',
-                background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
-                color: '#fff',
-                border: 'none',
-                borderRadius: '0.75rem',
-                fontSize: '0.9375rem',
-                fontWeight: '600',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '0.5rem',
-                boxShadow: '0 4px 12px rgba(239, 68, 68, 0.3)',
-              }}
-            >
-              <Lock style={{ width: '16px', height: '16px' }} />
-              Reservieren ({selectedFreeCount})
-            </motion.button>
-          )}
-
-          {/* FREIGEBEN BUTTON */}
-          {selectedOccupiedCount > 0 && (
-            <motion.button
-              onClick={onRelease}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              style={{
-                width: '100%',
-                padding: '1rem',
-                background: 'linear-gradient(135deg, #4ade80 0%, #22c55e 100%)',
-                color: '#000',
-                border: 'none',
-                borderRadius: '0.75rem',
-                fontSize: '0.9375rem',
-                fontWeight: '600',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '0.5rem',
-                boxShadow: '0 4px 12px rgba(74, 222, 128, 0.3)',
-              }}
-            >
-              <Check style={{ width: '16px', height: '16px' }} />
-              Freigeben ({selectedOccupiedCount})
-            </motion.button>
-          )}
-        </div>
-
         {/* STATISTIK */}
-        <div style={{ 
-          marginBottom: '2rem',
-          padding: '1.25rem',
-          background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.1) 0%, rgba(212, 175, 55, 0.05) 100%)',
-          borderRadius: '1rem',
-          border: '1px solid rgba(212, 175, 55, 0.2)',
+        <div style={{
+          backgroundColor: 'rgba(212, 175, 55, 0.1)',
+          border: '1px solid rgba(212, 175, 55, 0.3)',
+          borderRadius: '0.75rem',
+          padding: '1rem',
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
             <BarChart3 style={{ width: '18px', height: '18px', color: '#d4af37' }} />
-            <span style={{ fontSize: '0.8125rem', color: 'rgba(255, 255, 255, 0.6)', fontWeight: '500', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            <h3 style={{ color: 'white', fontSize: '0.875rem', fontWeight: '600', margin: 0 }}>
               Statistik
-            </span>
+            </h3>
           </div>
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>
-            <span style={{ 
-              fontSize: '2rem', 
-              color: '#d4af37', 
-              fontWeight: '700',
-              fontVariantNumeric: 'tabular-nums',
-            }}>
-              {occupiedSeats.length}
-            </span>
-            <span style={{ fontSize: '0.875rem', color: 'rgba(255, 255, 255, 0.7)' }}>
-              {occupiedSeats.length === 1 ? 'Reservierung' : 'Reservierungen'}
-            </span>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <span style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '0.875rem' }}>Gesamt belegt:</span>
+              <span style={{ color: '#d4af37', fontSize: '0.875rem', fontWeight: '600' }}>{occupiedSeats.length}</span>
+            </div>
+            {selectedSeats.length > 0 && (
+              <>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '0.875rem' }}>Ausgewählt frei:</span>
+                  <span style={{ color: '#10b981', fontSize: '0.875rem', fontWeight: '600' }}>{selectedFreeCount}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '0.875rem' }}>Ausgewählt belegt:</span>
+                  <span style={{ color: '#ef4444', fontSize: '0.875rem', fontWeight: '600' }}>{selectedOccupiedCount}</span>
+                </div>
+              </>
+            )}
           </div>
         </div>
 
         {/* AUSGEWÄHLTE SITZE */}
-        {selectedSeats.length > 0 ? (
-          <div style={{ marginBottom: '2rem' }}>
-            <h4 style={{ 
-              color: 'white', 
-              fontSize: '0.9375rem', 
-              fontWeight: '600', 
-              marginBottom: '1rem',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem',
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+          {selectedSeats.length === 0 ? (
+            <div style={{
+              padding: '2rem',
+              textAlign: 'center',
+              color: 'rgba(255, 255, 255, 0.5)',
+              fontSize: '0.875rem',
             }}>
-              Ausgewählt
-              <span style={{ 
-                color: 'rgba(255, 255, 255, 0.5)', 
-                fontSize: '0.8125rem',
-                fontWeight: '500',
-              }}>
-                ({selectedSeats.length})
-              </span>
-            </h4>
-            
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-              {selectedSeats.map(({ row, number }, index) => {
-                const isOcc = isSeatOccupied(row, number);
-                const hasData = hasSeatData(row, number);
-                
-                return (
-                  <motion.div
-                    key={`${row}${number}-${index}`}
-                    style={{
-                      backgroundColor: isOcc ? 'rgba(185, 28, 28, 0.15)' : 'rgba(74, 222, 128, 0.15)',
-                      border: `1px solid ${isOcc ? 'rgba(185, 28, 28, 0.3)' : 'rgba(74, 222, 128, 0.3)'}`,
-                      borderRadius: '0.75rem',
-                      padding: '0.875rem 1rem',
-                      color: 'white',
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                    }}
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                  >
-                    <span style={{ 
-                      fontWeight: '600', 
-                      fontSize: '1rem',
-                      fontVariantNumeric: 'tabular-nums',
-                    }}>
-                      {row}{number}
-                    </span>
-                    
-                    {/* DATEN BUTTON */}
-                    {isOcc && (
-                      <motion.button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onAddDataClick(row, number);
-                        }}
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
+              <Lock style={{ width: '48px', height: '48px', margin: '0 auto 1rem', opacity: 0.3 }} />
+              <p style={{ margin: 0 }}>Keine Sitzplätze ausgewählt</p>
+            </div>
+          ) : (
+            selectedSeats.map((seat) => {
+              const isOccupied = isSeatOccupied(seat.row, seat.number);
+              const details = getSeatDetails(seat.row, seat.number);
+              const hasData = hasSeatData(seat.row, seat.number);
+
+              return (
+                <motion.div
+                  key={`${seat.row}-${seat.number}`}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  style={{
+                    backgroundColor: isOccupied
+                      ? 'rgba(239, 68, 68, 0.1)'
+                      : 'rgba(16, 185, 129, 0.1)',
+                    borderRadius: '0.75rem',
+                    padding: '1rem',
+                    border: isOccupied
+                      ? '1px solid rgba(239, 68, 68, 0.3)'
+                      : '1px solid rgba(16, 185, 129, 0.3)',
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <div style={{ flex: 1 }}>
+                      <p style={{
+                        color: 'white',
+                        fontWeight: '600',
+                        margin: '0 0 0.25rem 0',
+                        fontSize: '1rem'
+                      }}>
+                        Reihe {seat.row}, Platz {seat.number}
+                      </p>
+                      {isOccupied && details && (
+                        <div style={{ marginTop: '0.5rem' }}>
+                          {(details.firstName || details.lastName) && (
+                            <p style={{
+                              color: 'rgba(255, 255, 255, 0.8)',
+                              fontSize: '0.875rem',
+                              margin: '0 0 0.25rem 0',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '0.5rem'
+                            }}>
+                              <User style={{ width: '14px', height: '14px' }} />
+                              {details.firstName} {details.lastName}
+                            </p>
+                          )}
+                          {details.email && (
+                            <p style={{
+                              color: 'rgba(255, 255, 255, 0.7)',
+                              fontSize: '0.75rem',
+                              margin: '0 0 0.25rem 0',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '0.5rem'
+                            }}>
+                              <Mail style={{ width: '14px', height: '14px' }} />
+                              {details.email}
+                            </p>
+                          )}
+                          {details.createdAt && (
+                            <p style={{
+                              color: 'rgba(255, 255, 255, 0.6)',
+                              fontSize: '0.75rem',
+                              margin: '0.25rem 0 0 0',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '0.5rem'
+                            }}>
+                              <Calendar style={{ width: '14px', height: '14px' }} />
+                              {formatDate(details.createdAt)}
+                            </p>
+                          )}
+                          {details.note && (
+                            <p style={{
+                              color: 'rgba(255, 255, 255, 0.7)',
+                              fontSize: '0.75rem',
+                              margin: '0.5rem 0 0 0',
+                              fontStyle: 'italic'
+                            }}>
+                              "{details.note}"
+                            </p>
+                          )}
+                        </div>
+                      )}
+                      <p style={{
+                        color: isOccupied ? '#ef4444' : '#10b981',
+                        fontSize: '0.75rem',
+                        fontWeight: '600',
+                        margin: '0.5rem 0 0 0'
+                      }}>
+                        {isOccupied ? 'Belegt' : 'Frei'}
+                      </p>
+                    </div>
+                    {isOccupied && !hasData && (
+                      <button
+                        onClick={() => onAddDataClick(seat.row, seat.number)}
                         style={{
-                          padding: '0.375rem 0.75rem',
-                          background: hasData ? 'rgba(74, 222, 128, 0.2)' : 'rgba(212, 175, 55, 0.2)',
-                          border: `1px solid ${hasData ? 'rgba(74, 222, 128, 0.4)' : 'rgba(212, 175, 55, 0.4)'}`,
+                          background: 'rgba(212, 175, 55, 0.2)',
+                          border: '1px solid rgba(212, 175, 55, 0.5)',
                           borderRadius: '0.5rem',
-                          color: hasData ? '#4ade80' : '#d4af37',
-                          fontSize: '0.8125rem',
-                          fontWeight: '600',
+                          padding: '0.5rem',
                           cursor: 'pointer',
                           display: 'flex',
                           alignItems: 'center',
-                          gap: '0.375rem',
+                          justifyContent: 'center',
                         }}
                       >
-                        {hasData ? (
-                          <>
-                            <Check style={{ width: '12px', height: '12px' }} />
-                            Daten
-                          </>
-                        ) : (
-                          <>
-                            <Plus style={{ width: '12px', height: '12px' }} />
-                            Daten
-                          </>
-                        )}
-                      </motion.button>
+                        <Plus style={{ width: '16px', height: '16px', color: '#d4af37' }} />
+                      </button>
                     )}
-                  </motion.div>
-                );
-              })}
-            </div>
-          </div>
-        ) : (
-          <div style={{ marginBottom: 'auto', textAlign: 'center', padding: '2rem 0' }}>
-            <p style={{ 
-              color: 'rgba(255, 255, 255, 0.4)', 
-              fontSize: '0.875rem',
-              margin: 0,
-            }}>
-              Keine Sitze ausgewählt
-            </p>
+                  </div>
+                </motion.div>
+              );
+            })
+          )}
+        </div>
+
+        {/* ACTIONS */}
+        {selectedSeats.length > 0 && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+            {selectedFreeCount > 0 && (
+              <button
+                onClick={onReserve}
+                style={{
+                  width: '100%',
+                  padding: '0.875rem',
+                  background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                  border: 'none',
+                  borderRadius: '0.5rem',
+                  color: 'white',
+                  fontSize: '0.875rem',
+                  fontWeight: '700',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.5rem',
+                }}
+              >
+                <Check style={{ width: '18px', height: '18px' }} />
+                Reservieren ({selectedFreeCount})
+              </button>
+            )}
+
+            {selectedOccupiedCount > 0 && (
+              <button
+                onClick={onRelease}
+                style={{
+                  width: '100%',
+                  padding: '0.875rem',
+                  background: 'rgba(239, 68, 68, 0.2)',
+                  border: '1px solid rgba(239, 68, 68, 0.5)',
+                  borderRadius: '0.5rem',
+                  color: '#ef4444',
+                  fontSize: '0.875rem',
+                  fontWeight: '700',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.5rem',
+                }}
+              >
+                <Trash2 style={{ width: '18px', height: '18px' }} />
+                Freigeben ({selectedOccupiedCount})
+              </button>
+            )}
           </div>
         )}
 
-        {/* DELETE ALL BUTTON - GANZ UNTEN */}
+        {/* ALLE FREIGEBEN */}
         {occupiedSeats.length > 0 && (
-          <div style={{ 
-            marginTop: 'auto', 
-            paddingTop: '2rem', 
-            borderTop: '1px solid rgba(255, 255, 255, 0.1)',
-          }}>
-            <motion.button
-              onClick={handleDeleteAllClick}
-              whileHover={{ scale: 1.01 }}
-              whileTap={{ scale: 0.99 }}
-              style={{
-                width: '100%',
-                padding: '1rem',
-                background: 'rgba(239, 68, 68, 0.1)',
-                color: '#ef4444',
-                border: '1px solid rgba(239, 68, 68, 0.3)',
-                borderRadius: '0.75rem',
-                fontSize: '0.875rem',
-                fontWeight: '600',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '0.5rem',
-                transition: 'all 0.2s',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = 'rgba(239, 68, 68, 0.15)';
-                e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.4)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)';
-                e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.3)';
-              }}
-            >
-              <Trash2 style={{ width: '16px', height: '16px' }} />
-              Alle {occupiedSeats.length} Reservierungen löschen
-            </motion.button>
-          </div>
+          <button
+            onClick={() => setConfirmModalOpen(true)}
+            style={{
+              width: '100%',
+              padding: '0.875rem',
+              background: 'rgba(239, 68, 68, 0.1)',
+              border: '1px solid rgba(239, 68, 68, 0.3)',
+              borderRadius: '0.5rem',
+              color: '#ef4444',
+              fontSize: '0.875rem',
+              fontWeight: '700',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '0.5rem',
+            }}
+          >
+            <Trash2 style={{ width: '18px', height: '18px' }} />
+            Alle Reservierungen löschen ({occupiedSeats.length})
+          </button>
         )}
-      </motion.div>
+
+        {/* FREIKARTEN GENERATOR */}
+        <FreeTicketGenerator />
+
+        {/* INFO BOX UNTEN RECHTS */}
+        <div style={{
+          backgroundColor: 'rgba(59, 130, 246, 0.1)',
+          border: '1px solid rgba(59, 130, 246, 0.3)',
+          borderRadius: '0.75rem',
+          padding: '1rem',
+          marginTop: 'auto',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
+            <Info style={{ width: '18px', height: '18px', color: '#3b82f6' }} />
+            <h3 style={{ color: 'white', fontSize: '0.875rem', fontWeight: '600', margin: 0 }}>
+              Info
+            </h3>
+          </div>
+          <p style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '0.75rem', margin: 0, lineHeight: '1.5' }}>
+            Wähle Sitzplätze aus um Details wie Name, E-Mail und Reservierungsdatum anzuzeigen.
+          </p>
+        </div>
+      </div>
+
+      {/* MODALS */}
+      <DeleteAllConfirmModal
+        isOpen={confirmModalOpen}
+        onClose={() => setConfirmModalOpen(false)}
+        onConfirm={() => {
+          onReleaseAll();
+          setConfirmModalOpen(false);
+        }}
+        seatCount={occupiedSeats.length}
+      />
     </>
   );
 }

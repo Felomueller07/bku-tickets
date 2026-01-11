@@ -1,24 +1,22 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+// import { Inter, Space_Grotesk } from "next/font/google";  // ❌ AUSKOMMENTIERT
+import { Toaster } from "sonner";
 import "./globals.css";
-import { Toaster } from 'sonner';
-import SessionProviderWrapper from '@/components/SessionProviderWrapper';
-import CookieBanner from '@/components/CookieBanner';
-import Footer from '@/components/Footer';
+import SessionWrapper from "@/components/SessionWrapper";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
+// const inter = Inter({ 
+//   subsets: ["latin"],
+//   variable: "--font-inter",
+// });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+// const spaceGrotesk = Space_Grotesk({ 
+//   subsets: ["latin"],
+//   variable: "--font-space-grotesk",
+// });
 
 export const metadata: Metadata = {
   title: "BKU Tickets - Josefi Konzert 2026",
-  description: "Ticketverkauf für das Josefi Konzert 2026 im Kursaal Meran",
+  description: "Tickets für das Josefi Konzert 2026 der Bürgerkapelle Untermais",
 };
 
 export default function RootLayout({
@@ -28,20 +26,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="de">
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap" rel="stylesheet" />
-      </head>
-      <body className={`${geistSans.variable} ${geistMono.variable}`} style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-        <SessionProviderWrapper>
-          <div style={{ flex: 1 }}>
-            {children}
-          </div>
-          <Footer />
-          <Toaster position="top-center" />
-          <CookieBanner />
-        </SessionProviderWrapper>
+      <body style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }}>
+        <SessionWrapper>
+          {children}
+          <Toaster position="top-center" richColors />
+        </SessionWrapper>
       </body>
     </html>
   );

@@ -133,7 +133,7 @@ export default function UserMenu() {
               <button
                 onClick={() => {
                   setIsOpen(false);
-                  router.push('/dashboard');
+                  router.push('/meine-tickets');
                 }}
                 style={{
                   width: '100%',

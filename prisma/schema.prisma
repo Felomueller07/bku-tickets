@@ -3,8 +3,8 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider = "sqlite"
+  url      = "file:./dev.db"
 }
 
 model Seat {
@@ -14,8 +14,10 @@ model Seat {
   status    String
   firstName String?
   lastName  String?
+  email     String?   // ⭐ NEU HINZUGEFÜGT
   note      String?
   userId    Int?
+  user      User?    @relation(fields: [userId], references: [id])
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -23,18 +25,46 @@ model Seat {
 }
 
 model User {
-  id       Int    @id @default(autoincrement())
-  email    String @unique
-  name     String
-  password String
-  role     String
+  id                 Int                 @id @default(autoincrement())
+  email              String              @unique
+  firstName          String?
+  lastName           String?
+  password           String
+  role               String              @default("user")
+  emailVerified      Boolean             @default(false)
+  seats              Seat[]
+  freeTickets        FreeTicket[]
+  voucherCodes       VoucherCode[]       @relation("VoucherUser")
+  verificationCodes  VerificationCode[]
+}
+
+
+model VoucherCode {
+  id        Int       @id @default(autoincrement())
+  code      String    @unique
+  used      Boolean   @default(false)
+  usedBy    Int?
+  user      User?     @relation("VoucherUser", fields: [usedBy], references: [id])
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+}
+
+model VerificationCode {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  code      String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
 }
 
 model FreeTicket {
   id        Int      @id @default(autoincrement())
   code      String   @unique
   used      Boolean  @default(false)
-  usedBy    Int?
-  usedAt    DateTime?
   createdAt DateTime @default(now())
+  usedAt    DateTime?
+  usedBy    Int?
+  user      User?    @relation(fields: [usedBy], references: [id])
 }
+

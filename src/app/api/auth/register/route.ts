@@ -1,88 +1,72 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
+import { sendVerificationEmail } from '@/lib/verification-email';
+
+const prisma = new PrismaClient();
 
 export async function POST(request: NextRequest) {
   try {
-    console.log('📝 Registrierungs-Anfrage erhalten');
-    
     const body = await request.json();
-    const { email, name, password } = body;
+    console.log('📥 Received body:', body);
+    
+    const { firstName, lastName, email, password } = body;
 
-    console.log('📧 Email:', email);
-    console.log('👤 Name:', name);
+    console.log('📝 firstName:', firstName);
+    console.log('📝 lastName:', lastName);
+    console.log('📝 email:', email);
+    console.log('📝 password:', password ? '***' : 'LEER');
 
     // Validierung
-    if (!email || !name || !password) {
-      console.log('❌ Fehlende Felder');
+    if (!firstName || !lastName || !email || !password) {
+      console.log('❌ Fehlende Felder!');
       return NextResponse.json(
         { error: 'Alle Felder sind erforderlich' },
         { status: 400 }
       );
     }
 
-    // Email-Format prüfen
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      console.log('❌ Ungültige Email');
-      return NextResponse.json(
-        { error: 'Ungültige E-Mail-Adresse' },
-        { status: 400 }
-      );
-    }
-
-    // Passwort-Länge prüfen
-    if (password.length < 6) {
-      console.log('❌ Passwort zu kurz');
-      return NextResponse.json(
-        { error: 'Passwort muss mindestens 6 Zeichen lang sein' },
-        { status: 400 }
-      );
-    }
-
-    // Prüfen ob Email bereits existiert
+    // Email bereits registriert?
     const existingUser = await prisma.user.findUnique({
       where: { email },
     });
 
     if (existingUser) {
-      console.log('❌ Email existiert bereits');
       return NextResponse.json(
-        { error: 'Diese E-Mail-Adresse ist bereits registriert' },
+        { error: 'Email bereits registriert' },
         { status: 400 }
       );
     }
 
-    console.log('🔐 Hash Passwort...');
     // Passwort hashen
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    console.log('💾 Erstelle User in DB...');
     // User erstellen
     const user = await prisma.user.create({
       data: {
+        firstName,
+        lastName,
         email,
-        name,
         password: hashedPassword,
         role: 'user',
+        emailVerified: false,
       },
     });
 
-    console.log('✅ User erstellt! ID:', user.id);
+    // Verifizierungs-Email senden
+    const fullName = `${firstName} ${lastName}`;
+    await sendVerificationEmail(user.id, user.email, fullName);
+
+    console.log('✅ User registriert:', user.email);
 
     return NextResponse.json({
       success: true,
-      user: {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        role: user.role,
-      },
+      message: 'Registrierung erfolgreich! Bitte überprüfe deine Email.',
     });
-  } catch (error) {
-    console.error('❌ Register Error:', error);
+  } catch (error: any) {
+    console.error('❌ Registrierungs-Fehler:', error);
     return NextResponse.json(
-      { error: 'Fehler bei der Registrierung' },
+      { error: 'Registrierung fehlgeschlagen' },
       { status: 500 }
     );
   }

@@ -3,7 +3,7 @@ import Stripe from 'stripe';
 import { auth } from '@/auth';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-12-15.clover',
+  apiVersion: '2025-12-15.clover',  // ⭐ GEÄNDERT
 });
 
 export async function POST(request: NextRequest) {
@@ -14,47 +14,47 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Nicht angemeldet' }, { status: 401 });
     }
 
-    const body = await request.json();
-    const { seats } = body; // Array of { row, number }
+    const { seats } = await request.json();
 
     if (!seats || seats.length === 0) {
       return NextResponse.json({ error: 'Keine Sitze ausgewählt' }, { status: 400 });
     }
 
-    const PRICE_PER_SEAT = 20.00;
-    const totalAmount = seats.length * PRICE_PER_SEAT;
+    const userId = String((session.user as any).id);
 
-    // Stripe Checkout Session erstellen
+    const lineItems = seats.map((seat: any) => ({
+      price_data: {
+        currency: 'eur',
+        product_data: {
+          name: `Josefi Konzert 2026 - Reihe ${seat.row}, Platz ${seat.number}`,
+          description: 'Kursaal Meran, 22. März 2026, 19:00 Uhr',
+        },
+        unit_amount: 2000,
+      },
+      quantity: 1,
+    }));
+
     const checkoutSession = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
-      line_items: [
-        {
-          price_data: {
-            currency: 'eur',
-            product_data: {
-              name: 'Josefi Konzert 2026 - Tickets',
-              description: `${seats.length} Sitzplatz${seats.length > 1 ? 'plätze' : ''}: ${seats.map((s: any) => `${s.row}${s.number}`).join(', ')}`,
-            },
-            unit_amount: Math.round(PRICE_PER_SEAT * 100), // Cent
-          },
-          quantity: seats.length,
-        },
-      ],
+      line_items: lineItems,
       mode: 'payment',
-      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard`,
+      success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/dashboard`,
       metadata: {
-        userId: (session.user as any).id,
-        seats: JSON.stringify(seats),
+        userId: userId,
+        seats: JSON.stringify(seats.map((s: any) => ({ 
+          row: s.row, 
+          number: s.number, 
+          firstName: s.firstName, 
+          lastName: s.lastName,
+          email: s.email 
+        }))),
       },
     });
 
-    return NextResponse.json({ 
-      sessionId: checkoutSession.id,
-      url: checkoutSession.url,
-    });
-  } catch (error) {
-    console.error('Checkout Error:', error);
-    return NextResponse.json({ error: 'Fehler beim Checkout' }, { status: 500 });
+    return NextResponse.json({ url: checkoutSession.url });
+  } catch (error: any) {
+    console.error('Checkout error:', error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
