@@ -44,3 +44,8 @@ prisma/dev.db-journal
 # Environment variables
 .env
 .env*.local
+public/collage*.JPG
+public/bku-logo.png
+public/collage*.JPG
+public/bku-logo.png
+7.2.0
