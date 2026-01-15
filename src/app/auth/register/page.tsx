@@ -4,7 +4,6 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Eye, EyeOff, Mail, User, Lock, CheckCircle, XCircle, ArrowLeft } from 'lucide-react';
-import { signIn } from 'next-auth/react';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -20,7 +19,6 @@ export default function RegisterPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // Passwort-Stärke berechnen
   const calculatePasswordStrength = (password: string) => {
     let strength = 0;
     if (password.length >= 8) strength += 25;
@@ -46,7 +44,6 @@ export default function RegisterPage() {
     return 'Stark';
   };
 
-  // Passwort-Anforderungen
   const requirements = [
     { text: 'Mindestens 8 Zeichen', met: formData.password.length >= 8 },
   ];
@@ -55,7 +52,6 @@ export default function RegisterPage() {
     e.preventDefault();
     setError('');
 
-    // Validierung
     if (formData.password !== formData.confirmPassword) {
       setError('Passwörter stimmen nicht überein');
       return;
@@ -86,7 +82,6 @@ export default function RegisterPage() {
         throw new Error(data.error || 'Registrierung fehlgeschlagen');
       }
 
-      // Weiterleitung zur Verifizierungsseite
       router.push(`/auth/verify?email=${encodeURIComponent(formData.email)}`);
     } catch (err: any) {
       setError(err.message);
@@ -170,7 +165,7 @@ export default function RegisterPage() {
         )}
 
         <form onSubmit={handleSubmit}>
-          {/* Name */}
+          {/* Vorname */}
           <div style={{ marginBottom: '1.5rem' }}>
             <label style={{
               display: 'block',
@@ -179,7 +174,7 @@ export default function RegisterPage() {
               marginBottom: '0.5rem',
               fontWeight: '500',
             }}>
-              Name
+              Vorname
             </label>
             <div style={{ position: 'relative' }}>
               <User style={{
@@ -193,8 +188,50 @@ export default function RegisterPage() {
               }} />
               <input
                 type="text"
-                value={`${formData.firstName} ${formData.lastName}`.trim()}
+                value={formData.firstName}
                 onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                required
+                style={{
+                  width: '100%',
+                  padding: '0.75rem 1rem 0.75rem 3rem',
+                  backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  borderRadius: '0.5rem',
+                  color: '#fff',
+                  fontSize: '1rem',
+                  outline: 'none',
+                }}
+                onFocus={(e) => e.target.style.borderColor = '#d4af37'}
+                onBlur={(e) => e.target.style.borderColor = 'rgba(255, 255, 255, 0.1)'}
+              />
+            </div>
+          </div>
+
+          {/* Nachname */}
+          <div style={{ marginBottom: '1.5rem' }}>
+            <label style={{
+              display: 'block',
+              color: 'rgba(255, 255, 255, 0.8)',
+              fontSize: '0.875rem',
+              marginBottom: '0.5rem',
+              fontWeight: '500',
+            }}>
+              Nachname
+            </label>
+            <div style={{ position: 'relative' }}>
+              <User style={{
+                position: 'absolute',
+                left: '1rem',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                width: '18px',
+                height: '18px',
+                color: 'rgba(255, 255, 255, 0.5)',
+              }} />
+              <input
+                type="text"
+                value={formData.lastName}
+                onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
                 required
                 style={{
                   width: '100%',
@@ -311,7 +348,6 @@ export default function RegisterPage() {
               </button>
             </div>
 
-            {/* Passwort-Stärke-Balken */}
             {formData.password && (
               <div style={{ marginTop: '0.75rem' }}>
                 <div style={{
@@ -348,7 +384,6 @@ export default function RegisterPage() {
               </div>
             )}
 
-            {/* Anforderungen */}
             {formData.password && (
               <div style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                 {requirements.map((req, index) => (
