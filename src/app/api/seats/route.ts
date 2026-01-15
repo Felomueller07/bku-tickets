@@ -7,10 +7,10 @@ export async function GET() {
   
   try {
     const seats = await prisma.seat.findMany({
-      where: { 
-        status: { 
-          in: ['reserved', 'paid'] 
-        } 
+      where: {
+        status: {
+          in: ['reserved', 'paid']
+        }
       },
       include: {
         user: {
@@ -28,10 +28,10 @@ export async function GET() {
     
     return NextResponse.json(seats);
   } catch (error: any) {
-    console.error('❌❌❌ GET /api/seats ERROR:', error);
-    return NextResponse.json({ 
+    console.error('❌ GET /api/seats ERROR:', error);
+    return NextResponse.json({
       error: 'Fehler beim Laden',
-      details: error.message 
+      details: error.message
     }, { status: 500 });
   }
 }
@@ -73,6 +73,45 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true });
   } catch (error: any) {
     console.error('❌ POST Error:', error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const session = await auth();
+    
+    // Check if user is admin
+    if (!session?.user || (session.user as any).role !== 'admin') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+    }
+
+    const body = await request.json();
+    const { seats } = body;
+
+    console.log('🗑️ DELETE Seats:', seats);
+
+    for (const seat of seats) {
+      await prisma.seat.updateMany({
+        where: {
+          row: seat.row,
+          number: seat.number,
+        },
+        data: {
+          status: 'available',
+          userId: null,
+          firstName: null,
+          lastName: null,
+          email: null,
+          note: null,
+        },
+      });
+    }
+
+    console.log('✅ DELETE erfolgreich!');
+    return NextResponse.json({ success: true });
+  } catch (error: any) {
+    console.error('❌ DELETE Error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
