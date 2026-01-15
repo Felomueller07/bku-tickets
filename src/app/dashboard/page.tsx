@@ -4,7 +4,7 @@ import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { LogOut, User } from 'lucide-react';
+import { LogOut, User, Ticket } from 'lucide-react';
 import SeatMap from '@/components/SeatMap';
 
 export default function DashboardPage() {
@@ -79,6 +79,7 @@ export default function DashboardPage() {
             alignItems: 'center',
             gap: '1rem',
           }}>
+            {/* USER INFO */}
             <div style={{
               display: 'flex',
               alignItems: 'center',
@@ -107,6 +108,30 @@ export default function DashboardPage() {
               )}
             </div>
 
+            {/* MEINE TICKETS BUTTON */}
+            <motion.button
+              onClick={() => router.push('/my-tickets')}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              style={{
+                padding: '0.5rem 1rem',
+                backgroundColor: 'rgba(212, 175, 55, 0.1)',
+                border: '1px solid rgba(212, 175, 55, 0.3)',
+                borderRadius: '0.5rem',
+                color: '#d4af37',
+                fontSize: '0.875rem',
+                fontWeight: '500',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+              }}
+            >
+              <Ticket style={{ width: '16px', height: '16px' }} />
+              Meine Tickets
+            </motion.button>
+
+            {/* LOGOUT BUTTON */}
             <motion.button
               onClick={() => signOut({ callbackUrl: '/' })}
               whileHover={{ scale: 1.05 }}
