@@ -108,30 +108,33 @@ export default function DashboardPage() {
               )}
             </div>
 
-            {/* MEINE TICKETS BUTTON */}
-            <motion.button
-              onClick={() => router.push('/my-tickets')}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              style={{
-                padding: '0.5rem 1rem',
-                backgroundColor: 'rgba(212, 175, 55, 0.1)',
-                border: '1px solid rgba(212, 175, 55, 0.3)',
-                borderRadius: '0.5rem',
-                color: '#d4af37',
-                fontSize: '0.875rem',
-                fontWeight: '500',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-              }}
-            >
-              <Ticket style={{ width: '16px', height: '16px' }} />
-              Meine Tickets
-            </motion.button>
+            {/* MEINE TICKETS - NUR FÜR NORMALE USER */}
+            {!isAdmin && (
+              <motion.button
+                onClick={() => router.push('/tickets')}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                style={{
+                  padding: '0.5rem 1rem',
+                  background: 'transparent',
+                  border: '1px solid rgba(212, 175, 55, 0.5)',
+                  borderRadius: '0.5rem',
+                  color: '#d4af37',
+                  fontSize: '0.875rem',
+                  fontWeight: '400',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  transition: 'all 0.2s',
+                }}
+              >
+                <Ticket style={{ width: '16px', height: '16px' }} />
+                Meine Tickets
+              </motion.button>
+            )}
 
-            {/* LOGOUT BUTTON */}
+            {/* LOGOUT */}
             <motion.button
               onClick={() => signOut({ callbackUrl: '/' })}
               whileHover={{ scale: 1.05 }}
