@@ -8,9 +8,9 @@ export async function GET(request: NextRequest) {
   try {
     const sessionId = request.nextUrl.searchParams.get('session_id');
     
-    console.log('=== PAYMENT SUCCESS ===');
+    console.log('=== PAYMENT SUCCESS GET ===');
     console.log('Session ID:', sessionId);
-
+    
     if (!sessionId) {
       return NextResponse.json({ error: 'No session ID' }, { status: 400 });
     }
@@ -18,19 +18,17 @@ export async function GET(request: NextRequest) {
     const session = await stripe.checkout.sessions.retrieve(sessionId);
     
     console.log('Payment Status:', session.payment_status);
-
+    
     if (session.payment_status === 'paid') {
       const seats = JSON.parse(session.metadata?.seats || '[]');
       const userId = parseInt(session.metadata?.userId || '0');
-
-      const customerEmail = '07muefel@rgtfo-me.it';  // Test
       
       console.log('Sitze:', seats);
       console.log('User ID:', userId);
-
+      
       for (const seat of seats) {
         console.log(`Erstelle/Update Sitz ${seat.row}${seat.number}...`);
-        console.log(`📝 Kontaktdaten: ${seat.firstName} ${seat.lastName} (${seat.email})`);  // ⭐ NEU
+        console.log(`📝 Kontaktdaten: ${seat.firstName} ${seat.lastName} (${seat.email})`);
         
         await prisma.seat.upsert({
           where: {
@@ -39,24 +37,23 @@ export async function GET(request: NextRequest) {
           update: {
             status: 'paid',
             userId: userId,
-            firstName: seat.firstName || '',      // ⭐ NEU
-            lastName: seat.lastName || '',        // ⭐ NEU
-            email: seat.email || '',              // ⭐ NEU
+            firstName: seat.firstName || '',
+            lastName: seat.lastName || '',
+            email: seat.email || '',
           },
           create: {
             row: seat.row,
             number: seat.number,
             status: 'paid',
             userId: userId,
-            firstName: seat.firstName || '',      // ⭐ NEU
-            lastName: seat.lastName || '',        // ⭐ NEU
-            email: seat.email || '',              // ⭐ NEU
+            firstName: seat.firstName || '',
+            lastName: seat.lastName || '',
+            email: seat.email || '',
           },
         });
-
         console.log(`✅ ${seat.row}${seat.number} → PAID mit Kontaktdaten gespeichert`);
       }
-
+      
       console.log('=== FERTIG ===');
       
       return NextResponse.json({ 
@@ -64,9 +61,77 @@ export async function GET(request: NextRequest) {
         seats: seats
       });
     }
-
+    
     return NextResponse.json({ error: 'Payment not completed' }, { status: 400 });
+  } catch (error: any) {
+    console.error('=== FEHLER ===');
+    console.error(error.message);
+    return NextResponse.json({ 
+      error: error.message 
+    }, { status: 500 });
+  }
+}
 
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const { sessionId } = body;
+    
+    console.log('=== PAYMENT SUCCESS POST ===');
+    console.log('Session ID:', sessionId);
+    
+    if (!sessionId) {
+      return NextResponse.json({ error: 'No session ID' }, { status: 400 });
+    }
+
+    const session = await stripe.checkout.sessions.retrieve(sessionId);
+    
+    console.log('Payment Status:', session.payment_status);
+    
+    if (session.payment_status === 'paid') {
+      const seats = JSON.parse(session.metadata?.seats || '[]');
+      const userId = parseInt(session.metadata?.userId || '0');
+      
+      console.log('Sitze:', seats);
+      console.log('User ID:', userId);
+      
+      for (const seat of seats) {
+        console.log(`Erstelle/Update Sitz ${seat.row}${seat.number}...`);
+        console.log(`📝 Kontaktdaten: ${seat.firstName} ${seat.lastName} (${seat.email})`);
+        
+        await prisma.seat.upsert({
+          where: {
+            row_number: { row: seat.row, number: seat.number }
+          },
+          update: {
+            status: 'paid',
+            userId: userId,
+            firstName: seat.firstName || '',
+            lastName: seat.lastName || '',
+            email: seat.email || '',
+          },
+          create: {
+            row: seat.row,
+            number: seat.number,
+            status: 'paid',
+            userId: userId,
+            firstName: seat.firstName || '',
+            lastName: seat.lastName || '',
+            email: seat.email || '',
+          },
+        });
+        console.log(`✅ ${seat.row}${seat.number} → PAID mit Kontaktdaten gespeichert`);
+      }
+      
+      console.log('=== FERTIG ===');
+      
+      return NextResponse.json({ 
+        success: true, 
+        seats: seats
+      });
+    }
+    
+    return NextResponse.json({ error: 'Payment not completed' }, { status: 400 });
   } catch (error: any) {
     console.error('=== FEHLER ===');
     console.error(error.message);
