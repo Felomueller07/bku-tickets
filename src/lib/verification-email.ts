@@ -24,7 +24,7 @@ export async function sendVerificationEmail(userId: number, email: string, name:
 
     // Email senden
     const { data, error } = await resend.emails.send({
-      from: 'BKU Tickets <onboarding@resend.dev>',
+      from: 'BKU Tickets <noreply@untgab.com>',
      to: email,
       subject: '🔐 Email-Bestätigung - BKU Tickets',
       html: `
