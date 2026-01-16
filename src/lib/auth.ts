@@ -20,7 +20,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         }
 
         try {
-          console.log('�� Suche User in DB...');
+          console.log('🔍 Suche User in DB...');
           const user = await prisma.user.findUnique({
             where: { email: credentials.email as string },
           });
@@ -32,7 +32,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
           console.log('✅ User gefunden! ID:', user.id, 'Role:', user.role);
 
-          // Email Verification Check
           if (!user.emailVerified) {
             console.log('❌ Email nicht verifiziert');
             throw new Error('Bitte bestätige zuerst deine Email-Adresse');
@@ -49,15 +48,14 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             return null;
           }
 
-          console.log('✅ Passwort korrekt!');
-          console.log('✅ Login erfolgreich für:', user.email);
+          console.log('✅ Login erfolgreich!');
 
           return {
             id: user.id.toString(),
             email: user.email,
             name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email,
-            firstName: user.firstName,
-            lastName: user.lastName,
+            firstName: user.firstName || '',
+            lastName: user.lastName || '',
             role: user.role,
           };
         } catch (error) {
@@ -70,17 +68,19 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        token.role = (user as any).role;
-        token.firstName = (user as any).firstName;
-        token.lastName = (user as any).lastName;
+        token.id = user.id;
+        token.role = user.role;
+        token.firstName = user.firstName;
+        token.lastName = user.lastName;
       }
       return token;
     },
     async session({ session, token }) {
       if (session.user) {
-        (session.user as any).role = token.role;
-        (session.user as any).firstName = token.firstName;
-        (session.user as any).lastName = token.lastName;
+        session.user.id = token.id as string;
+        session.user.role = token.role as string;
+        session.user.firstName = token.firstName as string;
+        session.user.lastName = token.lastName as string;
       }
       return session;
     },
