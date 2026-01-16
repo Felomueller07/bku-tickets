@@ -3,6 +3,7 @@ import { Toaster } from "sonner";
 import "./globals.css";
 import SessionWrapper from "@/components/SessionWrapper";
 import CookieBanner from "@/components/CookieBanner";
+import Footer from "@/components/Footer";
 
 export const metadata: Metadata = {
   title: "BKU Tickets - Josefi Konzert 2026",
@@ -16,9 +17,15 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="de">
-      <body style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }}>
+      <body style={{ 
+        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+        display: 'flex',
+        flexDirection: 'column',
+        minHeight: '100vh',
+      }}>
         <SessionWrapper>
           {children}
+          <Footer />
           <Toaster position="top-center" richColors />
           <CookieBanner />
         </SessionWrapper>
