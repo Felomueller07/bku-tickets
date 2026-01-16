@@ -20,8 +20,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         }
 
         try {
-          // User aus Datenbank laden
-          console.log('🔍 Suche User in DB...');
+          console.log('�� Suche User in DB...');
           const user = await prisma.user.findUnique({
             where: { email: credentials.email as string },
           });
@@ -33,7 +32,12 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
           console.log('✅ User gefunden! ID:', user.id, 'Role:', user.role);
 
-          // Passwort prüfen
+          // Email Verification Check
+          if (!user.emailVerified) {
+            console.log('❌ Email nicht verifiziert');
+            throw new Error('Bitte bestätige zuerst deine Email-Adresse');
+          }
+
           console.log('🔐 Prüfe Passwort...');
           const isValid = await bcrypt.compare(
             credentials.password as string,
@@ -48,11 +52,12 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           console.log('✅ Passwort korrekt!');
           console.log('✅ Login erfolgreich für:', user.email);
 
-          // User-Objekt zurückgeben
           return {
             id: user.id.toString(),
             email: user.email,
             name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email,
+            firstName: user.firstName,
+            lastName: user.lastName,
             role: user.role,
           };
         } catch (error) {
@@ -66,12 +71,16 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     async jwt({ token, user }) {
       if (user) {
         token.role = (user as any).role;
+        token.firstName = (user as any).firstName;
+        token.lastName = (user as any).lastName;
       }
       return token;
     },
     async session({ session, token }) {
       if (session.user) {
         (session.user as any).role = token.role;
+        (session.user as any).firstName = token.firstName;
+        (session.user as any).lastName = token.lastName;
       }
       return session;
     },
