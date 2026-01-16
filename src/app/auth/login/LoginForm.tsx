@@ -2,15 +2,12 @@
 
 import { useState } from 'react';
 import { signIn } from 'next-auth/react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Eye, EyeOff, ArrowLeft } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, LogIn } from 'lucide-react';
 
 export default function LoginForm() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const registered = searchParams?.get('registered');
-
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -27,18 +24,17 @@ export default function LoginForm() {
         email,
         password,
         redirect: false,
-        callbackUrl: '/dashboard',
       });
 
       if (result?.error) {
         setError('Ungültige E-Mail oder Passwort');
-        setLoading(false);
-      } else if (result?.ok) {
-        // Erfolgreich - redirect zum Dashboard
-        window.location.href = '/dashboard';
+      } else {
+        router.push('/dashboard');
+        router.refresh();
       }
     } catch (err) {
       setError('Ein Fehler ist aufgetreten');
+    } finally {
       setLoading(false);
     }
   };
@@ -49,270 +45,250 @@ export default function LoginForm() {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      position: 'relative',
-      overflow: 'hidden',
+      background: 'linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 50%, #1a1a1a 100%)',
+      padding: '2rem',
     }}>
-      <div style={{
-        position: 'absolute',
-        inset: 0,
-        backgroundImage: 'url(/kapelle.jpg)',
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        filter: 'blur(8px)',
-        opacity: 0.3,
-      }} />
-
-      <div style={{
-        position: 'absolute',
-        inset: 0,
-        background: 'linear-gradient(135deg, rgba(26, 26, 26, 0.9) 0%, rgba(45, 45, 45, 0.9) 100%)',
-      }} />
-
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
         style={{
-          position: 'relative',
+          backgroundColor: 'rgba(0, 0, 0, 0.8)',
+          backdropFilter: 'blur(10px)',
+          borderRadius: '1.5rem',
+          padding: '3rem',
+          maxWidth: '450px',
           width: '100%',
-          maxWidth: '400px',
-          padding: '2rem',
+          border: '1px solid rgba(212, 175, 55, 0.3)',
+          boxShadow: '0 20px 60px rgba(0, 0, 0, 0.5)',
         }}
       >
-        <div style={{
-          backgroundColor: 'rgba(0, 0, 0, 0.6)',
-          backdropFilter: 'blur(20px)',
-          borderRadius: '1.5rem',
-          padding: '2.5rem',
-          border: '1px solid rgba(255, 255, 255, 0.1)',
-          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)',
+        <h1 style={{
+          color: '#d4af37',
+          fontSize: '2rem',
+          fontWeight: '700',
+          marginBottom: '0.5rem',
+          textAlign: 'center',
         }}>
-          <h1 style={{
-            color: 'white',
-            fontSize: '2rem',
-            fontWeight: '700',
-            marginBottom: '0.5rem',
-            textAlign: 'center',
-          }}>
-            Anmelden
-          </h1>
+          Anmelden
+        </h1>
+        <p style={{
+          color: 'rgba(255, 255, 255, 0.6)',
+          fontSize: '0.875rem',
+          marginBottom: '2rem',
+          textAlign: 'center',
+        }}>
+          Josefi Konzert 2026
+        </p>
 
-          <p style={{
-            color: 'rgba(255, 255, 255, 0.6)',
+        {error && (
+          <div style={{
+            backgroundColor: 'rgba(239, 68, 68, 0.1)',
+            border: '1px solid rgba(239, 68, 68, 0.3)',
+            borderRadius: '0.5rem',
+            padding: '1rem',
+            marginBottom: '1.5rem',
+            color: '#ef4444',
             fontSize: '0.875rem',
-            marginBottom: '2rem',
             textAlign: 'center',
           }}>
-            Josefi Konzert 2026
-          </p>
+            {error}
+          </div>
+        )}
 
-          {registered && (
-            <div style={{
-              padding: '1rem',
-              backgroundColor: 'rgba(74, 222, 128, 0.1)',
-              border: '1px solid rgba(74, 222, 128, 0.3)',
-              borderRadius: '0.75rem',
-              marginBottom: '1.5rem',
+        <form onSubmit={handleSubmit}>
+          <div style={{ marginBottom: '1.5rem' }}>
+            <label style={{
+              display: 'block',
+              color: 'rgba(255, 255, 255, 0.8)',
+              fontSize: '0.875rem',
+              marginBottom: '0.5rem',
+              fontWeight: '500',
             }}>
-              <p style={{
-                color: '#4ade80',
-                fontSize: '0.875rem',
-                margin: 0,
-              }}>
-                ✅ Registrierung erfolgreich! Du kannst dich jetzt anmelden.
-              </p>
-            </div>
-          )}
-
-          {error && (
-            <div style={{
-              padding: '1rem',
-              backgroundColor: 'rgba(239, 68, 68, 0.1)',
-              border: '1px solid rgba(239, 68, 68, 0.3)',
-              borderRadius: '0.75rem',
-              marginBottom: '1.5rem',
-            }}>
-              <p style={{
-                color: '#ef4444',
-                fontSize: '0.875rem',
-                margin: 0,
-              }}>
-                {error}
-              </p>
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit}>
-            <div style={{ marginBottom: '1.5rem' }}>
-              <label style={{
-                display: 'block',
-                color: 'rgba(255, 255, 255, 0.8)',
-                fontSize: '0.875rem',
-                fontWeight: '500',
-                marginBottom: '0.5rem',
-              }}>
-                E-Mail
-              </label>
+              E-Mail
+            </label>
+            <div style={{ position: 'relative' }}>
+              <Mail style={{
+                position: 'absolute',
+                left: '1rem',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                width: '18px',
+                height: '18px',
+                color: 'rgba(255, 255, 255, 0.5)',
+              }} />
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                disabled={loading}
                 style={{
                   width: '100%',
-                  padding: '0.75rem 1rem',
+                  padding: '0.75rem 1rem 0.75rem 3rem',
                   backgroundColor: 'rgba(255, 255, 255, 0.05)',
                   border: '1px solid rgba(255, 255, 255, 0.1)',
                   borderRadius: '0.5rem',
-                  color: 'white',
+                  color: '#fff',
                   fontSize: '1rem',
                   outline: 'none',
                 }}
+                onFocus={(e) => e.target.style.borderColor = '#d4af37'}
+                onBlur={(e) => e.target.style.borderColor = 'rgba(255, 255, 255, 0.1)'}
               />
             </div>
+          </div>
 
-            <div style={{ marginBottom: '1.5rem' }}>
-              <label style={{
-                display: 'block',
-                color: 'rgba(255, 255, 255, 0.8)',
-                fontSize: '0.875rem',
-                fontWeight: '500',
-                marginBottom: '0.5rem',
-              }}>
-                Passwort
-              </label>
-              <div style={{ position: 'relative' }}>
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  disabled={loading}
-                  style={{
-                    width: '100%',
-                    padding: '0.75rem 3rem 0.75rem 1rem',
-                    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                    border: '1px solid rgba(255, 255, 255, 0.1)',
-                    borderRadius: '0.5rem',
-                    color: 'white',
-                    fontSize: '1rem',
-                    outline: 'none',
-                  }}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  disabled={loading}
-                  style={{
-                    position: 'absolute',
-                    right: '1rem',
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    background: 'none',
-                    border: 'none',
-                    cursor: 'pointer',
-                    padding: 0,
-                    display: 'flex',
-                    alignItems: 'center',
-                  }}
-                >
-                  {showPassword ? (
-                    <EyeOff style={{ width: '18px', height: '18px', color: 'rgba(255, 255, 255, 0.5)' }} />
-                  ) : (
-                    <Eye style={{ width: '18px', height: '18px', color: 'rgba(255, 255, 255, 0.5)' }} />
-                  )}
-                </button>
-              </div>
-            </div>
-
-            <div style={{
-              padding: '0.75rem',
-              backgroundColor: 'rgba(139, 92, 246, 0.1)',
-              border: '1px solid rgba(139, 92, 246, 0.2)',
-              borderRadius: '0.5rem',
-              marginBottom: '1.5rem',
+          <div style={{ marginBottom: '2rem' }}>
+            <label style={{
+              display: 'block',
+              color: 'rgba(255, 255, 255, 0.8)',
+              fontSize: '0.875rem',
+              marginBottom: '0.5rem',
+              fontWeight: '500',
             }}>
-              <p style={{
-                color: 'rgba(255, 255, 255, 0.6)',
-                fontSize: '0.75rem',
-                margin: 0,
-                marginBottom: '0.25rem',
-              }}>
-                <strong>Demo Login:</strong>
-              </p>
-              <p style={{
+              Passwort
+            </label>
+            <div style={{ position: 'relative' }}>
+              <Lock style={{
+                position: 'absolute',
+                left: '1rem',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                width: '18px',
+                height: '18px',
                 color: 'rgba(255, 255, 255, 0.5)',
-                fontSize: '0.75rem',
-                margin: 0,
-              }}>
-                Admin: admin@bku.com / admin123
-              </p>
-            </div>
-
-            <motion.button
-              type="submit"
-              disabled={loading}
-              whileHover={{ scale: loading ? 1 : 1.02 }}
-              whileTap={{ scale: loading ? 1 : 0.98 }}
-              style={{
-                width: '100%',
-                padding: '0.875rem',
-                background: loading
-                  ? 'rgba(212, 175, 55, 0.5)'
-                  : 'linear-gradient(135deg, #d4af37 0%, #f4e7c3 100%)',
-                color: '#000',
-                border: 'none',
-                borderRadius: '0.75rem',
-                fontSize: '1rem',
-                fontWeight: '600',
-                cursor: loading ? 'not-allowed' : 'pointer',
-                marginBottom: '1rem',
-              }}
-            >
-              {loading ? 'Wird angemeldet...' : 'Anmelden'}
-            </motion.button>
-
-            <div style={{ textAlign: 'center', marginBottom: '1rem' }}>
-              <button
-                type="button"
-                onClick={() => router.push('/auth/register')}
-                disabled={loading}
+              }} />
+              <input
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
                 style={{
-                  background: 'none',
-                  border: 'none',
-                  color: '#d4af37',
-                  fontSize: '0.875rem',
-                  cursor: loading ? 'not-allowed' : 'pointer',
-                  textDecoration: 'underline',
+                  width: '100%',
+                  padding: '0.75rem 3rem 0.75rem 3rem',
+                  backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  borderRadius: '0.5rem',
+                  color: '#fff',
+                  fontSize: '1rem',
+                  outline: 'none',
                 }}
-              >
-                Noch kein Konto? Jetzt registrieren
-              </button>
-            </div>
-
-            <div style={{ textAlign: 'center' }}>
+                onFocus={(e) => e.target.style.borderColor = '#d4af37'}
+                onBlur={(e) => e.target.style.borderColor = 'rgba(255, 255, 255, 0.1)'}
+              />
               <button
                 type="button"
-                onClick={() => router.push('/')}
-                disabled={loading}
+                onClick={() => setShowPassword(!showPassword)}
                 style={{
+                  position: 'absolute',
+                  right: '1rem',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
                   background: 'none',
                   border: 'none',
                   color: 'rgba(255, 255, 255, 0.5)',
-                  fontSize: '0.875rem',
-                  cursor: loading ? 'not-allowed' : 'pointer',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '0.25rem',
+                  cursor: 'pointer',
                 }}
               >
-                <ArrowLeft style={{ width: '14px', height: '14px' }} />
-                Zurück zur Startseite
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
             </div>
-          </form>
-        </div>
+          </div>
+
+          <div style={{
+            backgroundColor: 'rgba(100, 116, 139, 0.1)',
+            border: '1px solid rgba(100, 116, 139, 0.2)',
+            borderRadius: '0.5rem',
+            padding: '1rem',
+            marginBottom: '1.5rem',
+          }}>
+            <p style={{
+              color: 'rgba(255, 255, 255, 0.7)',
+              fontSize: '0.875rem',
+              margin: 0,
+              fontWeight: '500',
+            }}>
+              Demo Login:
+            </p>
+            <p style={{
+              color: 'rgba(255, 255, 255, 0.5)',
+              fontSize: '0.75rem',
+              margin: '0.25rem 0 0 0',
+            }}>
+              Admin: admin@bku.com / admin123
+            </p>
+          </div>
+
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            type="submit"
+            disabled={loading}
+            style={{
+              width: '100%',
+              padding: '1rem',
+              background: 'linear-gradient(135deg, #d4af37 0%, #f4e7c3 100%)',
+              border: 'none',
+              borderRadius: '0.5rem',
+              color: '#000',
+              fontSize: '1rem',
+              fontWeight: '700',
+              cursor: loading ? 'not-allowed' : 'pointer',
+              opacity: loading ? 0.7 : 1,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '0.5rem',
+            }}
+          >
+            {loading ? (
+              'Anmeldung läuft...'
+            ) : (
+              <>
+                <LogIn size={18} />
+                Anmelden
+              </>
+            )}
+          </motion.button>
+        </form>
+
+        <p style={{
+          color: 'rgba(255, 255, 255, 0.6)',
+          fontSize: '0.875rem',
+          marginTop: '1.5rem',
+          textAlign: 'center',
+        }}>
+          Noch kein Konto?{' '}
+          <button
+            onClick={() => router.push('/auth/register')}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: '#d4af37',
+              cursor: 'pointer',
+              textDecoration: 'underline',
+            }}
+          >
+            Jetzt registrieren
+          </button>
+        </p>
+
+        <button
+          onClick={() => router.push('/')}
+          style={{
+            width: '100%',
+            marginTop: '1rem',
+            padding: '0.75rem',
+            background: 'transparent',
+            border: '1px solid rgba(255, 255, 255, 0.2)',
+            borderRadius: '0.5rem',
+            color: 'rgba(255, 255, 255, 0.6)',
+            fontSize: '0.875rem',
+            cursor: 'pointer',
+          }}
+        >
+          ← Zurück zur Startseite
+        </button>
       </motion.div>
     </div>
   );
