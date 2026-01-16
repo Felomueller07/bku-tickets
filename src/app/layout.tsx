@@ -1,18 +1,8 @@
 import type { Metadata } from "next";
-// import { Inter, Space_Grotesk } from "next/font/google";  // ❌ AUSKOMMENTIERT
 import { Toaster } from "sonner";
 import "./globals.css";
 import SessionWrapper from "@/components/SessionWrapper";
-
-// const inter = Inter({ 
-//   subsets: ["latin"],
-//   variable: "--font-inter",
-// });
-
-// const spaceGrotesk = Space_Grotesk({ 
-//   subsets: ["latin"],
-//   variable: "--font-space-grotesk",
-// });
+import CookieBanner from "@/components/CookieBanner";
 
 export const metadata: Metadata = {
   title: "BKU Tickets - Josefi Konzert 2026",
@@ -30,6 +20,7 @@ export default function RootLayout({
         <SessionWrapper>
           {children}
           <Toaster position="top-center" richColors />
+          <CookieBanner />
         </SessionWrapper>
       </body>
     </html>
