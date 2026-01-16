@@ -45,16 +45,28 @@ export default function CheckoutModal({
     if (session?.user) {
       const user = session.user as any;
       console.log('👤 Session User:', user);
+  useEffect(() => {
+    if (session?.user) {
+      const user = session.user as any;
+      console.log('👤 Session User:', user);
+      
+      // FALLBACK: Wenn firstName/lastName nicht existieren, name splitten
+      let firstName = user.firstName || '';
+      let lastName = user.lastName || '';
+      
+      if (!firstName && user.name) {
+        const nameParts = user.name.split(' ');
+        firstName = nameParts[0] || '';
+        lastName = nameParts.slice(1).join(' ') || '';
+      }
+      
       setContactData({
-        firstName: user.firstName || '',
-        lastName: user.lastName || '',
+        firstName: firstName,
+        lastName: lastName,
         email: user.email || '',
       });
     }
   }, [session]);
-
-  // ⭐ WICHTIG: seatData aktualisieren wenn selectedSeats sich ändern
-  useEffect(() => {
     setSeatData(
       selectedSeats.map((seat) => ({
         ...seat,
