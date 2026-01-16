@@ -151,7 +151,7 @@ export default function LandingPage() {
   {/* BILD 1 - LINKS OBEN */}
   <motion.div
     initial={{ opacity: 0, y: -20, rotate: -5 }}
-    animate={{ opacity: 1, y: 0, rotate: -8 }}
+    animate={{ opacity: 1, y: 0, rotate: 0 }}
     transition={{ duration: 0.8, delay: 1 }}
     whileHover={{ rotate: -10, y: -5, transition: { duration: 0.3 } }}
     style={{
@@ -180,10 +180,10 @@ export default function LandingPage() {
 
   {/* BILD 2 - LINKS MITTE */}
   <motion.div
-    initial={{ opacity: 0, y: -20, rotate: 5 }}
-    animate={{ opacity: 1, y: 0, rotate: 6 }}
+    initial={{ opacity: 0, y: -20, rotate: 0 }}
+    animate={{ opacity: 1, y: 0, rotate: 0 }}
     transition={{ duration: 0.8, delay: 1.3 }}
-    whileHover={{ rotate: 8, y: -5, transition: { duration: 0.3 } }}
+    whileHover={{ rotate: 0, y: -5, transition: { duration: 0.3 } }}
     style={{
       position: 'absolute',
       top: '42%',
@@ -211,9 +211,9 @@ export default function LandingPage() {
   {/* BILD 3 - LINKS UNTEN */}
   <motion.div
     initial={{ opacity: 0, y: -20, rotate: -5 }}
-    animate={{ opacity: 1, y: 0, rotate: -4 }}
+    animate={{ opacity: 1, y: 0, rotate: 0 }}
     transition={{ duration: 0.8, delay: 1.6 }}
-    whileHover={{ rotate: -6, y: -5, transition: { duration: 0.3 } }}
+    whileHover={{ rotate: 0, y: -5, transition: { duration: 0.3 } }}
     style={{
       position: 'absolute',
       top: '82%',
@@ -279,8 +279,8 @@ export default function LandingPage() {
 
   {/* BILD 4 - RECHTS OBEN */}
   <motion.div
-    initial={{ opacity: 0, y: -20, rotate: 5 }}
-    animate={{ opacity: 1, y: 0, rotate: 7 }}
+    initial={{ opacity: 0, y: -20, rotate: 0 }}
+    animate={{ opacity: 1, y: 0, rotate: 0 }}
     transition={{ duration: 0.8, delay: 1.2 }}
     whileHover={{ rotate: 9, y: -5, transition: { duration: 0.3 } }}
     style={{
@@ -310,9 +310,9 @@ export default function LandingPage() {
   {/* BILD 5 - RECHTS MITTE */}
   <motion.div
     initial={{ opacity: 0, y: -20, rotate: -5 }}
-    animate={{ opacity: 1, y: 0, rotate: -6 }}
+    animate={{ opacity: 1, y: 0, rotate: 0 }}
     transition={{ duration: 0.8, delay: 1.5 }}
-    whileHover={{ rotate: -8, y: -5, transition: { duration: 0.3 } }}
+    whileHover={{ rotate: 0, y: -5, transition: { duration: 0.3 } }}
     style={{
       position: 'absolute',
       top: '38%',
@@ -339,10 +339,10 @@ export default function LandingPage() {
 
   {/* BILD 6 - RECHTS UNTEN */}
   <motion.div
-    initial={{ opacity: 0, y: -20, rotate: 5 }}
-    animate={{ opacity: 1, y: 0, rotate: 5 }}
+    initial={{ opacity: 0, y: -20, rotate: 0 }}
+    animate={{ opacity: 1, y: 0, rotate: 0 }}
     transition={{ duration: 0.8, delay: 1.8 }}
-    whileHover={{ rotate: 7, y: -5, transition: { duration: 0.3 } }}
+    whileHover={{ rotate: 0, y: -5, transition: { duration: 0.3 } }}
     style={{
       position: 'absolute',
       top: '77%',
