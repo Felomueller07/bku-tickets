@@ -13,15 +13,15 @@ export async function POST(request: NextRequest) {
     const { firstName, lastName, email, password } = body;
 
     console.log('📝 firstName:', firstName);
-    console.log('📝 lastName:', lastName || '(optional)');
+    console.log('📝 lastName:', lastName);
     console.log('📝 email:', email);
     console.log('📝 password:', password ? '***' : 'LEER');
 
-    // Validierung - lastName ist OPTIONAL
-    if (!firstName || !email || !password) {
+    // Validierung
+    if (!firstName || !lastName || !email || !password) {
       console.log('❌ Fehlende Felder!');
       return NextResponse.json(
-        { error: 'Vorname, Email und Passwort sind erforderlich' },
+        { error: 'Alle Felder sind erforderlich' },
         { status: 400 }
       );
     }
@@ -45,38 +45,28 @@ export async function POST(request: NextRequest) {
     const user = await prisma.user.create({
       data: {
         firstName,
-        lastName: lastName || '', // Optional, default leer
+        lastName,
         email,
         password: hashedPassword,
+        role: 'user',
         emailVerified: false,
       },
     });
 
-    console.log('✅ User erstellt:', user.id);
+    // Verifizierungs-Email senden
+    const fullName = `${firstName} ${lastName}`;
+    await sendVerificationEmail(user.id, user.email, fullName);
 
-    // Verification Code erstellen
-    const code = Math.floor(100000 + Math.random() * 900000).toString();
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 Minuten
-
-    await prisma.verificationCode.create({
-      data: {
-        userId: user.id,
-        code,
-        expiresAt,
-      },
-    });
-
-    // Email senden
-    await sendVerificationEmail(user.id, email, firstName);
+    console.log('✅ User registriert:', user.email);
 
     return NextResponse.json({
       success: true,
-      message: 'Registrierung erfolgreich! Bitte prüfe deine Emails.',
+      message: 'Registrierung erfolgreich! Bitte überprüfe deine Email.',
     });
   } catch (error: any) {
     console.error('❌ Registrierungs-Fehler:', error);
     return NextResponse.json(
-      { error: error.message || 'Fehler bei der Registrierung' },
+      { error: 'Registrierung fehlgeschlagen' },
       { status: 500 }
     );
   }

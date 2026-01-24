@@ -4,7 +4,8 @@ import { useState } from 'react';
 import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Eye, EyeOff, Mail, Lock, LogIn } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, LogIn, ArrowLeft } from 'lucide-react';
+import Image from 'next/image';
 
 export default function LoginForm() {
   const router = useRouter();
@@ -18,7 +19,37 @@ export default function LoginForm() {
     e.preventDefault();
     setError('');
     setLoading(true);
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setError('');
+  setLoading(true);
 
+  console.log('🔍 Login attempt:', { email, password }); // DEBUG
+
+  try {
+    const result = await signIn('credentials', {
+      email,
+      password,
+      redirect: false,
+    });
+
+    console.log('✅ SignIn result:', result); // DEBUG
+
+    if (result?.error) {
+      console.log('❌ Error:', result.error); // DEBUG
+      setError('Ungültige E-Mail oder Passwort');
+    } else {
+      console.log('✅ Login successful!'); // DEBUG
+      router.push('/dashboard');
+      router.refresh();
+    }
+  } catch (err) {
+    console.log('❌ Catch error:', err); // DEBUG
+    setError('Ein Fehler ist aufgetreten');
+  } finally {
+    setLoading(false);
+  }
+};
     try {
       const result = await signIn('credentials', {
         email,
@@ -45,24 +76,98 @@ export default function LoginForm() {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      background: 'linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 50%, #1a1a1a 100%)',
+      background: '#0a0a0a',
       padding: '2rem',
+      position: 'relative',
+      overflow: 'hidden',
     }}>
+      {/* Starke Orange-Beleuchtung rechts oben */}
+      <div style={{
+        position: 'fixed',
+        top: '-25%',
+        right: '-15%',
+        width: '1000px',
+        height: '1000px',
+        background: 'radial-gradient(circle, rgba(245, 158, 11, 0.25) 0%, rgba(245, 158, 11, 0.15) 30%, transparent 70%)',
+        filter: 'blur(120px)',
+        zIndex: 0,
+      }} />
+
+      {/* Zusätzliche Orange-Schicht */}
+      <div style={{
+        position: 'fixed',
+        top: '5%',
+        right: '10%',
+        width: '600px',
+        height: '600px',
+        background: 'radial-gradient(circle, rgba(251, 191, 36, 0.18) 0%, transparent 70%)',
+        filter: 'blur(90px)',
+        zIndex: 0,
+      }} />
+      
+      {/* Starke Blau-Beleuchtung links unten */}
+      <div style={{
+        position: 'fixed',
+        bottom: '-25%',
+        left: '-15%',
+        width: '900px',
+        height: '900px',
+        background: 'radial-gradient(circle, rgba(59, 130, 246, 0.18) 0%, rgba(59, 130, 246, 0.1) 40%, transparent 70%)',
+        filter: 'blur(110px)',
+        zIndex: 0,
+      }} />
+
+      {/* Zusätzliche Blau-Schicht */}
+      <div style={{
+        position: 'fixed',
+        bottom: '10%',
+        left: '5%',
+        width: '500px',
+        height: '500px',
+        background: 'radial-gradient(circle, rgba(96, 165, 250, 0.12) 0%, transparent 70%)',
+        filter: 'blur(80px)',
+        zIndex: 0,
+      }} />
+
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
         style={{
-          backgroundColor: 'rgba(0, 0, 0, 0.8)',
-          backdropFilter: 'blur(10px)',
+          position: 'relative',
+          zIndex: 1,
+          backgroundColor: 'rgba(0, 0, 0, 0.6)',
+          backdropFilter: 'blur(20px)',
           borderRadius: '1.5rem',
           padding: '3rem',
           maxWidth: '450px',
           width: '100%',
-          border: '1px solid rgba(212, 175, 55, 0.3)',
+          border: '1px solid rgba(212, 175, 55, 0.2)',
           boxShadow: '0 20px 60px rgba(0, 0, 0, 0.5)',
         }}
       >
+        {/* BKU Logo */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+          style={{
+            position: 'relative',
+            width: '80px',
+            height: '80px',
+            margin: '0 auto 1.5rem',
+            borderRadius: '16px',
+            overflow: 'hidden',
+          }}
+        >
+          <Image
+            src="/bku-logo.png"
+            alt="BKU"
+            fill
+            style={{ objectFit: 'cover' }}
+          />
+        </motion.div>
+
         <h1 style={{
           color: '#d4af37',
           fontSize: '2rem',
@@ -82,18 +187,22 @@ export default function LoginForm() {
         </p>
 
         {error && (
-          <div style={{
-            backgroundColor: 'rgba(239, 68, 68, 0.1)',
-            border: '1px solid rgba(239, 68, 68, 0.3)',
-            borderRadius: '0.5rem',
-            padding: '1rem',
-            marginBottom: '1.5rem',
-            color: '#ef4444',
-            fontSize: '0.875rem',
-            textAlign: 'center',
-          }}>
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            style={{
+              backgroundColor: 'rgba(239, 68, 68, 0.1)',
+              border: '1px solid rgba(239, 68, 68, 0.3)',
+              borderRadius: '0.5rem',
+              padding: '1rem',
+              marginBottom: '1.5rem',
+              color: '#ef4444',
+              fontSize: '0.875rem',
+              textAlign: 'center',
+            }}
+          >
             {error}
-          </div>
+          </motion.div>
         )}
 
         <form onSubmit={handleSubmit}>
@@ -115,7 +224,8 @@ export default function LoginForm() {
                 transform: 'translateY(-50%)',
                 width: '18px',
                 height: '18px',
-                color: 'rgba(255, 255, 255, 0.5)',
+                color: email ? '#4a4a4a' : 'rgba(255, 255, 255, 0.5)',
+                transition: 'color 0.3s',
               }} />
               <input
                 type="email"
@@ -131,9 +241,16 @@ export default function LoginForm() {
                   color: '#fff',
                   fontSize: '1rem',
                   outline: 'none',
+                  transition: 'all 0.3s',
                 }}
-                onFocus={(e) => e.target.style.borderColor = '#d4af37'}
-                onBlur={(e) => e.target.style.borderColor = 'rgba(255, 255, 255, 0.1)'}
+                onFocus={(e) => {
+                  e.target.style.borderColor = '#d4af37';
+                  e.target.style.backgroundColor = 'rgba(255, 255, 255, 0.08)';
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+                  e.target.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
+                }}
               />
             </div>
           </div>
@@ -156,7 +273,8 @@ export default function LoginForm() {
                 transform: 'translateY(-50%)',
                 width: '18px',
                 height: '18px',
-                color: 'rgba(255, 255, 255, 0.5)',
+                color: password ? '#4a4a4a' : 'rgba(255, 255, 255, 0.5)',
+                transition: 'color 0.3s',
               }} />
               <input
                 type={showPassword ? 'text' : 'password'}
@@ -172,26 +290,36 @@ export default function LoginForm() {
                   color: '#fff',
                   fontSize: '1rem',
                   outline: 'none',
+                  transition: 'all 0.3s',
                 }}
-                onFocus={(e) => e.target.style.borderColor = '#d4af37'}
-                onBlur={(e) => e.target.style.borderColor = 'rgba(255, 255, 255, 0.1)'}
+                onFocus={(e) => {
+                  e.target.style.borderColor = '#d4af37';
+                  e.target.style.backgroundColor = 'rgba(255, 255, 255, 0.08)';
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+                  e.target.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
+                }}
               />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                style={{
-                  position: 'absolute',
-                  right: '1rem',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  background: 'none',
-                  border: 'none',
-                  color: 'rgba(255, 255, 255, 0.5)',
-                  cursor: 'pointer',
-                }}
-              >
-                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-              </button>
+<button
+  type="button"
+  onClick={() => setShowPassword(!showPassword)}
+  style={{
+    position: 'absolute',
+    right: '1rem',
+    top: '50%',
+    transform: 'translateY(-50%)',
+    background: 'none',
+    border: 'none',
+    color: password ? '#4a4a4a' : 'rgba(255, 255, 255, 0.5)',
+    cursor: 'pointer',
+    transition: 'color 0.3s',
+  }}
+  onMouseEnter={(e) => e.currentTarget.style.color = '#d4af37'}
+  onMouseLeave={(e) => e.currentTarget.style.color = password ? '#4a4a4a' : 'rgba(255, 255, 255, 0.5)'}
+>
+  {showPassword ? <Eye size={18} /> : <EyeOff size={18} />}
+</button>
             </div>
           </div>
 
@@ -239,6 +367,8 @@ export default function LoginForm() {
               alignItems: 'center',
               justifyContent: 'center',
               gap: '0.5rem',
+              boxShadow: '0 4px 20px rgba(212, 175, 55, 0.3)',
+              transition: 'all 0.3s',
             }}
           >
             {loading ? (
@@ -267,13 +397,16 @@ export default function LoginForm() {
               color: '#d4af37',
               cursor: 'pointer',
               textDecoration: 'underline',
+              fontWeight: '500',
             }}
           >
             Jetzt registrieren
           </button>
         </p>
 
-        <button
+        <motion.button
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
           onClick={() => router.push('/')}
           style={{
             width: '100%',
@@ -285,10 +418,24 @@ export default function LoginForm() {
             color: 'rgba(255, 255, 255, 0.6)',
             fontSize: '0.875rem',
             cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '0.5rem',
+            transition: 'all 0.3s',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.4)';
+            e.currentTarget.style.color = 'rgba(255, 255, 255, 0.8)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+            e.currentTarget.style.color = 'rgba(255, 255, 255, 0.6)';
           }}
         >
-          ← Zurück zur Startseite
-        </button>
+          <ArrowLeft size={16} />
+          Zurück zur Startseite
+        </motion.button>
       </motion.div>
     </div>
   );

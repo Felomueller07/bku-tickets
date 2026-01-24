@@ -17,6 +17,7 @@ const Clothespin = () => (
     height: '28px',
     zIndex: 10,
   }}>
+    {/* Linker Teil */}
     <div style={{
       position: 'absolute',
       left: '3px',
@@ -27,6 +28,7 @@ const Clothespin = () => (
       borderRadius: '4px 4px 3px 3px',
       boxShadow: '0 3px 6px rgba(0,0,0,0.5), inset 0 1px 2px rgba(255,255,255,0.2)',
     }} />
+    {/* Rechter Teil */}
     <div style={{
       position: 'absolute',
       right: '3px',
@@ -37,6 +39,7 @@ const Clothespin = () => (
       borderRadius: '4px 4px 3px 3px',
       boxShadow: '0 3px 6px rgba(0,0,0,0.5), inset 0 1px 2px rgba(255,255,255,0.2)',
     }} />
+    {/* Feder (Metallring) */}
     <div style={{
       position: 'absolute',
       left: '50%',
@@ -67,312 +70,325 @@ export default function LandingPage() {
 
   return (
     <div ref={containerRef} style={{ 
-      background: '#0a0a0a',
+      background: 'linear-gradient(to bottom, #0a0a0a 0%, #1a1a1a 100%)',
       position: 'relative',
       overflow: 'hidden',
     }}>
-      {/* Starke Orange-Beleuchtung rechts oben */}
       <div style={{
         position: 'fixed',
-        top: '-25%',
-        right: '-15%',
-        width: '1000px',
-        height: '1000px',
-        background: 'radial-gradient(circle, rgba(245, 158, 11, 0.25) 0%, rgba(245, 158, 11, 0.15) 30%, transparent 70%)',
-        filter: 'blur(120px)',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundImage: `
+          linear-gradient(rgba(245, 158, 11, 0.03) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(245, 158, 11, 0.03) 1px, transparent 1px)
+        `,
+        backgroundSize: '50px 50px',
         zIndex: 0,
       }} />
 
-      {/* Zusätzliche Orange-Schicht für mehr Helligkeit */}
       <div style={{
         position: 'fixed',
-        top: '5%',
-        right: '10%',
-        width: '600px',
-        height: '600px',
-        background: 'radial-gradient(circle, rgba(251, 191, 36, 0.18) 0%, transparent 70%)',
-        filter: 'blur(90px)',
-        zIndex: 0,
-      }} />
-      
-      {/* Starke Blau-Beleuchtung links unten */}
-      <div style={{
-        position: 'fixed',
-        bottom: '-25%',
-        left: '-15%',
-        width: '900px',
-        height: '900px',
-        background: 'radial-gradient(circle, rgba(59, 130, 246, 0.18) 0%, rgba(59, 130, 246, 0.1) 40%, transparent 70%)',
-        filter: 'blur(110px)',
-        zIndex: 0,
-      }} />
-
-      {/* Zusätzliche Blau-Schicht */}
-      <div style={{
-        position: 'fixed',
-        bottom: '10%',
-        left: '5%',
-        width: '500px',
-        height: '500px',
-        background: 'radial-gradient(circle, rgba(96, 165, 250, 0.12) 0%, transparent 70%)',
-        filter: 'blur(80px)',
-        zIndex: 0,
-      }} />
-
-      {/* Zentrale subtile Aufhellung */}
-      <div style={{
-        position: 'fixed',
-        top: '40%',
+        top: '50%',
         left: '50%',
         transform: 'translate(-50%, -50%)',
         width: '800px',
         height: '800px',
-        background: 'radial-gradient(circle, rgba(245, 158, 11, 0.08) 0%, transparent 70%)',
-        filter: 'blur(100px)',
+        opacity: 0.02,
+        zIndex: 0,
+        pointerEvents: 'none',
+        borderRadius: '50%',
+        overflow: 'hidden',
+      }}>
+        <Image
+          src="/bku-logo.png"
+          alt="BKU"
+          fill
+          style={{ objectFit: 'contain' }}
+        />
+      </div>
+
+{/* WÄSCHELEINE LINKS */}
+{/* WÄSCHELEINE LINKS */}
+<div style={{
+  position: 'absolute',  // ← GEÄNDERT von 'fixed' zu 'absolute'
+  left: '15rem',
+  top: '15vh',
+  width: '5px',
+  height: '70vh',
+  background: 'linear-gradient(180deg, rgba(120, 120, 120, 0.6) 0%, rgba(100, 100, 100, 0.8) 50%, rgba(120, 120, 120, 0.6) 100%)',
+  boxShadow: '3px 0 8px rgba(0, 0, 0, 0.5), inset -1px 0 2px rgba(255, 255, 255, 0.2)',
+  borderRadius: '3px',
+  zIndex: 2,
+}}>
+  {/* Oberer Knoten */}
+  <div style={{
+    position: 'absolute',
+    top: '-8px',
+    left: '50%',
+    transform: 'translateX(-50%)',
+    width: '12px',
+    height: '12px',
+    background: 'radial-gradient(circle, rgba(140, 140, 140, 0.9) 0%, rgba(100, 100, 100, 0.8) 100%)',
+    borderRadius: '50%',
+    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.4)',
+  }} />
+  
+  {/* Unterer Knoten */}
+  <div style={{
+    position: 'absolute',
+    bottom: '-8px',
+    left: '50%',
+    transform: 'translateX(-50%)',
+    width: '12px',
+    height: '12px',
+    background: 'radial-gradient(circle, rgba(140, 140, 140, 0.9) 0%, rgba(100, 100, 100, 0.8) 100%)',
+    borderRadius: '50%',
+    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.4)',
+  }} />
+
+  {/* BILD 1 - LINKS OBEN */}
+  <motion.div
+    initial={{ opacity: 0, y: -20, rotate: -5 }}
+    animate={{ opacity: 1, y: 0, rotate: 0 }}
+    transition={{ duration: 0.8, delay: 1 }}
+    whileHover={{ rotate: -10, y: -5, transition: { duration: 0.3 } }}
+    style={{
+      position: 'absolute',
+      top: '5%',
+      left: '-6.75rem',
+      width: '220px',
+      height: '147px',
+      background: 'rgba(255, 255, 255, 0.05)',
+      backdropFilter: 'blur(10px)',
+      border: '1px solid rgba(245, 158, 11, 0.2)',
+      borderRadius: '12px',
+      overflow: 'hidden',
+      boxShadow: '0 10px 30px rgba(0, 0, 0, 0.3)',
+      cursor: 'pointer',
+    }}
+  >
+    <Clothespin />
+    <Image
+      src="/collage1.JPG"
+      alt="BKU Konzert"
+      fill
+      style={{ objectFit: 'cover' }}
+    />
+  </motion.div>
+
+  {/* BILD 2 - LINKS MITTE */}
+  <motion.div
+    initial={{ opacity: 0, y: -20, rotate: 0 }}
+    animate={{ opacity: 1, y: 0, rotate: 0 }}
+    transition={{ duration: 0.8, delay: 1.3 }}
+    whileHover={{ rotate: 0, y: -5, transition: { duration: 0.3 } }}
+    style={{
+      position: 'absolute',
+      top: '41%',
+      left: '-6.75rem',
+      width: '220px',
+      height: '147px',
+      background: 'rgba(255, 255, 255, 0.05)',
+      backdropFilter: 'blur(10px)',
+      border: '1px solid rgba(245, 158, 11, 0.2)',
+      borderRadius: '12px',
+      overflow: 'hidden',
+      boxShadow: '0 10px 30px rgba(0, 0, 0, 0.3)',
+      cursor: 'pointer',
+    }}
+  >
+    <Clothespin />
+    <Image
+      src="/collage2.JPG"
+      alt="BKU Konzert"
+      fill
+      style={{ objectFit: 'cover' }}
+    />
+  </motion.div>
+
+  {/* BILD 3 - LINKS UNTEN */}
+  <motion.div
+    initial={{ opacity: 0, y: -20, rotate: -5 }}
+    animate={{ opacity: 1, y: 0, rotate: 0 }}
+    transition={{ duration: 0.8, delay: 1.6 }}
+    whileHover={{ rotate: 0, y: -5, transition: { duration: 0.3 } }}
+    style={{
+      position: 'absolute',
+      top: '77%',
+      left: '-6.75rem',
+      width: '220px',
+      height: '147px',
+      background: 'rgba(255, 255, 255, 0.05)',
+      backdropFilter: 'blur(10px)',
+      border: '1px solid rgba(245, 158, 11, 0.2)',
+      borderRadius: '12px',
+      overflow: 'hidden',
+      boxShadow: '0 10px 30px rgba(0, 0, 0, 0.3)',
+      cursor: 'pointer',
+    }}
+  >
+    <Clothespin />
+    <Image
+      src="/collage3.JPG"
+      alt="BKU Konzert"
+      fill
+      style={{ objectFit: 'cover' }}
+    />
+  </motion.div>
+</div>
+
+{/* WÄSCHELEINE RECHTS */}
+<div style={{
+  position: 'absolute',  // ← GEÄNDERT von 'fixed' zu 'absolute'
+  right: '15rem',
+  top: '15vh',
+  width: '5px',
+  height: '70vh',
+  background: 'linear-gradient(180deg, rgba(120, 120, 120, 0.6) 0%, rgba(100, 100, 100, 0.8) 50%, rgba(120, 120, 120, 0.6) 100%)',
+  boxShadow: '3px 0 8px rgba(0, 0, 0, 0.5), inset -1px 0 2px rgba(255, 255, 255, 0.2)',
+  borderRadius: '3px',
+  zIndex: 2,
+}}>
+  {/* Oberer Knoten */}
+  <div style={{
+    position: 'absolute',
+    top: '-8px',
+    left: '50%',
+    transform: 'translateX(-50%)',
+    width: '12px',
+    height: '12px',
+    background: 'radial-gradient(circle, rgba(140, 140, 140, 0.9) 0%, rgba(100, 100, 100, 0.8) 100%)',
+    borderRadius: '50%',
+    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.4)',
+  }} />
+  
+  {/* Unterer Knoten */}
+  <div style={{
+    position: 'absolute',
+    bottom: '-8px',
+    left: '50%',
+    transform: 'translateX(-50%)',
+    width: '12px',
+    height: '12px',
+    background: 'radial-gradient(circle, rgba(140, 140, 140, 0.9) 0%, rgba(100, 100, 100, 0.8) 100%)',
+    borderRadius: '50%',
+    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.4)',
+  }} />
+
+  {/* BILD 4 - RECHTS OBEN */}
+  <motion.div
+    initial={{ opacity: 0, y: -20, rotate: 0 }}
+    animate={{ opacity: 1, y: 0, rotate: 0 }}
+    transition={{ duration: 0.8, delay: 1.2 }}
+    whileHover={{ rotate: 9, y: -5, transition: { duration: 0.3 } }}
+    style={{
+      position: 'absolute',
+      top: '5%',
+      right: '-6.75rem',
+      width: '220px',
+      height: '147px',
+      background: 'rgba(255, 255, 255, 0.05)',
+      backdropFilter: 'blur(10px)',
+      border: '1px solid rgba(245, 158, 11, 0.2)',
+      borderRadius: '12px',
+      overflow: 'hidden',
+      boxShadow: '0 10px 30px rgba(0, 0, 0, 0.3)',
+      cursor: 'pointer',
+    }}
+  >
+    <Clothespin />
+    <Image
+      src="/collage4.JPG"
+      alt="BKU Konzert"
+      fill
+      style={{ objectFit: 'cover' }}
+    />
+  </motion.div>
+
+  {/* BILD 5 - RECHTS MITTE */}
+  <motion.div
+    initial={{ opacity: 0, y: -20, rotate: -5 }}
+    animate={{ opacity: 1, y: 0, rotate: 0 }}
+    transition={{ duration: 0.8, delay: 1.5 }}
+    whileHover={{ rotate: 0, y: -5, transition: { duration: 0.3 } }}
+    style={{
+      position: 'absolute',
+      top: '41%',
+      right: '-6.75rem',
+      width: '220px',
+      height: '147px',
+      background: 'rgba(255, 255, 255, 0.05)',
+      backdropFilter: 'blur(10px)',
+      border: '1px solid rgba(245, 158, 11, 0.2)',
+      borderRadius: '12px',
+      overflow: 'hidden',
+      boxShadow: '0 10px 30px rgba(0, 0, 0, 0.3)',
+      cursor: 'pointer',
+    }}
+  >
+    <Clothespin />
+    <Image
+      src="/collage5.JPG"
+      alt="BKU Konzert"
+      fill
+      style={{ objectFit: 'cover' }}
+    />
+  </motion.div>
+
+  {/* BILD 6 - RECHTS UNTEN */}
+  <motion.div
+    initial={{ opacity: 0, y: -20, rotate: 0 }}
+    animate={{ opacity: 1, y: 0, rotate: 0 }}
+    transition={{ duration: 0.8, delay: 1.8 }}
+    whileHover={{ rotate: 0, y: -5, transition: { duration: 0.3 } }}
+    style={{
+      position: 'absolute',
+      top: '77%',
+      right: '-6.75rem',
+      width: '220px',
+      height: '147px',
+      background: 'rgba(255, 255, 255, 0.05)',
+      backdropFilter: 'blur(10px)',
+      border: '1px solid rgba(245, 158, 11, 0.2)',
+      borderRadius: '12px',
+      overflow: 'hidden',
+      boxShadow: '0 10px 30px rgba(0, 0, 0, 0.3)',
+      cursor: 'pointer',
+    }}
+  >
+    <Clothespin />
+    <Image
+      src="/collage6.JPG"
+      alt="BKU Konzert"
+      fill
+      style={{ objectFit: 'cover' }}
+    />
+  </motion.div>
+</div>
+
+      <div style={{
+        position: 'fixed',
+        top: '-20%',
+        right: '-10%',
+        width: '600px',
+        height: '600px',
+        background: 'radial-gradient(circle, rgba(245, 158, 11, 0.15) 0%, transparent 70%)',
+        filter: 'blur(80px)',
         zIndex: 0,
       }} />
-
-      {/* WÄSCHELEINE LINKS */}
+      
       <div style={{
-        position: 'absolute',
-        left: '15rem',
-        top: '15vh',
-        width: '5px',
-        height: '70vh',
-        background: 'linear-gradient(180deg, rgba(120, 120, 120, 0.6) 0%, rgba(100, 100, 100, 0.8) 50%, rgba(120, 120, 120, 0.6) 100%)',
-        boxShadow: '3px 0 8px rgba(0, 0, 0, 0.5), inset -1px 0 2px rgba(255, 255, 255, 0.2)',
-        borderRadius: '3px',
-        zIndex: 2,
-      }}>
-        <div style={{
-          position: 'absolute',
-          top: '-8px',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          width: '12px',
-          height: '12px',
-          background: 'radial-gradient(circle, rgba(140, 140, 140, 0.9) 0%, rgba(100, 100, 100, 0.8) 100%)',
-          borderRadius: '50%',
-          boxShadow: '0 2px 4px rgba(0, 0, 0, 0.4)',
-        }} />
-        
-        <div style={{
-          position: 'absolute',
-          bottom: '-8px',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          width: '12px',
-          height: '12px',
-          background: 'radial-gradient(circle, rgba(140, 140, 140, 0.9) 0%, rgba(100, 100, 100, 0.8) 100%)',
-          borderRadius: '50%',
-          boxShadow: '0 2px 4px rgba(0, 0, 0, 0.4)',
-        }} />
-
-        <motion.div
-          initial={{ opacity: 0, y: -20, rotate: -5 }}
-          animate={{ opacity: 1, y: 0, rotate: 0 }}
-          transition={{ duration: 0.8, delay: 1 }}
-          style={{
-            position: 'absolute',
-            top: '5%',
-            left: '-6.75rem',
-            width: '220px',
-            height: '147px',
-            background: 'rgba(255, 255, 255, 0.05)',
-            backdropFilter: 'blur(10px)',
-            border: '1px solid rgba(245, 158, 11, 0.2)',
-            borderRadius: '12px',
-            overflow: 'hidden',
-            boxShadow: '0 10px 30px rgba(0, 0, 0, 0.3)',
-            cursor: 'pointer',
-          }}
-        >
-          <Clothespin />
-          <Image
-            src="/collage1.JPG"
-            alt="BKU Konzert"
-            fill
-            style={{ objectFit: 'cover' }}
-          />
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: -20, rotate: 0 }}
-          animate={{ opacity: 1, y: 0, rotate: 0 }}
-          transition={{ duration: 0.8, delay: 1.3 }}
-          style={{
-            position: 'absolute',
-            top: '41%',
-            left: '-6.75rem',
-            width: '220px',
-            height: '147px',
-            background: 'rgba(255, 255, 255, 0.05)',
-            backdropFilter: 'blur(10px)',
-            border: '1px solid rgba(245, 158, 11, 0.2)',
-            borderRadius: '12px',
-            overflow: 'hidden',
-            boxShadow: '0 10px 30px rgba(0, 0, 0, 0.3)',
-            cursor: 'pointer',
-          }}
-        >
-          <Clothespin />
-          <Image
-            src="/collage2.JPG"
-            alt="BKU Konzert"
-            fill
-            style={{ objectFit: 'cover' }}
-          />
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: -20, rotate: -5 }}
-          animate={{ opacity: 1, y: 0, rotate: 0 }}
-          transition={{ duration: 0.8, delay: 1.6 }}
-          style={{
-            position: 'absolute',
-            top: '77%',
-            left: '-6.75rem',
-            width: '220px',
-            height: '147px',
-            background: 'rgba(255, 255, 255, 0.05)',
-            backdropFilter: 'blur(10px)',
-            border: '1px solid rgba(245, 158, 11, 0.2)',
-            borderRadius: '12px',
-            overflow: 'hidden',
-            boxShadow: '0 10px 30px rgba(0, 0, 0, 0.3)',
-            cursor: 'pointer',
-          }}
-        >
-          <Clothespin />
-          <Image
-            src="/collage3.JPG"
-            alt="BKU Konzert"
-            fill
-            style={{ objectFit: 'cover' }}
-          />
-        </motion.div>
-      </div>
-
-      {/* WÄSCHELEINE RECHTS */}
-      <div style={{
-        position: 'absolute',
-        right: '15rem',
-        top: '15vh',
-        width: '5px',
-        height: '70vh',
-        background: 'linear-gradient(180deg, rgba(120, 120, 120, 0.6) 0%, rgba(100, 100, 100, 0.8) 50%, rgba(120, 120, 120, 0.6) 100%)',
-        boxShadow: '3px 0 8px rgba(0, 0, 0, 0.5), inset -1px 0 2px rgba(255, 255, 255, 0.2)',
-        borderRadius: '3px',
-        zIndex: 2,
-      }}>
-        <div style={{
-          position: 'absolute',
-          top: '-8px',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          width: '12px',
-          height: '12px',
-          background: 'radial-gradient(circle, rgba(140, 140, 140, 0.9) 0%, rgba(100, 100, 100, 0.8) 100%)',
-          borderRadius: '50%',
-          boxShadow: '0 2px 4px rgba(0, 0, 0, 0.4)',
-        }} />
-        
-        <div style={{
-          position: 'absolute',
-          bottom: '-8px',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          width: '12px',
-          height: '12px',
-          background: 'radial-gradient(circle, rgba(140, 140, 140, 0.9) 0%, rgba(100, 100, 100, 0.8) 100%)',
-          borderRadius: '50%',
-          boxShadow: '0 2px 4px rgba(0, 0, 0, 0.4)',
-        }} />
-
-        <motion.div
-          initial={{ opacity: 0, y: -20, rotate: 0 }}
-          animate={{ opacity: 1, y: 0, rotate: 0 }}
-          transition={{ duration: 0.8, delay: 1.2 }}
-          style={{
-            position: 'absolute',
-            top: '5%',
-            right: '-6.75rem',
-            width: '220px',
-            height: '147px',
-            background: 'rgba(255, 255, 255, 0.05)',
-            backdropFilter: 'blur(10px)',
-            border: '1px solid rgba(245, 158, 11, 0.2)',
-            borderRadius: '12px',
-            overflow: 'hidden',
-            boxShadow: '0 10px 30px rgba(0, 0, 0, 0.3)',
-            cursor: 'pointer',
-          }}
-        >
-          <Clothespin />
-          <Image
-            src="/collage4.JPG"
-            alt="BKU Konzert"
-            fill
-            style={{ objectFit: 'cover' }}
-          />
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: -20, rotate: -5 }}
-          animate={{ opacity: 1, y: 0, rotate: 0 }}
-          transition={{ duration: 0.8, delay: 1.5 }}
-          style={{
-            position: 'absolute',
-            top: '41%',
-            right: '-6.75rem',
-            width: '220px',
-            height: '147px',
-            background: 'rgba(255, 255, 255, 0.05)',
-            backdropFilter: 'blur(10px)',
-            border: '1px solid rgba(245, 158, 11, 0.2)',
-            borderRadius: '12px',
-            overflow: 'hidden',
-            boxShadow: '0 10px 30px rgba(0, 0, 0, 0.3)',
-            cursor: 'pointer',
-          }}
-        >
-          <Clothespin />
-          <Image
-            src="/collage5.JPG"
-            alt="BKU Konzert"
-            fill
-            style={{ objectFit: 'cover' }}
-          />
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: -20, rotate: 0 }}
-          animate={{ opacity: 1, y: 0, rotate: 0 }}
-          transition={{ duration: 0.8, delay: 1.8 }}
-          style={{
-            position: 'absolute',
-            top: '77%',
-            right: '-6.75rem',
-            width: '220px',
-            height: '147px',
-            background: 'rgba(255, 255, 255, 0.05)',
-            backdropFilter: 'blur(10px)',
-            border: '1px solid rgba(245, 158, 11, 0.2)',
-            borderRadius: '12px',
-            overflow: 'hidden',
-            boxShadow: '0 10px 30px rgba(0, 0, 0, 0.3)',
-            cursor: 'pointer',
-          }}
-        >
-          <Clothespin />
-          <Image
-            src="/collage6.JPG"
-            alt="BKU Konzert"
-            fill
-            style={{ objectFit: 'cover' }}
-          />
-        </motion.div>
-      </div>
+        position: 'fixed',
+        bottom: '-20%',
+        left: '-10%',
+        width: '500px',
+        height: '500px',
+        background: 'radial-gradient(circle, rgba(59, 130, 246, 0.1) 0%, transparent 70%)',
+        filter: 'blur(80px)',
+        zIndex: 0,
+      }} />
 
       <motion.nav
         initial={{ y: -100 }}
@@ -515,26 +531,26 @@ export default function LandingPage() {
               />
             </motion.div>
 
-<motion.div
-  initial={{ opacity: 0, y: 20 }}
-  animate={{ opacity: 1, y: 0 }}
-  transition={{ duration: 0.6, delay: 0.2 }}
-  style={{
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: '0.75rem',
-    padding: '1rem 2rem',
-    background: 'rgba(245, 158, 11, 0.1)',
-    border: '1px solid rgba(245, 158, 11, 0.3)',
-    borderRadius: '100px',
-    marginBottom: '2rem',
-  }}
->
-  <Sparkles style={{ width: '20px', height: '20px', color: '#f59e0b' }} />
-  <span style={{ fontSize: '1.5rem', color: '#f59e0b', fontWeight: '700' }}>
-    22. März 2026
-  </span>
-</motion.div>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                padding: '0.5rem 1rem',
+                background: 'rgba(245, 158, 11, 0.1)',
+                border: '1px solid rgba(245, 158, 11, 0.3)',
+                borderRadius: '100px',
+                marginBottom: '2rem',
+              }}
+            >
+              <Sparkles style={{ width: '16px', height: '16px', color: '#f59e0b' }} />
+              <span style={{ fontSize: '0.875rem', color: '#f59e0b', fontWeight: '600' }}>
+                22. März 2026
+              </span>
+            </motion.div>
 
             <motion.h1
               initial={{ opacity: 0, y: 30 }}

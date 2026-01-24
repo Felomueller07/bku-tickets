@@ -442,7 +442,7 @@ export default function SeatMap() {
   // ⭐ FÜGE HIER EIN:
   const handleRemoveSeat = (row: string, number: number) => {
     setSelectedSeats(prev => prev.filter(s => !(s.row === row && s.number === number)));
-  };
+  };  
 
   // REIHEN-DEFINITIONEN
   const mainRowLetters = ['E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y'];
