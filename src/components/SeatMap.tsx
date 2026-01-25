@@ -133,7 +133,7 @@ export default function SeatMap() {
   // State für ausgewählte Sitze
   const [selectedSeats, setSelectedSeats] = useState<Array<{ row: string; number: number }>>([]);
 
-  // State für reservierte Sitze
+  // State für reservierte Sitze (ca. Zeile 51)
   const [occupiedSeats, setOccupiedSeats] = useState<Array<{
     row: string;
     number: number;
@@ -142,8 +142,8 @@ export default function SeatMap() {
     email?: string;
     note?: string;
     createdAt?: string;
-    userId?: number;
-    user?: {
+    userId?: number;           // ⭐ NEU
+    user?: {                   // ⭐ NEU
       id: number;
       email: string;
       name: string;
@@ -162,7 +162,7 @@ export default function SeatMap() {
   const [infoPanelOpen, setInfoPanelOpen] = useState(false);
   const [infoPanelSeat, setInfoPanelSeat] = useState<{ row: string; number: number } | null>(null);
 
-  // Mobile States
+  // ⭐ MOBILE STATES
   const [isMobile, setIsMobile] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -173,7 +173,7 @@ export default function SeatMap() {
     loadSeats();
   }, []);
 
-  // Mobile Detection
+  // ⭐ MOBILE DETECTION
   useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 1024);
@@ -185,11 +185,14 @@ export default function SeatMap() {
   }, []);
 
   const loadSeats = async () => {
+    console.log('🔄 loadSeats gestartet...');
     try {
       const response = await fetch('/api/seats');
+      console.log('📡 API Response:', response.ok, response.status);
 
       if (response.ok) {
         const data = await response.json();
+        console.log('📦 Rohdaten von API:', data);
 
         const mappedSeats = data.map((seat: any) => ({
           row: seat.row,
@@ -199,18 +202,23 @@ export default function SeatMap() {
           email: seat.email || '',
           note: seat.note || '',
           createdAt: seat.createdAt,
-          userId: seat.userId,
-          user: seat.user,
+          userId: seat.userId,       // ⭐ NEU
+          user: seat.user,           // ⭐ NEU
         }));
 
+        console.log('🎯 Mapped Sitze:', mappedSeats);
+        console.log('📊 Anzahl Sitze:', mappedSeats.length);
+
         setOccupiedSeats(mappedSeats);
-        setLoading(false);
+        console.log('✅ setOccupiedSeats aufgerufen!');
+        setLoading(false);  // ⭐ NEU!
       } else {
-        setLoading(false);
+        console.error('❌ API Fehler:', response.status);
+        setLoading(false);  // ⭐ NEU!
       }
     } catch (error) {
       console.error('❌ Fehler beim Laden:', error);
-      setLoading(false);
+      setLoading(false);  // ⭐ NEU!
     }
   };
 
@@ -221,8 +229,9 @@ export default function SeatMap() {
 
     // USER: Belegte Sitze NICHT anklickbar!
     if (isOcc && !isAdmin) {
+      console.log('❌ Sitz ist bereits belegt!');
       toast.error(`Sitz ${row}${number} ist bereits reserviert`, { duration: 2000 });
-      return;
+      return; // Früher Exit!
     }
 
     // ADMIN: Klick auf ROTEN Sitz → Info-Panel öffnen
@@ -301,7 +310,7 @@ export default function SeatMap() {
   // ========================================
   // DATEN SPEICHERN (UPDATE IN DATENBANK)
   // ========================================
-  const handleModalSave = async (data: { firstName: string; lastName: string; email: string; applyToAll: boolean }) => {
+  const handleModalSave = async (data: { firstName: string; lastName: string; email: string; applyToAll: boolean }) => {  // ⭐ GEÄNDERT: note → email
     if (modalMode === 'edit' && currentEditSeat) {
       try {
         if (data.applyToAll && selectedSeats.length > 1) {
@@ -314,7 +323,7 @@ export default function SeatMap() {
                 body: JSON.stringify({
                   firstName: data.firstName,
                   lastName: data.lastName,
-                  email: data.email,
+                  email: data.email,  // ⭐ GEÄNDERT: note → email
                 })
               })
             );
@@ -329,7 +338,7 @@ export default function SeatMap() {
             body: JSON.stringify({
               firstName: data.firstName,
               lastName: data.lastName,
-              email: data.email,
+              email: data.email,  // ⭐ GEÄNDERT: note → email
             })
           });
 
@@ -446,6 +455,7 @@ export default function SeatMap() {
     return undefined;
   };
 
+  // ⭐ FÜGE HIER EIN:
   const handleRemoveSeat = (row: string, number: number) => {
     setSelectedSeats(prev => prev.filter(s => !(s.row === row && s.number === number)));
   };  
@@ -538,29 +548,26 @@ export default function SeatMap() {
         currentUserId={Number((session?.user as any)?.id)}
       />
 
+      {/* ⭐ HAUPT-CONTAINER */}
       <div style={{ 
-        maxWidth: isMobile ? '100vw' : '1800px', 
+        maxWidth: '1800px', 
         margin: '0 auto', 
         display: 'flex', 
-        gap: isMobile ? '0' : '2rem', 
+        gap: '2rem', 
         alignItems: 'flex-start', 
-        paddingBottom: isMobile ? '6rem' : '2rem',
-        overflow: isMobile ? 'hidden' : 'visible',
+        paddingBottom: isMobile ? '6rem' : '2rem' 
       }}>
 
-        {/* SITZPLAN - MIT CSS SCALE auf Mobile */}
+        {/* ⭐ SITZPLAN - ORIGINAL, auf Mobile scrollbar */}
         <div style={{ 
           flex: 1, 
           backgroundColor: 'rgba(0, 0, 0, 0.3)', 
           backdropFilter: 'blur(10px)', 
           borderRadius: isMobile ? '0' : '1rem', 
-          padding: isMobile ? '0.5rem' : '2rem', 
+          padding: '2rem', 
           border: isMobile ? 'none' : '1px solid rgba(255, 255, 255, 0.2)',
           overflow: isMobile ? 'auto' : 'visible',
-          transform: isMobile ? 'scale(0.35)' : 'none',
-          transformOrigin: 'top left',
-          width: isMobile ? '285%' : 'auto',
-          touchAction: isMobile ? 'pan-x pan-y pinch-zoom' : 'auto',
+          maxHeight: isMobile ? 'calc(100vh - 100px)' : 'none',
         }}>
 
           <p style={{ color: 'white', marginBottom: '1.5rem', fontSize: '1.125rem', textAlign: 'center' }}>
@@ -574,7 +581,7 @@ export default function SeatMap() {
             </div>
           </div>
 
-          {/* HAUPT-CONTAINER - UNVERÄNDERT VON ORIGINAL! */}
+          {/* HAUPT-CONTAINER - UNVERÄNDERT! */}
           <div style={{ position: 'relative' }}>
 
             {/* GALERIE-EBENE */}
@@ -625,7 +632,7 @@ export default function SeatMap() {
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '3rem' }}>
                         {sideRowsLeft.map((group, groupIdx) => (
                           <div key={groupIdx} style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                             {group.map(seatNum => (   
+                            {group.map(seatNum => (
                               <SeatChair
                                 key={`${col}-${seatNum}`}
                                 row={col}
@@ -899,7 +906,7 @@ export default function SeatMap() {
           </div>
         </div>
 
-        {/* DESKTOP SIDEBAR - nur auf Desktop sichtbar */}
+        {/* ⭐ DESKTOP SIDEBAR - nur auf Desktop */}
         {!isMobile && (
           <>
             {isAdmin ? (
@@ -922,7 +929,7 @@ export default function SeatMap() {
           </>
         )}
 
-        {/* MOBILE FLOATING ACTION BUTTON */}
+        {/* ⭐ MOBILE FAB */}
         {isMobile && selectedSeats.length > 0 && (
           <motion.button
             initial={{ scale: 0 }}
@@ -973,7 +980,7 @@ export default function SeatMap() {
           </motion.button>
         )}
 
-        {/* MOBILE BOTTOM SHEET */}
+        {/* ⭐ MOBILE BOTTOM SHEET */}
         <AnimatePresence>
           {isMobile && sidebarOpen && (
             <>
