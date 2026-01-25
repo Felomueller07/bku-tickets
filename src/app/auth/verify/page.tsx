@@ -1,24 +1,20 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Eye, EyeOff, Mail, User, Lock, CheckCircle, XCircle, ArrowLeft, UserPlus } from 'lucide-react';
+import { ArrowLeft, CheckCircle } from 'lucide-react';
 import Image from 'next/image';
 
-export default function RegisterPage() {
+function VerifyContent() {
   const router = useRouter();
-  const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
-    password: '',
-    confirmPassword: '',
-  });
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const searchParams = useSearchParams();
+  const email = searchParams.get('email');
+  
+  const [code, setCode] = useState(['', '', '', '', '', '']);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
@@ -31,76 +27,123 @@ export default function RegisterPage() {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  const calculatePasswordStrength = (password: string) => {
-    let strength = 0;
-    if (password.length >= 8) strength += 25;
-    if (password.length >= 12) strength += 15;
-    if (/[a-z]/.test(password)) strength += 15;
-    if (/[A-Z]/.test(password)) strength += 15;
-    if (/[0-9]/.test(password)) strength += 15;
-    if (/[^a-zA-Z0-9]/.test(password)) strength += 15;
-    return Math.min(strength, 100);
+  const handleChange = (index: number, value: string) => {
+    if (value.length > 1) return;
+    
+    const newCode = [...code];
+    newCode[index] = value;
+    setCode(newCode);
+
+    // Auto-focus next input
+    if (value && index < 5) {
+      const nextInput = document.getElementById(`code-${index + 1}`);
+      nextInput?.focus();
+    }
   };
 
-  const passwordStrength = calculatePasswordStrength(formData.password);
-
-  const getStrengthColor = () => {
-    if (passwordStrength < 40) return '#ef4444';
-    if (passwordStrength < 70) return '#f59e0b';
-    return '#10b981';
+  const handleKeyDown = (index: number, e: React.KeyboardEvent) => {
+    if (e.key === 'Backspace' && !code[index] && index > 0) {
+      const prevInput = document.getElementById(`code-${index - 1}`);
+      prevInput?.focus();
+    }
   };
-
-  const getStrengthText = () => {
-    if (passwordStrength < 40) return 'Schwach';
-    if (passwordStrength < 70) return 'Mittel';
-    return 'Stark';
-  };
-
-  const requirements = [
-    { text: 'Mindestens 8 Zeichen', met: formData.password.length >= 8 },
-  ];
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
-
-    if (formData.password !== formData.confirmPassword) {
-      setError('Passwörter stimmen nicht überein');
-      return;
-    }
-
-    if (passwordStrength < 40) {
-      setError('Passwort ist zu schwach');
+    const verificationCode = code.join('');
+    
+    if (verificationCode.length !== 6) {
+      setError('Bitte geben Sie den vollständigen Code ein');
       return;
     }
 
     setLoading(true);
+    setError('');
 
     try {
-      const response = await fetch('/api/auth/register', {
+      const response = await fetch('/api/auth/verify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          firstName: formData.firstName,
-          lastName: formData.lastName,
-          email: formData.email,
-          password: formData.password,
-        }),
+        body: JSON.stringify({ email, code: verificationCode }),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Registrierung fehlgeschlagen');
+        throw new Error(data.error || 'Verifizierung fehlgeschlagen');
       }
 
-      router.push(`/auth/verify?email=${encodeURIComponent(formData.email)}`);
+      setSuccess(true);
+      setTimeout(() => {
+        router.push('/auth/login');
+      }, 2000);
     } catch (err: any) {
       setError(err.message);
     } finally {
       setLoading(false);
     }
   };
+
+  const handleResend = async () => {
+    setLoading(true);
+    setError('');
+
+    try {
+      const response = await fetch('/api/auth/resend-code', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Code konnte nicht erneut gesendet werden');
+      }
+
+      alert('Code wurde erneut gesendet!');
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (success) {
+    return (
+      <div style={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: '#0a0a0a',
+        padding: isMobile ? '1rem' : '2rem',
+        position: 'relative',
+        overflow: 'hidden',
+      }}>
+        <motion.div
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          style={{
+            textAlign: 'center',
+            backgroundColor: 'rgba(0, 0, 0, 0.6)',
+            backdropFilter: 'blur(20px)',
+            borderRadius: '1.5rem',
+            padding: isMobile ? '2rem' : '3rem',
+            maxWidth: '450px',
+            width: '100%',
+            border: '1px solid rgba(16, 185, 129, 0.3)',
+          }}
+        >
+          <CheckCircle style={{ width: '64px', height: '64px', color: '#10b981', margin: '0 auto 1.5rem' }} />
+          <h2 style={{ color: '#10b981', fontSize: isMobile ? '1.5rem' : '2rem', marginBottom: '1rem' }}>
+            Erfolgreich verifiziert!
+          </h2>
+          <p style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: isMobile ? '0.875rem' : '1rem' }}>
+            Sie werden zum Login weitergeleitet...
+          </p>
+        </motion.div>
+      </div>
+    );
+  }
 
   return (
     <div style={{
@@ -113,7 +156,7 @@ export default function RegisterPage() {
       position: 'relative',
       overflow: 'hidden',
     }}>
-      {/* Starke Orange-Beleuchtung rechts oben */}
+      {/* Beleuchtungseffekte */}
       <div style={{
         position: 'fixed',
         top: '-25%',
@@ -125,7 +168,6 @@ export default function RegisterPage() {
         zIndex: 0,
       }} />
 
-      {/* Zusätzliche Orange-Schicht */}
       <div style={{
         position: 'fixed',
         top: '5%',
@@ -136,8 +178,7 @@ export default function RegisterPage() {
         filter: 'blur(90px)',
         zIndex: 0,
       }} />
-      
-      {/* Starke Blau-Beleuchtung links unten */}
+
       <div style={{
         position: 'fixed',
         bottom: '-25%',
@@ -149,7 +190,6 @@ export default function RegisterPage() {
         zIndex: 0,
       }} />
 
-      {/* Zusätzliche Blau-Schicht */}
       <div style={{
         position: 'fixed',
         bottom: '10%',
@@ -172,12 +212,10 @@ export default function RegisterPage() {
           backdropFilter: 'blur(20px)',
           borderRadius: '1.5rem',
           padding: isMobile ? '2rem 1.5rem' : '3rem',
-          maxWidth: '500px',
+          maxWidth: '450px',
           width: '100%',
           border: '1px solid rgba(212, 175, 55, 0.2)',
           boxShadow: '0 20px 60px rgba(0, 0, 0, 0.5)',
-          maxHeight: '90vh',
-          overflowY: 'auto',
         }}
       >
         {/* BKU Logo */}
@@ -209,7 +247,7 @@ export default function RegisterPage() {
           marginBottom: '0.5rem',
           textAlign: 'center',
         }}>
-          Registrieren
+          E-Mail bestätigen
         </h1>
         <p style={{
           color: 'rgba(255, 255, 255, 0.6)',
@@ -217,7 +255,8 @@ export default function RegisterPage() {
           marginBottom: isMobile ? '1.5rem' : '2rem',
           textAlign: 'center',
         }}>
-          Erstelle deinen BKU Tickets Account
+          Wir haben einen 6-stelligen Code an<br />
+          <strong style={{ color: '#d4af37' }}>{email}</strong> gesendet
         </p>
 
         {error && (
@@ -232,6 +271,7 @@ export default function RegisterPage() {
               marginBottom: '1.5rem',
               color: '#ef4444',
               fontSize: isMobile ? '0.75rem' : '0.875rem',
+              textAlign: 'center',
             }}
           >
             {error}
@@ -239,41 +279,31 @@ export default function RegisterPage() {
         )}
 
         <form onSubmit={handleSubmit}>
-          {/* Vorname */}
-          <div style={{ marginBottom: isMobile ? '1rem' : '1.5rem' }}>
-            <label style={{
-              display: 'block',
-              color: 'rgba(255, 255, 255, 0.8)',
-              fontSize: isMobile ? '0.75rem' : '0.875rem',
-              marginBottom: '0.5rem',
-              fontWeight: '500',
-            }}>
-              Vorname
-            </label>
-            <div style={{ position: 'relative' }}>
-              <User style={{
-                position: 'absolute',
-                left: '1rem',
-                top: '50%',
-                transform: 'translateY(-50%)',
-                width: '18px',
-                height: '18px',
-                color: formData.firstName ? '#4a4a4a' : 'rgba(255, 255, 255, 0.5)',
-                transition: 'color 0.3s',
-              }} />
+          <div style={{
+            display: 'flex',
+            gap: isMobile ? '0.5rem' : '0.75rem',
+            justifyContent: 'center',
+            marginBottom: isMobile ? '1.5rem' : '2rem',
+          }}>
+            {code.map((digit, index) => (
               <input
+                key={index}
+                id={`code-${index}`}
                 type="text"
-                value={formData.firstName}
-                onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                required
+                maxLength={1}
+                value={digit}
+                onChange={(e) => handleChange(index, e.target.value)}
+                onKeyDown={(e) => handleKeyDown(index, e)}
                 style={{
-                  width: '100%',
-                  padding: isMobile ? '0.75rem 1rem 0.75rem 2.75rem' : '0.75rem 1rem 0.75rem 3rem',
+                  width: isMobile ? '2.5rem' : '3.5rem',
+                  height: isMobile ? '2.5rem' : '3.5rem',
+                  fontSize: isMobile ? '1.25rem' : '1.5rem',
+                  fontWeight: '700',
+                  textAlign: 'center',
                   backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                  border: '1px solid rgba(255, 255, 255, 0.1)',
-                  borderRadius: '0.5rem',
-                  color: '#fff',
-                  fontSize: isMobile ? '0.875rem' : '1rem',
+                  border: '2px solid rgba(212, 175, 55, 0.3)',
+                  borderRadius: '0.75rem',
+                  color: '#d4af37',
                   outline: 'none',
                   transition: 'all 0.3s',
                 }}
@@ -282,310 +312,11 @@ export default function RegisterPage() {
                   e.target.style.backgroundColor = 'rgba(255, 255, 255, 0.08)';
                 }}
                 onBlur={(e) => {
-                  e.target.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+                  e.target.style.borderColor = 'rgba(212, 175, 55, 0.3)';
                   e.target.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
                 }}
               />
-            </div>
-          </div>
-
-          {/* Nachname */}
-          <div style={{ marginBottom: isMobile ? '1rem' : '1.5rem' }}>
-            <label style={{
-              display: 'block',
-              color: 'rgba(255, 255, 255, 0.8)',
-              fontSize: isMobile ? '0.75rem' : '0.875rem',
-              marginBottom: '0.5rem',
-              fontWeight: '500',
-            }}>
-              Nachname
-            </label>
-            <div style={{ position: 'relative' }}>
-              <User style={{
-                position: 'absolute',
-                left: '1rem',
-                top: '50%',
-                transform: 'translateY(-50%)',
-                width: '18px',
-                height: '18px',
-                color: formData.lastName ? '#4a4a4a' : 'rgba(255, 255, 255, 0.5)',
-                transition: 'color 0.3s',
-              }} />
-              <input
-                type="text"
-                value={formData.lastName}
-                onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-                required
-                style={{
-                  width: '100%',
-                  padding: isMobile ? '0.75rem 1rem 0.75rem 2.75rem' : '0.75rem 1rem 0.75rem 3rem',
-                  backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                  border: '1px solid rgba(255, 255, 255, 0.1)',
-                  borderRadius: '0.5rem',
-                  color: '#fff',
-                  fontSize: isMobile ? '0.875rem' : '1rem',
-                  outline: 'none',
-                  transition: 'all 0.3s',
-                }}
-                onFocus={(e) => {
-                  e.target.style.borderColor = '#d4af37';
-                  e.target.style.backgroundColor = 'rgba(255, 255, 255, 0.08)';
-                }}
-                onBlur={(e) => {
-                  e.target.style.borderColor = 'rgba(255, 255, 255, 0.1)';
-                  e.target.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
-                }}
-              />
-            </div>
-          </div>
-
-          {/* Email */}
-          <div style={{ marginBottom: isMobile ? '1rem' : '1.5rem' }}>
-            <label style={{
-              display: 'block',
-              color: 'rgba(255, 255, 255, 0.8)',
-              fontSize: isMobile ? '0.75rem' : '0.875rem',
-              marginBottom: '0.5rem',
-              fontWeight: '500',
-            }}>
-              Email
-            </label>
-            <div style={{ position: 'relative' }}>
-              <Mail style={{
-                position: 'absolute',
-                left: '1rem',
-                top: '50%',
-                transform: 'translateY(-50%)',
-                width: '18px',
-                height: '18px',
-                color: formData.email ? '#4a4a4a' : 'rgba(255, 255, 255, 0.5)',
-                transition: 'color 0.3s',
-              }} />
-              <input
-                type="email"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                required
-                style={{
-                  width: '100%',
-                  padding: isMobile ? '0.75rem 1rem 0.75rem 2.75rem' : '0.75rem 1rem 0.75rem 3rem',
-                  backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                  border: '1px solid rgba(255, 255, 255, 0.1)',
-                  borderRadius: '0.5rem',
-                  color: '#fff',
-                  fontSize: isMobile ? '0.875rem' : '1rem',
-                  outline: 'none',
-                  transition: 'all 0.3s',
-                }}
-                onFocus={(e) => {
-                  e.target.style.borderColor = '#d4af37';
-                  e.target.style.backgroundColor = 'rgba(255, 255, 255, 0.08)';
-                }}
-                onBlur={(e) => {
-                  e.target.style.borderColor = 'rgba(255, 255, 255, 0.1)';
-                  e.target.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
-                }}
-              />
-            </div>
-          </div>
-
-          {/* Passwort */}
-          <div style={{ marginBottom: '1rem' }}>
-            <label style={{
-              display: 'block',
-              color: 'rgba(255, 255, 255, 0.8)',
-              fontSize: isMobile ? '0.75rem' : '0.875rem',
-              marginBottom: '0.5rem',
-              fontWeight: '500',
-            }}>
-              Passwort
-            </label>
-            <div style={{ position: 'relative' }}>
-              <Lock style={{
-                position: 'absolute',
-                left: '1rem',
-                top: '50%',
-                transform: 'translateY(-50%)',
-                width: '18px',
-                height: '18px',
-                color: formData.password ? '#4a4a4a' : 'rgba(255, 255, 255, 0.5)',
-                transition: 'color 0.3s',
-              }} />
-              <input
-                type={showPassword ? 'text' : 'password'}
-                value={formData.password}
-                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                required
-                style={{
-                  width: '100%',
-                  padding: isMobile ? '0.75rem 2.75rem 0.75rem 2.75rem' : '0.75rem 3rem 0.75rem 3rem',
-                  backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                  border: '1px solid rgba(255, 255, 255, 0.1)',
-                  borderRadius: '0.5rem',
-                  color: '#fff',
-                  fontSize: isMobile ? '0.875rem' : '1rem',
-                  outline: 'none',
-                  transition: 'all 0.3s',
-                }}
-                onFocus={(e) => {
-                  e.target.style.borderColor = '#d4af37';
-                  e.target.style.backgroundColor = 'rgba(255, 255, 255, 0.08)';
-                }}
-                onBlur={(e) => {
-                  e.target.style.borderColor = 'rgba(255, 255, 255, 0.1)';
-                  e.target.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
-                }}
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                style={{
-                  position: 'absolute',
-                  right: '1rem',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  background: 'none',
-                  border: 'none',
-                  color: formData.password ? '#4a4a4a' : 'rgba(255, 255, 255, 0.5)',
-                  cursor: 'pointer',
-                  transition: 'color 0.3s',
-                }}
-                onMouseEnter={(e) => e.currentTarget.style.color = '#d4af37'}
-                onMouseLeave={(e) => e.currentTarget.style.color = formData.password ? '#4a4a4a' : 'rgba(255, 255, 255, 0.5)'}
-              >
-                {showPassword ? <Eye size={18} /> : <EyeOff size={18} />}
-              </button>
-            </div>
-
-            {formData.password && (
-              <div style={{ marginTop: '0.75rem' }}>
-                <div style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  marginBottom: '0.5rem',
-                }}>
-                  <span style={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: isMobile ? '0.625rem' : '0.75rem' }}>
-                    Passwort-Stärke:
-                  </span>
-                  <span style={{ color: getStrengthColor(), fontSize: isMobile ? '0.625rem' : '0.75rem', fontWeight: '600' }}>
-                    {getStrengthText()}
-                  </span>
-                </div>
-                <div style={{
-                  width: '100%',
-                  height: '6px',
-                  backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                  borderRadius: '3px',
-                  overflow: 'hidden',
-                }}>
-                  <motion.div
-                    initial={{ width: 0 }}
-                    animate={{ width: `${passwordStrength}%` }}
-                    transition={{ duration: 0.3 }}
-                    style={{
-                      height: '100%',
-                      backgroundColor: getStrengthColor(),
-                      borderRadius: '3px',
-                    }}
-                  />
-                </div>
-              </div>
-            )}
-
-            {formData.password && (
-              <div style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                {requirements.map((req, index) => (
-                  <div key={index} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    {req.met ? (
-                      <CheckCircle style={{ width: '14px', height: '14px', color: '#10b981' }} />
-                    ) : (
-                      <XCircle style={{ width: '14px', height: '14px', color: 'rgba(255, 255, 255, 0.3)' }} />
-                    )}
-                    <span style={{
-                      color: req.met ? '#10b981' : 'rgba(255, 255, 255, 0.5)',
-                      fontSize: isMobile ? '0.625rem' : '0.75rem',
-                    }}>
-                      {req.text}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Passwort bestätigen */}
-          <div style={{ marginBottom: isMobile ? '1.5rem' : '2rem' }}>
-            <label style={{
-              display: 'block',
-              color: 'rgba(255, 255, 255, 0.8)',
-              fontSize: isMobile ? '0.75rem' : '0.875rem',
-              marginBottom: '0.5rem',
-              fontWeight: '500',
-            }}>
-              Passwort bestätigen
-            </label>
-            <div style={{ position: 'relative' }}>
-              <Lock style={{
-                position: 'absolute',
-                left: '1rem',
-                top: '50%',
-                transform: 'translateY(-50%)',
-                width: '18px',
-                height: '18px',
-                color: formData.confirmPassword ? '#4a4a4a' : 'rgba(255, 255, 255, 0.5)',
-                transition: 'color 0.3s',
-              }} />
-              <input
-                type={showConfirmPassword ? 'text' : 'password'}
-                value={formData.confirmPassword}
-                onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                required
-                style={{
-                  width: '100%',
-                  padding: isMobile ? '0.75rem 2.75rem 0.75rem 2.75rem' : '0.75rem 3rem 0.75rem 3rem',
-                  backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                  border: `1px solid ${formData.confirmPassword && formData.password !== formData.confirmPassword ? '#ef4444' : 'rgba(255, 255, 255, 0.1)'}`,
-                  borderRadius: '0.5rem',
-                  color: '#fff',
-                  fontSize: isMobile ? '0.875rem' : '1rem',
-                  outline: 'none',
-                  transition: 'all 0.3s',
-                }}
-                onFocus={(e) => {
-                  e.target.style.borderColor = '#d4af37';
-                  e.target.style.backgroundColor = 'rgba(255, 255, 255, 0.08)';
-                }}
-                onBlur={(e) => {
-                  e.target.style.borderColor = formData.confirmPassword && formData.password !== formData.confirmPassword ? '#ef4444' : 'rgba(255, 255, 255, 0.1)';
-                  e.target.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
-                }}
-              />
-              <button
-                type="button"
-                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                style={{
-                  position: 'absolute',
-                  right: '1rem',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  background: 'none',
-                  border: 'none',
-                  color: formData.confirmPassword ? '#4a4a4a' : 'rgba(255, 255, 255, 0.5)',
-                  cursor: 'pointer',
-                  transition: 'color 0.3s',
-                }}
-                onMouseEnter={(e) => e.currentTarget.style.color = '#d4af37'}
-                onMouseLeave={(e) => e.currentTarget.style.color = formData.confirmPassword ? '#4a4a4a' : 'rgba(255, 255, 255, 0.5)'}
-              >
-                {showConfirmPassword ? <Eye size={18} /> : <EyeOff size={18} />}
-              </button>
-            </div>
-            {formData.confirmPassword && formData.password !== formData.confirmPassword && (
-              <p style={{ color: '#ef4444', fontSize: isMobile ? '0.625rem' : '0.75rem', marginTop: '0.5rem' }}>
-                Passwörter stimmen nicht überein
-              </p>
-            )}
+            ))}
           </div>
 
           <motion.button
@@ -604,51 +335,38 @@ export default function RegisterPage() {
               fontWeight: '700',
               cursor: loading ? 'not-allowed' : 'pointer',
               opacity: loading ? 0.7 : 1,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '0.5rem',
               boxShadow: '0 4px 20px rgba(212, 175, 55, 0.3)',
+              transition: 'all 0.3s',
+              marginBottom: '1rem',
+            }}
+          >
+            {loading ? 'Wird überprüft...' : 'Bestätigen'}
+          </motion.button>
+
+          <button
+            type="button"
+            onClick={handleResend}
+            disabled={loading}
+            style={{
+              width: '100%',
+              padding: isMobile ? '0.75rem' : '0.875rem',
+              background: 'transparent',
+              border: '1px solid rgba(255, 255, 255, 0.2)',
+              borderRadius: '0.5rem',
+              color: 'rgba(255, 255, 255, 0.6)',
+              fontSize: isMobile ? '0.75rem' : '0.875rem',
+              cursor: loading ? 'not-allowed' : 'pointer',
               transition: 'all 0.3s',
             }}
           >
-            {loading ? (
-              'Registrierung läuft...'
-            ) : (
-              <>
-                <UserPlus size={isMobile ? 16 : 18} />
-                Registrieren
-              </>
-            )}
-          </motion.button>
-        </form>
-
-        <p style={{
-          color: 'rgba(255, 255, 255, 0.6)',
-          fontSize: isMobile ? '0.75rem' : '0.875rem',
-          marginTop: '1.5rem',
-          textAlign: 'center',
-        }}>
-          Bereits registriert?{' '}
-          <button
-            onClick={() => router.push('/auth/login')}
-            style={{
-              background: 'none',
-              border: 'none',
-              color: '#d4af37',
-              cursor: 'pointer',
-              textDecoration: 'underline',
-              fontWeight: '500',
-            }}
-          >
-            Zum Login
+            Code erneut senden
           </button>
-        </p>
+        </form>
 
         <motion.button
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
-          onClick={() => router.push('/auth/login')}
+          onClick={() => router.push('/auth/register')}
           style={{
             width: '100%',
             marginTop: '1rem',
@@ -675,9 +393,17 @@ export default function RegisterPage() {
           }}
         >
           <ArrowLeft size={isMobile ? 14 : 16} />
-          Zurück zum Login
+          Zurück zur Registrierung
         </motion.button>
       </motion.div>
     </div>
+  );
+}
+
+export default function VerifyPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <VerifyContent />
+    </Suspense>
   );
 }

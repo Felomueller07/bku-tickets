@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Eye, EyeOff, Mail, User, Lock, CheckCircle, XCircle, ArrowLeft, UserPlus } from 'lucide-react';
@@ -19,6 +19,17 @@ export default function RegisterPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   const calculatePasswordStrength = (password: string) => {
     let strength = 0;
@@ -98,7 +109,7 @@ export default function RegisterPage() {
       alignItems: 'center',
       justifyContent: 'center',
       background: '#0a0a0a',
-      padding: '2rem',
+      padding: isMobile ? '1rem' : '2rem',
       position: 'relative',
       overflow: 'hidden',
     }}>
@@ -107,8 +118,8 @@ export default function RegisterPage() {
         position: 'fixed',
         top: '-25%',
         right: '-15%',
-        width: '1000px',
-        height: '1000px',
+        width: isMobile ? '600px' : '1000px',
+        height: isMobile ? '600px' : '1000px',
         background: 'radial-gradient(circle, rgba(245, 158, 11, 0.25) 0%, rgba(245, 158, 11, 0.15) 30%, transparent 70%)',
         filter: 'blur(120px)',
         zIndex: 0,
@@ -119,8 +130,8 @@ export default function RegisterPage() {
         position: 'fixed',
         top: '5%',
         right: '10%',
-        width: '600px',
-        height: '600px',
+        width: isMobile ? '400px' : '600px',
+        height: isMobile ? '400px' : '600px',
         background: 'radial-gradient(circle, rgba(251, 191, 36, 0.18) 0%, transparent 70%)',
         filter: 'blur(90px)',
         zIndex: 0,
@@ -131,8 +142,8 @@ export default function RegisterPage() {
         position: 'fixed',
         bottom: '-25%',
         left: '-15%',
-        width: '900px',
-        height: '900px',
+        width: isMobile ? '600px' : '900px',
+        height: isMobile ? '600px' : '900px',
         background: 'radial-gradient(circle, rgba(59, 130, 246, 0.18) 0%, rgba(59, 130, 246, 0.1) 40%, transparent 70%)',
         filter: 'blur(110px)',
         zIndex: 0,
@@ -143,8 +154,8 @@ export default function RegisterPage() {
         position: 'fixed',
         bottom: '10%',
         left: '5%',
-        width: '500px',
-        height: '500px',
+        width: isMobile ? '300px' : '500px',
+        height: isMobile ? '300px' : '500px',
         background: 'radial-gradient(circle, rgba(96, 165, 250, 0.12) 0%, transparent 70%)',
         filter: 'blur(80px)',
         zIndex: 0,
@@ -160,11 +171,13 @@ export default function RegisterPage() {
           backgroundColor: 'rgba(0, 0, 0, 0.6)',
           backdropFilter: 'blur(20px)',
           borderRadius: '1.5rem',
-          padding: '3rem',
+          padding: isMobile ? '2rem 1.5rem' : '3rem',
           maxWidth: '500px',
           width: '100%',
           border: '1px solid rgba(212, 175, 55, 0.2)',
           boxShadow: '0 20px 60px rgba(0, 0, 0, 0.5)',
+          maxHeight: '90vh',
+          overflowY: 'auto',
         }}
       >
         {/* BKU Logo */}
@@ -174,9 +187,9 @@ export default function RegisterPage() {
           transition={{ duration: 0.6, delay: 0.2 }}
           style={{
             position: 'relative',
-            width: '80px',
-            height: '80px',
-            margin: '0 auto 1.5rem',
+            width: isMobile ? '60px' : '80px',
+            height: isMobile ? '60px' : '80px',
+            margin: isMobile ? '0 auto 1rem' : '0 auto 1.5rem',
             borderRadius: '16px',
             overflow: 'hidden',
           }}
@@ -191,7 +204,7 @@ export default function RegisterPage() {
 
         <h1 style={{
           color: '#d4af37',
-          fontSize: '2rem',
+          fontSize: isMobile ? '1.5rem' : '2rem',
           fontWeight: '700',
           marginBottom: '0.5rem',
           textAlign: 'center',
@@ -200,8 +213,8 @@ export default function RegisterPage() {
         </h1>
         <p style={{
           color: 'rgba(255, 255, 255, 0.6)',
-          fontSize: '0.875rem',
-          marginBottom: '2rem',
+          fontSize: isMobile ? '0.75rem' : '0.875rem',
+          marginBottom: isMobile ? '1.5rem' : '2rem',
           textAlign: 'center',
         }}>
           Erstelle deinen BKU Tickets Account
@@ -215,10 +228,10 @@ export default function RegisterPage() {
               backgroundColor: 'rgba(239, 68, 68, 0.1)',
               border: '1px solid rgba(239, 68, 68, 0.3)',
               borderRadius: '0.5rem',
-              padding: '1rem',
+              padding: isMobile ? '0.75rem' : '1rem',
               marginBottom: '1.5rem',
               color: '#ef4444',
-              fontSize: '0.875rem',
+              fontSize: isMobile ? '0.75rem' : '0.875rem',
             }}
           >
             {error}
@@ -227,11 +240,11 @@ export default function RegisterPage() {
 
         <form onSubmit={handleSubmit}>
           {/* Vorname */}
-          <div style={{ marginBottom: '1.5rem' }}>
+          <div style={{ marginBottom: isMobile ? '1rem' : '1.5rem' }}>
             <label style={{
               display: 'block',
               color: 'rgba(255, 255, 255, 0.8)',
-              fontSize: '0.875rem',
+              fontSize: isMobile ? '0.75rem' : '0.875rem',
               marginBottom: '0.5rem',
               fontWeight: '500',
             }}>
@@ -245,7 +258,8 @@ export default function RegisterPage() {
                 transform: 'translateY(-50%)',
                 width: '18px',
                 height: '18px',
-                color: 'rgba(255, 255, 255, 0.5)',
+                color: formData.firstName ? '#4a4a4a' : 'rgba(255, 255, 255, 0.5)',
+                transition: 'color 0.3s',
               }} />
               <input
                 type="text"
@@ -254,12 +268,12 @@ export default function RegisterPage() {
                 required
                 style={{
                   width: '100%',
-                  padding: '0.75rem 1rem 0.75rem 3rem',
+                  padding: isMobile ? '0.75rem 1rem 0.75rem 2.75rem' : '0.75rem 1rem 0.75rem 3rem',
                   backgroundColor: 'rgba(255, 255, 255, 0.05)',
                   border: '1px solid rgba(255, 255, 255, 0.1)',
                   borderRadius: '0.5rem',
                   color: '#fff',
-                  fontSize: '1rem',
+                  fontSize: isMobile ? '0.875rem' : '1rem',
                   outline: 'none',
                   transition: 'all 0.3s',
                 }}
@@ -276,11 +290,11 @@ export default function RegisterPage() {
           </div>
 
           {/* Nachname */}
-          <div style={{ marginBottom: '1.5rem' }}>
+          <div style={{ marginBottom: isMobile ? '1rem' : '1.5rem' }}>
             <label style={{
               display: 'block',
               color: 'rgba(255, 255, 255, 0.8)',
-              fontSize: '0.875rem',
+              fontSize: isMobile ? '0.75rem' : '0.875rem',
               marginBottom: '0.5rem',
               fontWeight: '500',
             }}>
@@ -294,7 +308,8 @@ export default function RegisterPage() {
                 transform: 'translateY(-50%)',
                 width: '18px',
                 height: '18px',
-                color: 'rgba(255, 255, 255, 0.5)',
+                color: formData.lastName ? '#4a4a4a' : 'rgba(255, 255, 255, 0.5)',
+                transition: 'color 0.3s',
               }} />
               <input
                 type="text"
@@ -303,12 +318,12 @@ export default function RegisterPage() {
                 required
                 style={{
                   width: '100%',
-                  padding: '0.75rem 1rem 0.75rem 3rem',
+                  padding: isMobile ? '0.75rem 1rem 0.75rem 2.75rem' : '0.75rem 1rem 0.75rem 3rem',
                   backgroundColor: 'rgba(255, 255, 255, 0.05)',
                   border: '1px solid rgba(255, 255, 255, 0.1)',
                   borderRadius: '0.5rem',
                   color: '#fff',
-                  fontSize: '1rem',
+                  fontSize: isMobile ? '0.875rem' : '1rem',
                   outline: 'none',
                   transition: 'all 0.3s',
                 }}
@@ -325,11 +340,11 @@ export default function RegisterPage() {
           </div>
 
           {/* Email */}
-          <div style={{ marginBottom: '1.5rem' }}>
+          <div style={{ marginBottom: isMobile ? '1rem' : '1.5rem' }}>
             <label style={{
               display: 'block',
               color: 'rgba(255, 255, 255, 0.8)',
-              fontSize: '0.875rem',
+              fontSize: isMobile ? '0.75rem' : '0.875rem',
               marginBottom: '0.5rem',
               fontWeight: '500',
             }}>
@@ -343,7 +358,8 @@ export default function RegisterPage() {
                 transform: 'translateY(-50%)',
                 width: '18px',
                 height: '18px',
-                color: 'rgba(255, 255, 255, 0.5)',
+                color: formData.email ? '#4a4a4a' : 'rgba(255, 255, 255, 0.5)',
+                transition: 'color 0.3s',
               }} />
               <input
                 type="email"
@@ -352,12 +368,12 @@ export default function RegisterPage() {
                 required
                 style={{
                   width: '100%',
-                  padding: '0.75rem 1rem 0.75rem 3rem',
+                  padding: isMobile ? '0.75rem 1rem 0.75rem 2.75rem' : '0.75rem 1rem 0.75rem 3rem',
                   backgroundColor: 'rgba(255, 255, 255, 0.05)',
                   border: '1px solid rgba(255, 255, 255, 0.1)',
                   borderRadius: '0.5rem',
                   color: '#fff',
-                  fontSize: '1rem',
+                  fontSize: isMobile ? '0.875rem' : '1rem',
                   outline: 'none',
                   transition: 'all 0.3s',
                 }}
@@ -378,7 +394,7 @@ export default function RegisterPage() {
             <label style={{
               display: 'block',
               color: 'rgba(255, 255, 255, 0.8)',
-              fontSize: '0.875rem',
+              fontSize: isMobile ? '0.75rem' : '0.875rem',
               marginBottom: '0.5rem',
               fontWeight: '500',
             }}>
@@ -392,7 +408,8 @@ export default function RegisterPage() {
                 transform: 'translateY(-50%)',
                 width: '18px',
                 height: '18px',
-                color: 'rgba(255, 255, 255, 0.5)',
+                color: formData.password ? '#4a4a4a' : 'rgba(255, 255, 255, 0.5)',
+                transition: 'color 0.3s',
               }} />
               <input
                 type={showPassword ? 'text' : 'password'}
@@ -401,12 +418,12 @@ export default function RegisterPage() {
                 required
                 style={{
                   width: '100%',
-                  padding: '0.75rem 3rem 0.75rem 3rem',
+                  padding: isMobile ? '0.75rem 2.75rem 0.75rem 2.75rem' : '0.75rem 3rem 0.75rem 3rem',
                   backgroundColor: 'rgba(255, 255, 255, 0.05)',
                   border: '1px solid rgba(255, 255, 255, 0.1)',
                   borderRadius: '0.5rem',
                   color: '#fff',
-                  fontSize: '1rem',
+                  fontSize: isMobile ? '0.875rem' : '1rem',
                   outline: 'none',
                   transition: 'all 0.3s',
                 }}
@@ -429,14 +446,14 @@ export default function RegisterPage() {
                   transform: 'translateY(-50%)',
                   background: 'none',
                   border: 'none',
-                  color: 'rgba(255, 255, 255, 0.5)',
+                  color: formData.password ? '#4a4a4a' : 'rgba(255, 255, 255, 0.5)',
                   cursor: 'pointer',
                   transition: 'color 0.3s',
                 }}
                 onMouseEnter={(e) => e.currentTarget.style.color = '#d4af37'}
-                onMouseLeave={(e) => e.currentTarget.style.color = 'rgba(255, 255, 255, 0.5)'}
+                onMouseLeave={(e) => e.currentTarget.style.color = formData.password ? '#4a4a4a' : 'rgba(255, 255, 255, 0.5)'}
               >
-                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                {showPassword ? <Eye size={18} /> : <EyeOff size={18} />}
               </button>
             </div>
 
@@ -448,10 +465,10 @@ export default function RegisterPage() {
                   alignItems: 'center',
                   marginBottom: '0.5rem',
                 }}>
-                  <span style={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: '0.75rem' }}>
+                  <span style={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: isMobile ? '0.625rem' : '0.75rem' }}>
                     Passwort-Stärke:
                   </span>
-                  <span style={{ color: getStrengthColor(), fontSize: '0.75rem', fontWeight: '600' }}>
+                  <span style={{ color: getStrengthColor(), fontSize: isMobile ? '0.625rem' : '0.75rem', fontWeight: '600' }}>
                     {getStrengthText()}
                   </span>
                 </div>
@@ -487,7 +504,7 @@ export default function RegisterPage() {
                     )}
                     <span style={{
                       color: req.met ? '#10b981' : 'rgba(255, 255, 255, 0.5)',
-                      fontSize: '0.75rem',
+                      fontSize: isMobile ? '0.625rem' : '0.75rem',
                     }}>
                       {req.text}
                     </span>
@@ -498,11 +515,11 @@ export default function RegisterPage() {
           </div>
 
           {/* Passwort bestätigen */}
-          <div style={{ marginBottom: '2rem' }}>
+          <div style={{ marginBottom: isMobile ? '1.5rem' : '2rem' }}>
             <label style={{
               display: 'block',
               color: 'rgba(255, 255, 255, 0.8)',
-              fontSize: '0.875rem',
+              fontSize: isMobile ? '0.75rem' : '0.875rem',
               marginBottom: '0.5rem',
               fontWeight: '500',
             }}>
@@ -516,7 +533,8 @@ export default function RegisterPage() {
                 transform: 'translateY(-50%)',
                 width: '18px',
                 height: '18px',
-                color: 'rgba(255, 255, 255, 0.5)',
+                color: formData.confirmPassword ? '#4a4a4a' : 'rgba(255, 255, 255, 0.5)',
+                transition: 'color 0.3s',
               }} />
               <input
                 type={showConfirmPassword ? 'text' : 'password'}
@@ -525,12 +543,12 @@ export default function RegisterPage() {
                 required
                 style={{
                   width: '100%',
-                  padding: '0.75rem 3rem 0.75rem 3rem',
+                  padding: isMobile ? '0.75rem 2.75rem 0.75rem 2.75rem' : '0.75rem 3rem 0.75rem 3rem',
                   backgroundColor: 'rgba(255, 255, 255, 0.05)',
                   border: `1px solid ${formData.confirmPassword && formData.password !== formData.confirmPassword ? '#ef4444' : 'rgba(255, 255, 255, 0.1)'}`,
                   borderRadius: '0.5rem',
                   color: '#fff',
-                  fontSize: '1rem',
+                  fontSize: isMobile ? '0.875rem' : '1rem',
                   outline: 'none',
                   transition: 'all 0.3s',
                 }}
@@ -553,18 +571,18 @@ export default function RegisterPage() {
                   transform: 'translateY(-50%)',
                   background: 'none',
                   border: 'none',
-                  color: 'rgba(255, 255, 255, 0.5)',
+                  color: formData.confirmPassword ? '#4a4a4a' : 'rgba(255, 255, 255, 0.5)',
                   cursor: 'pointer',
                   transition: 'color 0.3s',
                 }}
                 onMouseEnter={(e) => e.currentTarget.style.color = '#d4af37'}
-                onMouseLeave={(e) => e.currentTarget.style.color = 'rgba(255, 255, 255, 0.5)'}
+                onMouseLeave={(e) => e.currentTarget.style.color = formData.confirmPassword ? '#4a4a4a' : 'rgba(255, 255, 255, 0.5)'}
               >
-                {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                {showConfirmPassword ? <Eye size={18} /> : <EyeOff size={18} />}
               </button>
             </div>
             {formData.confirmPassword && formData.password !== formData.confirmPassword && (
-              <p style={{ color: '#ef4444', fontSize: '0.75rem', marginTop: '0.5rem' }}>
+              <p style={{ color: '#ef4444', fontSize: isMobile ? '0.625rem' : '0.75rem', marginTop: '0.5rem' }}>
                 Passwörter stimmen nicht überein
               </p>
             )}
@@ -577,12 +595,12 @@ export default function RegisterPage() {
             disabled={loading}
             style={{
               width: '100%',
-              padding: '1rem',
+              padding: isMobile ? '0.875rem' : '1rem',
               background: 'linear-gradient(135deg, #d4af37 0%, #f4e7c3 100%)',
               border: 'none',
               borderRadius: '0.5rem',
               color: '#000',
-              fontSize: '1rem',
+              fontSize: isMobile ? '0.875rem' : '1rem',
               fontWeight: '700',
               cursor: loading ? 'not-allowed' : 'pointer',
               opacity: loading ? 0.7 : 1,
@@ -598,7 +616,7 @@ export default function RegisterPage() {
               'Registrierung läuft...'
             ) : (
               <>
-                <UserPlus size={18} />
+                <UserPlus size={isMobile ? 16 : 18} />
                 Registrieren
               </>
             )}
@@ -607,7 +625,7 @@ export default function RegisterPage() {
 
         <p style={{
           color: 'rgba(255, 255, 255, 0.6)',
-          fontSize: '0.875rem',
+          fontSize: isMobile ? '0.75rem' : '0.875rem',
           marginTop: '1.5rem',
           textAlign: 'center',
         }}>
@@ -634,12 +652,12 @@ export default function RegisterPage() {
           style={{
             width: '100%',
             marginTop: '1rem',
-            padding: '0.75rem',
+            padding: isMobile ? '0.625rem' : '0.75rem',
             background: 'transparent',
             border: '1px solid rgba(255, 255, 255, 0.2)',
             borderRadius: '0.5rem',
             color: 'rgba(255, 255, 255, 0.6)',
-            fontSize: '0.875rem',
+            fontSize: isMobile ? '0.75rem' : '0.875rem',
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
@@ -656,7 +674,7 @@ export default function RegisterPage() {
             e.currentTarget.style.color = 'rgba(255, 255, 255, 0.6)';
           }}
         >
-          <ArrowLeft size={16} />
+          <ArrowLeft size={isMobile ? 14 : 16} />
           Zurück zum Login
         </motion.button>
       </motion.div>
