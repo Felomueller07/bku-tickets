@@ -26,6 +26,7 @@ interface AdminSidebarProps {
   onReleaseAll: () => void;
   onSeatClick: (row: string, number: number) => void;
   onAddDataClick: (row: string, number: number) => void;
+  isMobile?: boolean;
 }
 
 export default function AdminSidebar({
@@ -37,6 +38,7 @@ export default function AdminSidebar({
   onReleaseAll,
   onSeatClick,
   onAddDataClick,
+  isMobile = false,
 }: AdminSidebarProps) {
 
   const [confirmModalOpen, setConfirmModalOpen] = useState(false);
@@ -68,22 +70,22 @@ export default function AdminSidebar({
   return (
     <>
       <div style={{
-        width: '400px',
-        backgroundColor: 'rgba(0, 0, 0, 0.9)',
-        backdropFilter: 'blur(20px)',
-        borderLeft: '1px solid rgba(212, 175, 55, 0.3)',
-        padding: '2rem',
+        width: isMobile ? '100%' : '400px',
+        backgroundColor: isMobile ? 'transparent' : 'rgba(0, 0, 0, 0.9)',
+        backdropFilter: isMobile ? 'none' : 'blur(20px)',
+        borderLeft: isMobile ? 'none' : '1px solid rgba(212, 175, 55, 0.3)',
+        padding: isMobile ? '0' : '2rem',
         display: 'flex',
         flexDirection: 'column',
-        gap: '1.5rem',
-        height: '100vh',
+        gap: isMobile ? '1rem' : '1.5rem',
+        height: isMobile ? 'auto' : '100vh',
         overflowY: 'auto',
       }}>
         {/* HEADER */}
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
             <Lock style={{ width: '24px', height: '24px', color: '#d4af37' }} />
-            <h2 style={{ color: 'white', fontSize: '1.5rem', fontWeight: '700', margin: 0 }}>
+            <h2 style={{ color: 'white', fontSize: isMobile ? '1.25rem' : '1.5rem', fontWeight: '700', margin: 0 }}>
               Admin Panel
             </h2>
           </div>
@@ -97,7 +99,7 @@ export default function AdminSidebar({
           backgroundColor: 'rgba(212, 175, 55, 0.1)',
           border: '1px solid rgba(212, 175, 55, 0.3)',
           borderRadius: '0.75rem',
-          padding: '1rem',
+          padding: isMobile ? '0.875rem' : '1rem',
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
             <BarChart3 style={{ width: '18px', height: '18px', color: '#d4af37' }} />
@@ -126,10 +128,17 @@ export default function AdminSidebar({
         </div>
 
         {/* AUSGEWÄHLTE SITZE */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+        <div style={{ 
+          flex: 1, 
+          display: 'flex', 
+          flexDirection: 'column', 
+          gap: '0.75rem',
+          maxHeight: isMobile ? '400px' : 'none',
+          overflowY: isMobile ? 'auto' : 'visible',
+        }}>
           {selectedSeats.length === 0 ? (
             <div style={{
-              padding: '2rem',
+              padding: isMobile ? '1.5rem' : '2rem',
               textAlign: 'center',
               color: 'rgba(255, 255, 255, 0.5)',
               fontSize: '0.875rem',
@@ -153,7 +162,7 @@ export default function AdminSidebar({
                       ? 'rgba(239, 68, 68, 0.1)'
                       : 'rgba(16, 185, 129, 0.1)',
                     borderRadius: '0.75rem',
-                    padding: '1rem',
+                    padding: isMobile ? '0.875rem' : '1rem',
                     border: isOccupied
                       ? '1px solid rgba(239, 68, 68, 0.3)'
                       : '1px solid rgba(16, 185, 129, 0.3)',
@@ -165,7 +174,7 @@ export default function AdminSidebar({
                         color: 'white',
                         fontWeight: '600',
                         margin: '0 0 0.25rem 0',
-                        fontSize: '1rem'
+                        fontSize: isMobile ? '0.9rem' : '1rem'
                       }}>
                         Reihe {seat.row}, Platz {seat.number}
                       </p>
@@ -191,9 +200,10 @@ export default function AdminSidebar({
                               margin: '0 0 0.25rem 0',
                               display: 'flex',
                               alignItems: 'center',
-                              gap: '0.5rem'
+                              gap: '0.5rem',
+                              wordBreak: 'break-all',
                             }}>
-                              <Mail style={{ width: '14px', height: '14px' }} />
+                              <Mail style={{ width: '14px', height: '14px', flexShrink: 0 }} />
                               {details.email}
                             </p>
                           )}
@@ -263,12 +273,12 @@ export default function AdminSidebar({
                 onClick={onReserve}
                 style={{
                   width: '100%',
-                  padding: '0.875rem',
+                  padding: isMobile ? '0.875rem' : '0.875rem',
                   background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
                   border: 'none',
                   borderRadius: '0.5rem',
                   color: 'white',
-                  fontSize: '0.875rem',
+                  fontSize: isMobile ? '0.875rem' : '0.875rem',
                   fontWeight: '700',
                   cursor: 'pointer',
                   display: 'flex',
@@ -287,12 +297,12 @@ export default function AdminSidebar({
                 onClick={onRelease}
                 style={{
                   width: '100%',
-                  padding: '0.875rem',
+                  padding: isMobile ? '0.875rem' : '0.875rem',
                   background: 'rgba(239, 68, 68, 0.2)',
                   border: '1px solid rgba(239, 68, 68, 0.5)',
                   borderRadius: '0.5rem',
                   color: '#ef4444',
-                  fontSize: '0.875rem',
+                  fontSize: isMobile ? '0.875rem' : '0.875rem',
                   fontWeight: '700',
                   cursor: 'pointer',
                   display: 'flex',
@@ -314,12 +324,12 @@ export default function AdminSidebar({
             onClick={() => setConfirmModalOpen(true)}
             style={{
               width: '100%',
-              padding: '0.875rem',
+              padding: isMobile ? '0.875rem' : '0.875rem',
               background: 'rgba(239, 68, 68, 0.1)',
               border: '1px solid rgba(239, 68, 68, 0.3)',
               borderRadius: '0.5rem',
               color: '#ef4444',
-              fontSize: '0.875rem',
+              fontSize: isMobile ? '0.875rem' : '0.875rem',
               fontWeight: '700',
               cursor: 'pointer',
               display: 'flex',
@@ -334,26 +344,28 @@ export default function AdminSidebar({
         )}
 
         {/* FREIKARTEN GENERATOR */}
-        <FreeTicketGenerator />
+        {!isMobile && <FreeTicketGenerator />}
 
-        {/* INFO BOX UNTEN RECHTS */}
-        <div style={{
-          backgroundColor: 'rgba(59, 130, 246, 0.1)',
-          border: '1px solid rgba(59, 130, 246, 0.3)',
-          borderRadius: '0.75rem',
-          padding: '1rem',
-          marginTop: 'auto',
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
-            <Info style={{ width: '18px', height: '18px', color: '#3b82f6' }} />
-            <h3 style={{ color: 'white', fontSize: '0.875rem', fontWeight: '600', margin: 0 }}>
-              Info
-            </h3>
+        {/* INFO BOX */}
+        {!isMobile && (
+          <div style={{
+            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+            border: '1px solid rgba(59, 130, 246, 0.3)',
+            borderRadius: '0.75rem',
+            padding: '1rem',
+            marginTop: 'auto',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
+              <Info style={{ width: '18px', height: '18px', color: '#3b82f6' }} />
+              <h3 style={{ color: 'white', fontSize: '0.875rem', fontWeight: '600', margin: 0 }}>
+                Info
+              </h3>
+            </div>
+            <p style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '0.75rem', margin: 0, lineHeight: '1.5' }}>
+              Wähle Sitzplätze aus um Details wie Name, E-Mail und Reservierungsdatum anzuzeigen.
+            </p>
           </div>
-          <p style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '0.75rem', margin: 0, lineHeight: '1.5' }}>
-            Wähle Sitzplätze aus um Details wie Name, E-Mail und Reservierungsdatum anzuzeigen.
-          </p>
-        </div>
+        )}
       </div>
 
       {/* MODALS */}

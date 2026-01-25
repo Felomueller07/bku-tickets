@@ -8,9 +8,10 @@ import CheckoutModal from './CheckoutModal';
 interface UserSidebarProps {
   selectedSeats: any[];
   onRemoveSeat: (row: string, number: number) => void;
+  isMobile?: boolean;
 }
 
-export default function UserSidebar({ selectedSeats, onRemoveSeat }: UserSidebarProps) {
+export default function UserSidebar({ selectedSeats, onRemoveSeat, isMobile = false }: UserSidebarProps) {
   const router = useRouter();
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
 
@@ -51,21 +52,21 @@ export default function UserSidebar({ selectedSeats, onRemoveSeat }: UserSidebar
   return (
     <>
       <div style={{
-        width: '350px',
-        backgroundColor: 'rgba(0, 0, 0, 0.8)',
-        backdropFilter: 'blur(20px)',
-        borderLeft: '1px solid rgba(212, 175, 55, 0.3)',
-        padding: '2rem',
+        width: isMobile ? '100%' : '350px',
+        backgroundColor: isMobile ? 'transparent' : 'rgba(0, 0, 0, 0.8)',
+        backdropFilter: isMobile ? 'none' : 'blur(20px)',
+        borderLeft: isMobile ? 'none' : '1px solid rgba(212, 175, 55, 0.3)',
+        padding: isMobile ? '0' : '2rem',
         display: 'flex',
         flexDirection: 'column',
-        gap: '1.5rem',
-        height: '100vh',
+        gap: isMobile ? '1rem' : '1.5rem',
+        height: isMobile ? 'auto' : '100vh',
         overflowY: 'auto',
       }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
             <ShoppingCart style={{ width: '24px', height: '24px', color: '#d4af37' }} />
-            <h2 style={{ color: 'white', fontSize: '1.5rem', fontWeight: '700', margin: 0 }}>
+            <h2 style={{ color: 'white', fontSize: isMobile ? '1.25rem' : '1.5rem', fontWeight: '700', margin: 0 }}>
               Warenkorb
             </h2>
           </div>
@@ -74,10 +75,17 @@ export default function UserSidebar({ selectedSeats, onRemoveSeat }: UserSidebar
           </p>
         </div>
 
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+        <div style={{ 
+          flex: 1, 
+          display: 'flex', 
+          flexDirection: 'column', 
+          gap: '0.75rem',
+          maxHeight: isMobile ? '300px' : 'none',
+          overflowY: isMobile ? 'auto' : 'visible',
+        }}>
           {selectedSeats.length === 0 ? (
             <div style={{
-              padding: '2rem',
+              padding: isMobile ? '1.5rem' : '2rem',
               textAlign: 'center',
               color: 'rgba(255, 255, 255, 0.5)',
               fontSize: '0.875rem',
@@ -92,7 +100,7 @@ export default function UserSidebar({ selectedSeats, onRemoveSeat }: UserSidebar
                 style={{
                   backgroundColor: 'rgba(255, 255, 255, 0.05)',
                   borderRadius: '0.75rem',
-                  padding: '1rem',
+                  padding: isMobile ? '0.875rem' : '1rem',
                   border: '1px solid rgba(255, 255, 255, 0.1)',
                   display: 'flex',
                   justifyContent: 'space-between',
@@ -100,7 +108,12 @@ export default function UserSidebar({ selectedSeats, onRemoveSeat }: UserSidebar
                 }}
               >
                 <div>
-                  <p style={{ color: 'white', fontWeight: '600', margin: '0 0 0.25rem 0' }}>
+                  <p style={{ 
+                    color: 'white', 
+                    fontWeight: '600', 
+                    margin: '0 0 0.25rem 0',
+                    fontSize: isMobile ? '0.9rem' : '1rem',
+                  }}>
                     Reihe {seat.row}, Platz {seat.number}
                   </p>
                   <p style={{ color: '#d4af37', fontSize: '0.875rem', fontWeight: '600', margin: 0 }}>
@@ -118,6 +131,8 @@ export default function UserSidebar({ selectedSeats, onRemoveSeat }: UserSidebar
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
+                    minWidth: '36px',
+                    minHeight: '36px',
                   }}
                 >
                   <X style={{ width: '16px', height: '16px', color: '#ef4444' }} />
@@ -130,18 +145,18 @@ export default function UserSidebar({ selectedSeats, onRemoveSeat }: UserSidebar
         {selectedSeats.length > 0 && (
           <div style={{
             borderTop: '1px solid rgba(255, 255, 255, 0.1)',
-            paddingTop: '1.5rem',
+            paddingTop: isMobile ? '1rem' : '1.5rem',
           }}>
             <div style={{
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
-              marginBottom: '1.5rem',
+              marginBottom: isMobile ? '1rem' : '1.5rem',
             }}>
-              <span style={{ color: 'rgba(255, 255, 255, 0.8)', fontSize: '1rem' }}>
+              <span style={{ color: 'rgba(255, 255, 255, 0.8)', fontSize: isMobile ? '0.9rem' : '1rem' }}>
                 Gesamtpreis:
               </span>
-              <span style={{ color: '#d4af37', fontSize: '1.5rem', fontWeight: '700' }}>
+              <span style={{ color: '#d4af37', fontSize: isMobile ? '1.25rem' : '1.5rem', fontWeight: '700' }}>
                 {totalPrice.toFixed(2)} €
               </span>
             </div>
@@ -149,12 +164,12 @@ export default function UserSidebar({ selectedSeats, onRemoveSeat }: UserSidebar
               onClick={() => setIsCheckoutOpen(true)}
               style={{
                 width: '100%',
-                padding: '1rem',
+                padding: isMobile ? '0.875rem' : '1rem',
                 background: 'linear-gradient(135deg, #d4af37 0%, #f4e7c3 100%)',
                 border: 'none',
                 borderRadius: '0.75rem',
                 color: '#000',
-                fontSize: '1rem',
+                fontSize: isMobile ? '0.9rem' : '1rem',
                 fontWeight: '700',
                 cursor: 'pointer',
                 transition: 'all 0.3s',
