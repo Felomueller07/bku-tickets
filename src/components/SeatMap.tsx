@@ -545,14 +545,14 @@ export default function SeatMap() {
         currentUserId={Number((session?.user as any)?.id)}
       />
 
-      {/* MOBILE HEADER - nur auf Mobile sichtbar */}
+      {/* MOBILE HEADER - nur auf Mobile */}
       {isMobile && (
         <div style={{
           position: 'fixed',
           top: 0,
           left: 0,
           right: 0,
-          height: '80px',
+          height: '70px',
           background: 'linear-gradient(135deg, rgba(10, 10, 10, 0.98) 0%, rgba(20, 20, 20, 0.95) 100%)',
           backdropFilter: 'blur(10px)',
           borderBottom: '1px solid rgba(212, 175, 55, 0.3)',
@@ -567,7 +567,7 @@ export default function SeatMap() {
           {/* LEFT: Event Info */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
             <div style={{ 
-              fontSize: '18px', 
+              fontSize: '16px', 
               fontWeight: '700', 
               color: '#d4af37',
               letterSpacing: '0.5px',
@@ -576,7 +576,7 @@ export default function SeatMap() {
               Josefi Konzert
             </div>
             <div style={{ 
-              fontSize: '14px', 
+              fontSize: '13px', 
               fontWeight: '600', 
               color: 'white',
               lineHeight: '1.2',
@@ -592,20 +592,20 @@ export default function SeatMap() {
             transform: 'translateX(-50%)',
             background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.15) 0%, rgba(212, 175, 55, 0.05) 100%)',
             border: '1px solid rgba(212, 175, 55, 0.4)',
-            borderRadius: '12px',
-            padding: '8px 16px',
+            borderRadius: '10px',
+            padding: '6px 14px',
             display: 'flex',
             alignItems: 'center',
-            gap: '8px',
+            gap: '6px',
           }}>
             <div style={{
-              width: '6px',
-              height: '6px',
+              width: '5px',
+              height: '5px',
               borderRadius: '50%',
               background: '#d4af37',
             }}></div>
             <span style={{
-              fontSize: '13px',
+              fontSize: '12px',
               fontWeight: '600',
               color: '#d4af37',
               letterSpacing: '1px',
@@ -615,13 +615,13 @@ export default function SeatMap() {
           </div>
 
           {/* RIGHT: User & Logout */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             {/* User Name */}
             <div style={{
-              fontSize: '12px',
+              fontSize: '11px',
               color: 'rgba(255, 255, 255, 0.7)',
               fontWeight: '500',
-              maxWidth: '80px',
+              maxWidth: '70px',
               overflow: 'hidden',
               textOverflow: 'ellipsis',
               whiteSpace: 'nowrap',
@@ -635,9 +635,9 @@ export default function SeatMap() {
               style={{
                 background: 'rgba(239, 68, 68, 0.1)',
                 border: '1px solid rgba(239, 68, 68, 0.3)',
-                borderRadius: '8px',
-                padding: '6px 12px',
-                fontSize: '11px',
+                borderRadius: '7px',
+                padding: '5px 10px',
+                fontSize: '10px',
                 fontWeight: '600',
                 color: '#ef4444',
                 cursor: 'pointer',
@@ -650,35 +650,35 @@ export default function SeatMap() {
         </div>
       )}
 
-      {/* HAUPT-CONTAINER - Desktop: row, Mobile: column */}
+      {/* HAUPT-CONTAINER */}
       <div style={{ 
-        maxWidth: '1800px', 
+        maxWidth: isMobile ? 'none' : '1800px',
         margin: '0 auto', 
-        display: 'flex', 
+        display: 'flex',
         flexDirection: isMobile ? 'column' : 'row',
-        gap: '2rem', 
+        gap: isMobile ? '0' : '2rem',
         alignItems: 'flex-start', 
         paddingBottom: '2rem',
-        paddingTop: isMobile ? '90px' : '0',
+        paddingTop: isMobile ? '80px' : '0',
       }}>
 
-        {/* SITZPLAN - mit CSS Scale auf Mobile */}
+        {/* SITZPLAN CONTAINER */}
         <div style={{ 
-          flex: 1, 
+          flex: 1,
+          width: '100%',
           display: 'flex',
           justifyContent: 'center',
           overflow: isMobile ? 'auto' : 'visible',
-          width: isMobile ? '100%' : 'auto',
         }}>
-          
-          {/* SCALE WRAPPER */}
+
+          {/* SCALE WRAPPER - NUR auf Mobile! */}
           <div style={{
-            transform: isMobile ? 'scale(0.45)' : 'none',
+            transform: isMobile ? 'scale(0.55)' : 'none',
             transformOrigin: isMobile ? 'top left' : 'center',
-            width: isMobile ? '1400px' : 'auto',
-            marginLeft: isMobile ? '50px' : '0',
+            width: isMobile ? '1600px' : 'auto',
+            marginLeft: isMobile ? '180px' : '0',
           }}>
-            
+
             <div style={{ 
               backgroundColor: 'rgba(0, 0, 0, 0.3)', 
               backdropFilter: 'blur(10px)', 
@@ -687,7 +687,13 @@ export default function SeatMap() {
               border: '1px solid rgba(255, 255, 255, 0.2)' 
             }}>
 
-              <p style={{ color: 'white', marginBottom: '1.5rem', fontSize: '1.125rem', textAlign: 'center' }}>
+              <p style={{ 
+                color: 'white', 
+                marginBottom: '1.5rem', 
+                fontSize: '1.125rem', 
+                textAlign: 'center',
+                display: isMobile ? 'none' : 'block',
+              }}>
                 Sitzplan {isAdmin && <span style={{ color: '#d4af37' }}>(Admin-Modus)</span>}
               </p>
 
@@ -698,7 +704,7 @@ export default function SeatMap() {
                 </div>
               </div>
 
-              {/* HAUPT-CONTAINER - 100% ORIGINAL! */}
+              {/* HAUPT-CONTAINER */}
               <div style={{ position: 'relative' }}>
 
                 {/* GALERIE-EBENE */}
@@ -1026,28 +1032,50 @@ export default function SeatMap() {
         </div>
 
         {/* SIDEBAR - Desktop: rechts, Mobile: unten */}
-        <div style={{ 
-          width: isMobile ? '100%' : 'auto',
-          marginTop: isMobile ? '2rem' : '0'
-        }}>
-          {isAdmin ? (
-            <AdminSidebar
-              selectedSeats={selectedSeats}
-              occupiedSeats={occupiedSeats}
-              isSeatOccupied={isSeatOccupied}
-              onReserve={handleReserveClick}
-              onRelease={handleAdminRelease}
-              onReleaseAll={handleAdminReleaseAll}
-              onSeatClick={handleSidebarSeatClick}
-              onAddDataClick={handleAddDataClick}
-            />
-          ) : (
-            <UserSidebar
-              selectedSeats={selectedSeats}
-              onRemoveSeat={handleRemoveSeat}
-            />
-          )}
-        </div>
+        {!isMobile && (
+          <div>
+            {isAdmin ? (
+              <AdminSidebar
+                selectedSeats={selectedSeats}
+                occupiedSeats={occupiedSeats}
+                isSeatOccupied={isSeatOccupied}
+                onReserve={handleReserveClick}
+                onRelease={handleAdminRelease}
+                onReleaseAll={handleAdminReleaseAll}
+                onSeatClick={handleSidebarSeatClick}
+                onAddDataClick={handleAddDataClick}
+              />
+            ) : (
+              <UserSidebar
+                selectedSeats={selectedSeats}
+                onRemoveSeat={handleRemoveSeat}
+              />
+            )}
+          </div>
+        )}
+
+        {/* MOBILE SIDEBAR - nur auf Mobile unten */}
+        {isMobile && (
+          <div style={{ width: '100%', marginTop: '2rem', padding: '0 1rem' }}>
+            {isAdmin ? (
+              <AdminSidebar
+                selectedSeats={selectedSeats}
+                occupiedSeats={occupiedSeats}
+                isSeatOccupied={isSeatOccupied}
+                onReserve={handleReserveClick}
+                onRelease={handleAdminRelease}
+                onReleaseAll={handleAdminReleaseAll}
+                onSeatClick={handleSidebarSeatClick}
+                onAddDataClick={handleAddDataClick}
+              />
+            ) : (
+              <UserSidebar
+                selectedSeats={selectedSeats}
+                onRemoveSeat={handleRemoveSeat}
+              />
+            )}
+          </div>
+        )}
       </div>
     </>
   );
