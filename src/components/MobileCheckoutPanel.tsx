@@ -10,6 +10,8 @@ interface MobileCheckoutPanelProps {
   onClose: () => void;
   selectedSeats: Array<{ row: string; number: number }>;
   onClearSeats: () => void;
+  isAdmin?: boolean;
+  onReserve?: () => void;
 }
 
 export default function MobileCheckoutPanel({
@@ -17,6 +19,8 @@ export default function MobileCheckoutPanel({
   onClose,
   selectedSeats,
   onClearSeats,
+  isAdmin = false,
+  onReserve,
 }: MobileCheckoutPanelProps) {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -46,6 +50,23 @@ export default function MobileCheckoutPanel({
 
     setLoading(true);
 
+    // ADMIN: Direkt reservieren ohne Stripe
+    if (isAdmin && onReserve) {
+      try {
+        await onReserve();
+        toast.success('Sitze reserviert!');
+        onClose();
+        onClearSeats();
+        setLoading(false);
+      } catch (error) {
+        console.error('Reserve error:', error);
+        toast.error('Fehler beim Reservieren');
+        setLoading(false);
+      }
+      return;
+    }
+
+    // USER: Mit Stripe Checkout
     try {
       const response = await fetch('/api/create-checkout-session', {
         method: 'POST',
@@ -156,7 +177,7 @@ export default function MobileCheckoutPanel({
                 fontWeight: '700',
                 margin: 0,
               }}>
-                Checkout
+                {isAdmin ? 'Reservieren' : 'Checkout'}
               </h3>
             </div>
             <button
@@ -346,44 +367,46 @@ export default function MobileCheckoutPanel({
             </div>
           </div>
 
-          {/* PRICE */}
-          <div style={{
-            background: 'rgba(255, 255, 255, 0.05)',
-            borderRadius: '12px',
-            padding: '1rem',
-            marginBottom: '1rem',
-          }}>
+          {/* PRICE - nur für User */}
+          {!isAdmin && (
             <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              marginBottom: '0.5rem',
+              background: 'rgba(255, 255, 255, 0.05)',
+              borderRadius: '12px',
+              padding: '1rem',
+              marginBottom: '1rem',
             }}>
-              <span style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '0.875rem' }}>
-                {selectedSeats.length} Ticket{selectedSeats.length !== 1 ? 's' : ''} × €{TICKET_PRICE}
-              </span>
-              <span style={{ color: 'white', fontSize: '0.875rem', fontWeight: '600' }}>
-                €{selectedSeats.length * TICKET_PRICE}
-              </span>
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: '0.5rem',
+              }}>
+                <span style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '0.875rem' }}>
+                  {selectedSeats.length} Ticket{selectedSeats.length !== 1 ? 's' : ''} × €{TICKET_PRICE}
+                </span>
+                <span style={{ color: 'white', fontSize: '0.875rem', fontWeight: '600' }}>
+                  €{selectedSeats.length * TICKET_PRICE}
+                </span>
+              </div>
+              <div style={{
+                height: '1px',
+                background: 'rgba(255, 255, 255, 0.1)',
+                margin: '0.75rem 0',
+              }}></div>
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+              }}>
+                <span style={{ color: 'white', fontSize: '1.125rem', fontWeight: '700' }}>
+                  Gesamt
+                </span>
+                <span style={{ color: '#d4af37', fontSize: '1.5rem', fontWeight: '700' }}>
+                  €{totalPrice}
+                </span>
+              </div>
             </div>
-            <div style={{
-              height: '1px',
-              background: 'rgba(255, 255, 255, 0.1)',
-              margin: '0.75rem 0',
-            }}></div>
-            <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-            }}>
-              <span style={{ color: 'white', fontSize: '1.125rem', fontWeight: '700' }}>
-                Gesamt
-              </span>
-              <span style={{ color: '#d4af37', fontSize: '1.5rem', fontWeight: '700' }}>
-                €{totalPrice}
-              </span>
-            </div>
-          </div>
+          )}
 
           {/* CHECKOUT BUTTON */}
           <button
@@ -409,7 +432,7 @@ export default function MobileCheckoutPanel({
             }}
           >
             <CreditCard style={{ width: '20px', height: '20px' }} />
-            {loading ? 'Lädt...' : 'Zur Zahlung'}
+            {loading ? 'Lädt...' : (isAdmin ? 'Reservieren' : 'Zur Zahlung')}
           </button>
         </div>
       </motion.div>

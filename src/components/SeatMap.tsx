@@ -1026,7 +1026,7 @@ export default function SeatMap() {
           </div>
         </div>
 
-        {/* SIDEBAR - Nur auf Desktop rechts */}
+        {/* DESKTOP SIDEBAR - Nur auf Desktop rechts */}
         {!isMobile && (
           <div>
             {isAdmin ? (
@@ -1048,26 +1048,10 @@ export default function SeatMap() {
             )}
           </div>
         )}
-
-        {/* MOBILE SIDEBAR - nur Admin auf Mobile unten */}
-        {isMobile && isAdmin && (
-          <div style={{ width: '100%', marginTop: '1rem', padding: '0 1rem' }}>
-            <AdminSidebar
-              selectedSeats={selectedSeats}
-              occupiedSeats={occupiedSeats}
-              isSeatOccupied={isSeatOccupied}
-              onReserve={handleReserveClick}
-              onRelease={handleAdminRelease}
-              onReleaseAll={handleAdminReleaseAll}
-              onSeatClick={handleSidebarSeatClick}
-              onAddDataClick={handleAddDataClick}
-            />
-          </div>
-        )}
       </div>
 
-      {/* MOBILE CHECKOUT - nur für normale User auf Mobile */}
-      {isMobile && !isAdmin && (
+      {/* MOBILE CHECKOUT - für ALLE auf Mobile */}
+      {isMobile && selectedSeats.length > 0 && (
         <>
           <MobileCheckoutButton
             selectedCount={selectedSeats.length}
@@ -1081,6 +1065,8 @@ export default function SeatMap() {
                 onClose={() => setCheckoutPanelOpen(false)}
                 selectedSeats={selectedSeats}
                 onClearSeats={() => setSelectedSeats([])}
+                isAdmin={isAdmin}
+                onReserve={handleReserveClick}
               />
             )}
           </AnimatePresence>
