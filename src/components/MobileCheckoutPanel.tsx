@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, PanInfo } from 'framer-motion';
-import { X, CreditCard, User, Mail, ShoppingCart } from 'lucide-react';
+import { X, CreditCard, User, Mail, ShoppingCart, Gift } from 'lucide-react';
 import { toast } from 'sonner';
+import { useSession } from 'next-auth/react';
 
 interface MobileCheckoutPanelProps {
   isOpen: boolean;
@@ -22,18 +23,63 @@ export default function MobileCheckoutPanel({
   isAdmin = false,
   onReserve,
 }: MobileCheckoutPanelProps) {
+  const { data: session } = useSession();
+  
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
+  
+  const [voucherCode, setVoucherCode] = useState('');
+  const [voucherValid, setVoucherValid] = useState<boolean | null>(null);
+  const [voucherChecking, setVoucherChecking] = useState(false);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [agreedToPrivacy, setAgreedToPrivacy] = useState(false);
 
-  const TICKET_PRICE = 20; // €25 pro Ticket
-  const totalPrice = selectedSeats.length * TICKET_PRICE;
+  const TICKET_PRICE = 20; // €20 pro Ticket
+  const totalPrice = voucherValid ? 0 : selectedSeats.length * TICKET_PRICE;
+
+  // Pre-fill user data from session
+  useEffect(() => {
+    if (session?.user) {
+      const user = session.user as any;
+      setFirstName(user.firstName || '');
+      setLastName(user.lastName || '');
+      setEmail(user.email || '');
+    }
+  }, [session]);
 
   // Drag to close
   const handleDragEnd = (event: any, info: PanInfo) => {
     if (info.offset.y > 100) {
       onClose();
+    }
+  };
+
+  const handleCheckVoucher = async () => {
+    if (!voucherCode.trim()) return;
+
+    setVoucherChecking(true);
+    try {
+      const response = await fetch('/api/voucher/check', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: voucherCode }),
+      });
+
+      const data = await response.json();
+      setVoucherValid(data.valid);
+      
+      if (data.valid) {
+        toast.success('✓ Freikarten-Code gültig!');
+      } else {
+        toast.error('✗ Ungültiger Code');
+      }
+    } catch (error) {
+      setVoucherValid(false);
+      toast.error('Fehler beim Prüfen des Codes');
+    } finally {
+      setVoucherChecking(false);
     }
   };
 
@@ -45,6 +91,11 @@ export default function MobileCheckoutPanel({
 
     if (!email.includes('@')) {
       toast.error('Bitte gültige E-Mail eingeben');
+      return;
+    }
+
+    if (!agreedToTerms || !agreedToPrivacy) {
+      toast.error('Bitte akzeptieren Sie die AGB und Datenschutzerklärung');
       return;
     }
 
@@ -75,6 +126,7 @@ export default function MobileCheckoutPanel({
           seats: selectedSeats,
           customerEmail: email,
           customerName: `${firstName} ${lastName}`,
+          voucherCode: voucherValid ? voucherCode : null,
         }),
       });
 
@@ -137,7 +189,7 @@ export default function MobileCheckoutPanel({
           bottom: 0,
           left: 0,
           right: 0,
-          maxHeight: '85vh',
+          maxHeight: '90vh',
           backgroundColor: '#0a0a0a',
           borderTopLeftRadius: '24px',
           borderTopRightRadius: '24px',
@@ -224,6 +276,7 @@ export default function MobileCheckoutPanel({
               display: 'flex',
               flexWrap: 'wrap',
               gap: '0.5rem',
+              marginBottom: '0.75rem',
             }}>
               {selectedSeats.map(seat => (
                 <div
@@ -242,7 +295,121 @@ export default function MobileCheckoutPanel({
                 </div>
               ))}
             </div>
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              paddingTop: '0.75rem',
+              borderTop: '1px solid rgba(212, 175, 55, 0.2)',
+            }}>
+              <span style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '0.875rem' }}>
+                Preis pro Ticket
+              </span>
+              <span style={{ color: '#d4af37', fontSize: '1.125rem', fontWeight: '700' }}>
+                {voucherValid ? '€0' : `€${TICKET_PRICE}`}
+              </span>
+            </div>
+            {!voucherValid && (
+              <div style={{
+                color: 'rgba(255, 255, 255, 0.5)',
+                fontSize: '0.75rem',
+                marginTop: '0.25rem',
+                textAlign: 'right',
+              }}>
+                Josefi Konzert 2026
+              </div>
+            )}
           </div>
+
+          {/* FREIKARTEN-CODE - nur für User */}
+          {!isAdmin && (
+            <div style={{
+              background: 'rgba(16, 185, 129, 0.1)',
+              border: '1px solid rgba(16, 185, 129, 0.3)',
+              borderRadius: '12px',
+              padding: '1rem',
+              marginBottom: '1.5rem',
+            }}>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                marginBottom: '0.75rem',
+              }}>
+                <Gift style={{ width: '18px', height: '18px', color: '#10b981' }} />
+                <div style={{
+                  color: '#10b981',
+                  fontSize: '0.875rem',
+                  fontWeight: '600',
+                }}>
+                  Freikarten-Code
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <input
+                  type="text"
+                  value={voucherCode}
+                  onChange={(e) => {
+                    setVoucherCode(e.target.value.toUpperCase());
+                    setVoucherValid(null);
+                  }}
+                  placeholder="CODE123"
+                  style={{
+                    flex: 1,
+                    padding: '10px 12px',
+                    background: 'rgba(255, 255, 255, 0.05)',
+                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    borderRadius: '8px',
+                    color: 'white',
+                    fontSize: '0.875rem',
+                    textTransform: 'uppercase',
+                    outline: 'none',
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={handleCheckVoucher}
+                  disabled={voucherChecking || !voucherCode.trim()}
+                  style={{
+                    padding: '10px 16px',
+                    background: voucherChecking || !voucherCode.trim() ? 'rgba(16, 185, 129, 0.3)' : '#10b981',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '8px',
+                    fontSize: '0.875rem',
+                    fontWeight: '600',
+                    cursor: voucherChecking || !voucherCode.trim() ? 'not-allowed' : 'pointer',
+                  }}
+                >
+                  {voucherChecking ? '...' : 'Prüfen'}
+                </button>
+              </div>
+              {voucherValid === true && (
+                <div style={{
+                  color: '#10b981',
+                  fontSize: '0.8rem',
+                  marginTop: '0.5rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.25rem',
+                }}>
+                  ✓ Code gültig! Freikarte aktiviert
+                </div>
+              )}
+              {voucherValid === false && (
+                <div style={{
+                  color: '#ef4444',
+                  fontSize: '0.8rem',
+                  marginTop: '0.5rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.25rem',
+                }}>
+                  ✗ Ungültiger Code
+                </div>
+              )}
+            </div>
+          )}
 
           {/* FORM */}
           <div style={{ marginBottom: '1.5rem' }}>
@@ -255,7 +422,7 @@ export default function MobileCheckoutPanel({
                 display: 'block',
                 marginBottom: '0.5rem',
               }}>
-                Vorname
+                Vorname *
               </label>
               <div style={{ position: 'relative' }}>
                 <User style={{
@@ -272,6 +439,7 @@ export default function MobileCheckoutPanel({
                   value={firstName}
                   onChange={(e) => setFirstName(e.target.value)}
                   placeholder="Max"
+                  required
                   style={{
                     width: '100%',
                     padding: '12px 12px 12px 40px',
@@ -281,6 +449,7 @@ export default function MobileCheckoutPanel({
                     color: 'white',
                     fontSize: '1rem',
                     outline: 'none',
+                    boxSizing: 'border-box',
                   }}
                 />
               </div>
@@ -295,7 +464,7 @@ export default function MobileCheckoutPanel({
                 display: 'block',
                 marginBottom: '0.5rem',
               }}>
-                Nachname
+                Nachname *
               </label>
               <div style={{ position: 'relative' }}>
                 <User style={{
@@ -312,6 +481,7 @@ export default function MobileCheckoutPanel({
                   value={lastName}
                   onChange={(e) => setLastName(e.target.value)}
                   placeholder="Mustermann"
+                  required
                   style={{
                     width: '100%',
                     padding: '12px 12px 12px 40px',
@@ -321,6 +491,7 @@ export default function MobileCheckoutPanel({
                     color: 'white',
                     fontSize: '1rem',
                     outline: 'none',
+                    boxSizing: 'border-box',
                   }}
                 />
               </div>
@@ -335,7 +506,7 @@ export default function MobileCheckoutPanel({
                 display: 'block',
                 marginBottom: '0.5rem',
               }}>
-                E-Mail
+                E-Mail *
               </label>
               <div style={{ position: 'relative' }}>
                 <Mail style={{
@@ -352,6 +523,7 @@ export default function MobileCheckoutPanel({
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="max@beispiel.de"
+                  required
                   style={{
                     width: '100%',
                     padding: '12px 12px 12px 40px',
@@ -361,11 +533,93 @@ export default function MobileCheckoutPanel({
                     color: 'white',
                     fontSize: '1rem',
                     outline: 'none',
+                    boxSizing: 'border-box',
                   }}
                 />
               </div>
+              <div style={{
+                color: 'rgba(255, 255, 255, 0.5)',
+                fontSize: '0.75rem',
+                marginTop: '0.5rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.25rem',
+              }}>
+                <Mail size={12} />
+                Die Tickets werden an diese E-Mail-Adresse gesendet.
+              </div>
             </div>
           </div>
+
+          {/* AGB & DATENSCHUTZ - nur für User */}
+          {!isAdmin && (
+            <div style={{ marginBottom: '1.5rem' }}>
+              <label style={{
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: '0.5rem',
+                marginBottom: '0.75rem',
+                cursor: 'pointer',
+              }}>
+                <input
+                  type="checkbox"
+                  checked={agreedToTerms}
+                  onChange={(e) => setAgreedToTerms(e.target.checked)}
+                  required
+                  style={{
+                    width: '18px',
+                    height: '18px',
+                    cursor: 'pointer',
+                    marginTop: '2px',
+                    flexShrink: 0,
+                  }}
+                />
+                <span style={{
+                  color: 'white',
+                  fontSize: '0.875rem',
+                  lineHeight: '1.4',
+                }}>
+                  Ich akzeptiere die{' '}
+                  <a href="/agb" target="_blank" style={{ color: '#d4af37', textDecoration: 'underline' }}>
+                    AGB
+                  </a>{' '}
+                  *
+                </span>
+              </label>
+
+              <label style={{
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: '0.5rem',
+                cursor: 'pointer',
+              }}>
+                <input
+                  type="checkbox"
+                  checked={agreedToPrivacy}
+                  onChange={(e) => setAgreedToPrivacy(e.target.checked)}
+                  required
+                  style={{
+                    width: '18px',
+                    height: '18px',
+                    cursor: 'pointer',
+                    marginTop: '2px',
+                    flexShrink: 0,
+                  }}
+                />
+                <span style={{
+                  color: 'white',
+                  fontSize: '0.875rem',
+                  lineHeight: '1.4',
+                }}>
+                  Ich akzeptiere die{' '}
+                  <a href="/datenschutz" target="_blank" style={{ color: '#d4af37', textDecoration: 'underline' }}>
+                    Datenschutzerklärung
+                  </a>{' '}
+                  *
+                </span>
+              </label>
+            </div>
+          )}
 
           {/* PRICE - nur für User */}
           {!isAdmin && (
@@ -385,7 +639,7 @@ export default function MobileCheckoutPanel({
                   {selectedSeats.length} Ticket{selectedSeats.length !== 1 ? 's' : ''} × €{TICKET_PRICE}
                 </span>
                 <span style={{ color: 'white', fontSize: '0.875rem', fontWeight: '600' }}>
-                  €{selectedSeats.length * TICKET_PRICE}
+                  €{voucherValid ? 0 : selectedSeats.length * TICKET_PRICE}
                 </span>
               </div>
               <div style={{
@@ -411,28 +665,36 @@ export default function MobileCheckoutPanel({
           {/* CHECKOUT BUTTON */}
           <button
             onClick={handleCheckout}
-            disabled={loading}
+            disabled={loading || (!isAdmin && (!agreedToTerms || !agreedToPrivacy))}
             style={{
               width: '100%',
               padding: '16px',
-              background: loading 
-                ? 'rgba(212, 175, 55, 0.5)' 
+              background: loading || (!isAdmin && (!agreedToTerms || !agreedToPrivacy))
+                ? 'rgba(212, 175, 55, 0.3)' 
                 : 'linear-gradient(135deg, #d4af37 0%, #f4d03f 100%)',
               border: 'none',
               borderRadius: '12px',
               color: '#0a0a0a',
               fontSize: '1rem',
               fontWeight: '700',
-              cursor: loading ? 'not-allowed' : 'pointer',
+              cursor: loading || (!isAdmin && (!agreedToTerms || !agreedToPrivacy)) ? 'not-allowed' : 'pointer',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               gap: '0.5rem',
-              boxShadow: '0 4px 12px rgba(212, 175, 55, 0.3)',
+              boxShadow: loading || (!isAdmin && (!agreedToTerms || !agreedToPrivacy)) 
+                ? 'none' 
+                : '0 4px 12px rgba(212, 175, 55, 0.3)',
             }}
           >
             <CreditCard style={{ width: '20px', height: '20px' }} />
-            {loading ? 'Lädt...' : (isAdmin ? 'Reservieren' : 'Zur Zahlung')}
+            {loading 
+              ? 'Lädt...' 
+              : isAdmin 
+                ? 'Reservieren' 
+                : voucherValid 
+                  ? 'Kostenlos reservieren'
+                  : 'Zur Zahlung'}
           </button>
         </div>
       </motion.div>
