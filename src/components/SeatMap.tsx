@@ -657,8 +657,8 @@ export default function SeatMap() {
 
         {/* SITZPLAN */}
         <div style={{ 
-          flex: 1,
-          width: '100%',
+          flex: isMobile ? 1 : 'none',  // ✅ Auf Desktop KEIN flex!
+  width: isMobile ? '100%' : 'auto',  // ✅ Auf Desktop auto!
           display: 'flex',
           justifyContent: isMobile ? 'flex-start' : 'center',
           overflow: isMobile ? 'auto' : 'visible',
