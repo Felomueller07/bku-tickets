@@ -667,7 +667,7 @@ export default function SeatMap() {
           
           {/* SCALE WRAPPER */}
           <div style={{
-            transform: isMobile ? 'scale(0.35)' : 'none',
+            transform: isMobile ? 'scale(0.35)' : 'scale(0.85)',
             transformOrigin: isMobile ? 'top left' : 'center',
             width: isMobile ? '1800px' : 'auto',
             marginLeft: isMobile ? '20px' : '0',
