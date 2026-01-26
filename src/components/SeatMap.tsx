@@ -662,7 +662,7 @@ export default function SeatMap() {
           display: 'flex',
           justifyContent: isMobile ? 'flex-start' : 'center',
           overflow: isMobile ? 'auto' : 'visible',
-          maxHeight: isMobile ? '700px' : 'none',
+          maxHeight: isMobile ? '600px' : 'none',
         }}>
           
           {/* SCALE WRAPPER */}
