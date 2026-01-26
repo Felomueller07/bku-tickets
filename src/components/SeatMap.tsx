@@ -842,7 +842,7 @@ export default function SeatMap() {
                 </div>
 
                 {/* PARKETT-EBENE */}
-                <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', padding: isMobile ? '1rem' : '2rem 10rem 9rem 10rem', pointerEvents: 'none' }}>
+                <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '2rem 10rem 9rem 10rem', pointerEvents: 'none' }}>
                   <div style={{ pointerEvents: 'auto' }}>
 
                     {/* HAUPTREIHEN E-Y */}
