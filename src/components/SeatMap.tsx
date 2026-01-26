@@ -645,7 +645,7 @@ export default function SeatMap() {
 
       {/* HAUPT-CONTAINER */}
       <div style={{ 
-        maxWidth: '2100px', 
+        maxWidth: '1800px', 
         margin: '0 auto', 
         display: 'flex', 
         flexDirection: isMobile ? 'column' : 'row',
@@ -657,8 +657,8 @@ export default function SeatMap() {
 
         {/* SITZPLAN */}
         <div style={{ 
-          flex: isMobile ? 1 : 'none',  // ✅ Auf Desktop KEIN flex!
-  width: isMobile ? '100%' : 'auto',  // ✅ Auf Desktop auto!
+          flex: isMobile ? 1 : 0,  // ✅ Desktop: KEIN flex!
+  width: isMobile ? '100%' : 'auto',  // ✅ Desktop: auto!
           display: 'flex',
           justifyContent: isMobile ? 'flex-start' : 'center',
           overflow: isMobile ? 'auto' : 'visible',
@@ -667,7 +667,7 @@ export default function SeatMap() {
           
           {/* SCALE WRAPPER */}
           <div style={{
-            transform: isMobile ? 'scale(0.35)' : 'scale(0.92)',
+            transform: isMobile ? 'scale(0.35)' : 'none',
             transformOrigin: isMobile ? 'top left' : 'center',
             width: isMobile ? '1800px' : 'auto',
             marginLeft: isMobile ? '20px' : '0',
