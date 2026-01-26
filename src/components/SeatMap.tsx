@@ -662,7 +662,7 @@ export default function SeatMap() {
           display: 'flex',
           justifyContent: isMobile ? 'flex-start' : 'center',
           overflow: isMobile ? 'auto' : 'visible',
-          height: isMobile ? 'fit-content' : 'auto',  // ⬅️ NEU!
+          maxHeight: isMobile ? '700px' : 'none',
         }}>
           
           {/* SCALE WRAPPER */}
@@ -671,7 +671,6 @@ export default function SeatMap() {
             transformOrigin: isMobile ? 'top left' : 'center',
             width: isMobile ? '1800px' : 'auto',
             marginLeft: isMobile ? '20px' : '0',
-            height: isMobile ? 'fit-content' : 'auto',  // ⬅️ NEU!
           }}>
             
             <div style={{ 
