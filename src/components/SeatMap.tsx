@@ -651,7 +651,7 @@ export default function SeatMap() {
         flexDirection: isMobile ? 'column' : 'row',
         gap: '2rem', 
         alignItems: 'flex-start', 
-        paddingBottom: isMobile ? '0' : '2rem',  // ✅ Kein Padding auf Mobile!
+        paddingBottom: isMobile ? '0' : '50rem',  // ✅ Kein Padding auf Mobile!
         paddingTop: isMobile ? '80px' : '0',
       }}>
 
