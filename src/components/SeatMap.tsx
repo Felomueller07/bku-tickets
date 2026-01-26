@@ -132,7 +132,7 @@ export default function SeatMap() {
   // State für ausgewählte Sitze
   const [selectedSeats, setSelectedSeats] = useState<Array<{ row: string; number: number }>>([]);
 
-  // State für reservierte Sitze (ca. Zeile 51)
+  // State für reservierte Sitze
   const [occupiedSeats, setOccupiedSeats] = useState<Array<{
     row: string;
     number: number;
@@ -141,8 +141,8 @@ export default function SeatMap() {
     email?: string;
     note?: string;
     createdAt?: string;
-    userId?: number;           // ⭐ NEU
-    user?: {                   // ⭐ NEU
+    userId?: number;
+    user?: {
       id: number;
       email: string;
       name: string;
@@ -161,11 +161,25 @@ export default function SeatMap() {
   const [infoPanelOpen, setInfoPanelOpen] = useState(false);
   const [infoPanelSeat, setInfoPanelSeat] = useState<{ row: string; number: number } | null>(null);
 
+  // Mobile State
+  const [isMobile, setIsMobile] = useState(false);
+
   // ========================================
   // DATEN AUS DATENBANK LADEN (beim Start)
   // ========================================
   useEffect(() => {
     loadSeats();
+  }, []);
+
+  // Mobile Detection
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 1024);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
   const loadSeats = async () => {
@@ -186,8 +200,8 @@ export default function SeatMap() {
           email: seat.email || '',
           note: seat.note || '',
           createdAt: seat.createdAt,
-          userId: seat.userId,       // ⭐ NEU
-          user: seat.user,           // ⭐ NEU
+          userId: seat.userId,
+          user: seat.user,
         }));
 
         console.log('🎯 Mapped Sitze:', mappedSeats);
@@ -195,14 +209,14 @@ export default function SeatMap() {
 
         setOccupiedSeats(mappedSeats);
         console.log('✅ setOccupiedSeats aufgerufen!');
-        setLoading(false);  // ⭐ NEU!
+        setLoading(false);
       } else {
         console.error('❌ API Fehler:', response.status);
-        setLoading(false);  // ⭐ NEU!
+        setLoading(false);
       }
     } catch (error) {
       console.error('❌ Fehler beim Laden:', error);
-      setLoading(false);  // ⭐ NEU!
+      setLoading(false);
     }
   };
 
@@ -215,7 +229,7 @@ export default function SeatMap() {
     if (isOcc && !isAdmin) {
       console.log('❌ Sitz ist bereits belegt!');
       toast.error(`Sitz ${row}${number} ist bereits reserviert`, { duration: 2000 });
-      return; // Früher Exit!
+      return;
     }
 
     // ADMIN: Klick auf ROTEN Sitz → Info-Panel öffnen
@@ -294,7 +308,7 @@ export default function SeatMap() {
   // ========================================
   // DATEN SPEICHERN (UPDATE IN DATENBANK)
   // ========================================
-  const handleModalSave = async (data: { firstName: string; lastName: string; email: string; applyToAll: boolean }) => {  // ⭐ GEÄNDERT: note → email
+  const handleModalSave = async (data: { firstName: string; lastName: string; email: string; applyToAll: boolean }) => {
     if (modalMode === 'edit' && currentEditSeat) {
       try {
         if (data.applyToAll && selectedSeats.length > 1) {
@@ -307,7 +321,7 @@ export default function SeatMap() {
                 body: JSON.stringify({
                   firstName: data.firstName,
                   lastName: data.lastName,
-                  email: data.email,  // ⭐ GEÄNDERT: note → email
+                  email: data.email,
                 })
               })
             );
@@ -322,7 +336,7 @@ export default function SeatMap() {
             body: JSON.stringify({
               firstName: data.firstName,
               lastName: data.lastName,
-              email: data.email,  // ⭐ GEÄNDERT: note → email
+              email: data.email,
             })
           });
 
@@ -439,7 +453,6 @@ export default function SeatMap() {
     return undefined;
   };
 
-  // ⭐ FÜGE HIER EIN:
   const handleRemoveSeat = (row: string, number: number) => {
     setSelectedSeats(prev => prev.filter(s => !(s.row === row && s.number === number)));
   };  
@@ -532,282 +545,313 @@ export default function SeatMap() {
         currentUserId={Number((session?.user as any)?.id)}
       />
 
-      <div style={{ maxWidth: '1800px', margin: '0 auto', display: 'flex', gap: '2rem', alignItems: 'flex-start', paddingBottom: '2rem' }}>
-
-        {/* SITZPLAN */}
-        <div style={{ flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.3)', backdropFilter: 'blur(10px)', borderRadius: '1rem', padding: '2rem', border: '1px solid rgba(255, 255, 255, 0.2)' }}>
-
-          <p style={{ color: 'white', marginBottom: '1.5rem', fontSize: '1.125rem', textAlign: 'center' }}>
-            Sitzplan {isAdmin && <span style={{ color: '#d4af37' }}>(Admin-Modus)</span>}
-          </p>
-
-          {/* BÜHNE */}
-          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '2rem' }}>
-            <div style={{ width: '600px', height: '200px', background: 'linear-gradient(180deg, rgba(90, 74, 66, 0.4) 0%, rgba(90, 74, 66, 0.2) 100%)', border: '2px solid rgba(255, 255, 255, 0.2)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <span style={{ color: '#d4af37', fontSize: '22px', fontWeight: '300', letterSpacing: '4px', textTransform: 'uppercase', fontFamily: 'Georgia, serif', textShadow: '0 2px 8px rgba(212, 175, 55, 0.3)' }}>Bühne</span>
+      {/* MOBILE HEADER - nur auf Mobile sichtbar */}
+      {isMobile && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          height: '80px',
+          background: 'linear-gradient(135deg, rgba(10, 10, 10, 0.98) 0%, rgba(20, 20, 20, 0.95) 100%)',
+          backdropFilter: 'blur(10px)',
+          borderBottom: '1px solid rgba(212, 175, 55, 0.3)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '0 1rem',
+          zIndex: 100,
+          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
+        }}>
+          
+          {/* LEFT: Event Info */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+            <div style={{ 
+              fontSize: '18px', 
+              fontWeight: '700', 
+              color: '#d4af37',
+              letterSpacing: '0.5px',
+              lineHeight: '1.2',
+            }}>
+              Josefi Konzert
+            </div>
+            <div style={{ 
+              fontSize: '14px', 
+              fontWeight: '600', 
+              color: 'white',
+              lineHeight: '1.2',
+            }}>
+              2026
             </div>
           </div>
 
-          {/* HAUPT-CONTAINER */}
-          <div style={{ position: 'relative' }}>
+          {/* CENTER: BKU Badge */}
+          <div style={{
+            position: 'absolute',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.15) 0%, rgba(212, 175, 55, 0.05) 100%)',
+            border: '1px solid rgba(212, 175, 55, 0.4)',
+            borderRadius: '12px',
+            padding: '8px 16px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+          }}>
+            <div style={{
+              width: '6px',
+              height: '6px',
+              borderRadius: '50%',
+              background: '#d4af37',
+            }}></div>
+            <span style={{
+              fontSize: '13px',
+              fontWeight: '600',
+              color: '#d4af37',
+              letterSpacing: '1px',
+            }}>
+              BKU
+            </span>
+          </div>
 
-            {/* GALERIE-EBENE */}
-            <div style={{ position: 'absolute', top: '-230px', left: 0, right: 0, bottom: 0 }}>
-
-              {/* LINKE GALERIE (BA, BB) */}
-              <div style={{ position: 'absolute', top: 0, left: 0, bottom: 0, width: '150px', border: '2px solid rgba(255, 255, 255, 0.3)', borderRadius: '1rem', backgroundColor: 'rgba(0, 0, 0, 0.2)', padding: '1.5rem 1rem', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                <div style={{ color: '#d4af37', fontSize: '14px', fontWeight: 'bold', marginBottom: '1rem', letterSpacing: '1px' }}>GALERIE</div>
-
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
-                  {['BA', 'BB'].map(col => (
-                    <div key={col} style={{ display: 'flex', flexDirection: 'column' }}>
-                      <div style={{ color: 'white', fontSize: '14px', fontWeight: 'bold', textAlign: 'center', marginBottom: '0.5rem', width: '32px' }}>{col}</div>
-
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '3rem' }}>
-                        {sideRowsLeft.map((group, groupIdx) => (
-                          <div key={groupIdx} style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                            {group.map(seatNum => (
-                              <SeatChair
-                                key={`${col}-${seatNum}`}
-                                row={col}
-                                number={seatNum}
-                                rotation={90}
-                                isOccupied={isSeatOccupied(col, seatNum)}
-                                isSelected={isSeatSelected(col, seatNum)}
-                                isAdmin={isAdmin}
-                                onToggleSelect={handleToggleSelect}
-                              />
-                            ))}
-                          </div>
-                        ))}
-                      </div>
-
-                      <div style={{ color: 'white', fontSize: '14px', fontWeight: 'bold', textAlign: 'center', marginTop: '0.5rem', width: '32px' }}>{col}</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* RECHTE GALERIE (BC, BD) */}
-              <div style={{ position: 'absolute', top: 0, right: 0, bottom: 0, width: '150px', border: '2px solid rgba(255, 255, 255, 0.3)', borderRadius: '1rem', backgroundColor: 'rgba(0, 0, 0, 0.2)', padding: '1.5rem 1rem', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                <div style={{ color: '#d4af37', fontSize: '14px', fontWeight: 'bold', marginBottom: '1rem', letterSpacing: '1px' }}>GALERIE</div>
-
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
-                  {['BC', 'BD'].map(col => (
-                    <div key={col} style={{ display: 'flex', flexDirection: 'column' }}>
-                      <div style={{ color: 'white', fontSize: '14px', fontWeight: 'bold', textAlign: 'center', marginBottom: '0.5rem', width: '32px' }}>{col}</div>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '3rem' }}>
-                        {sideRowsLeft.map((group, groupIdx) => (
-                          <div key={groupIdx} style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                            {group.map(seatNum => (
-                              <SeatChair
-                                key={`${col}-${seatNum}`}
-                                row={col}
-                                number={seatNum}
-                                rotation={-90}
-                                isOccupied={isSeatOccupied(col, seatNum)}
-                                isSelected={isSeatSelected(col, seatNum)}
-                                isAdmin={isAdmin}
-                                onToggleSelect={handleToggleSelect}
-                              />
-                            ))}
-                          </div>
-                        ))}
-                      </div>
-                      <div style={{ color: 'white', fontSize: '14px', fontWeight: 'bold', textAlign: 'center', marginTop: '0.5rem', width: '32px' }}>{col}</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* UNTERE GALERIE (BM) */}
-              <div style={{ position: 'absolute', bottom: '20px', left: '200px', right: '200px', border: '2px solid rgba(255, 255, 255, 0.3)', borderRadius: '1rem', backgroundColor: 'rgba(0, 0, 0, 0.2)', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.75rem' }}>
-                  <div style={{ color: 'white', fontSize: '14px', fontWeight: 'bold' }}>BM</div>
-
-                  <div style={{ display: 'flex', gap: '0px' }}>
-                    {[1, 2, 3, 4].map(num => (
-                      <SeatChair
-                        key={`BM-${num}`}
-                        row="BM"
-                        number={num}
-                        isOccupied={isSeatOccupied('BM', num)}
-                        isSelected={isSeatSelected('BM', num)}
-                        isAdmin={isAdmin}
-                        onToggleSelect={handleToggleSelect}
-                      />
-                    ))}
-                  </div>
-
-                  <div style={{ display: 'flex', gap: '0px' }}>
-                    {[5, 6, 7, 8, 9, 10, 11, 12].map(num => (
-                      <SeatChair
-                        key={`BM-${num}`}
-                        row="BM"
-                        number={num}
-                        isOccupied={isSeatOccupied('BM', num)}
-                        isSelected={isSeatSelected('BM', num)}
-                        isAdmin={isAdmin}
-                        onToggleSelect={handleToggleSelect}
-                      />
-                    ))}
-                  </div>
-
-                  <div style={{ display: 'flex', gap: '0px' }}>
-                    {[13, 14, 15, 16].map(num => (
-                      <SeatChair
-                        key={`BM-${num}`}
-                        row="BM"
-                        number={num}
-                        isOccupied={isSeatOccupied('BM', num)}
-                        isSelected={isSeatSelected('BM', num)}
-                        isAdmin={isAdmin}
-                        onToggleSelect={handleToggleSelect}
-                      />
-                    ))}
-                  </div>
-
-                  <div style={{ color: 'white', fontSize: '14px', fontWeight: 'bold' }}>BM</div>
-                </div>
-
-                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.75rem' }}>
-                  <div style={{ color: 'white', fontSize: '14px', fontWeight: 'bold' }}>BM</div>
-                  <div style={{ display: 'flex', gap: '0px' }}>
-                    {[17, 18, 19, 20, 21, 22].map(num => (
-                      <SeatChair
-                        key={`BM-${num}`}
-                        row="BM"
-                        number={num}
-                        isOccupied={isSeatOccupied('BM', num)}
-                        isSelected={isSeatSelected('BM', num)}
-                        isAdmin={isAdmin}
-                        onToggleSelect={handleToggleSelect}
-                      />
-                    ))}
-                  </div>
-                  <div style={{ color: 'white', fontSize: '14px', fontWeight: 'bold' }}>BM</div>
-                </div>
-              </div>
+          {/* RIGHT: User & Logout */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            {/* User Name */}
+            <div style={{
+              fontSize: '12px',
+              color: 'rgba(255, 255, 255, 0.7)',
+              fontWeight: '500',
+              maxWidth: '80px',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}>
+              {(session?.user as any)?.name || (session?.user as any)?.email?.split('@')[0] || 'Admin'}
             </div>
 
-            {/* PARKETT-EBENE */}
-            <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '2rem 10rem 9rem 10rem', pointerEvents: 'none' }}>
-              <div style={{ pointerEvents: 'auto' }}>
+            {/* Logout Button */}
+            <button
+              onClick={() => window.location.href = '/api/auth/signout'}
+              style={{
+                background: 'rgba(239, 68, 68, 0.1)',
+                border: '1px solid rgba(239, 68, 68, 0.3)',
+                borderRadius: '8px',
+                padding: '6px 12px',
+                fontSize: '11px',
+                fontWeight: '600',
+                color: '#ef4444',
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+              }}
+            >
+              Abmelden
+            </button>
+          </div>
+        </div>
+      )}
 
-                {/* HAUPTREIHEN E-Y */}
-                {mainRows.map(({ letter, leftSeats, rightSeats }) => (
-                  <Fragment key={letter}>
-                    <div style={{ display: 'flex', alignItems: 'center', marginBottom: '2px', gap: '20px' }}>
-                      <div style={{ color: 'white', fontSize: '16px', fontWeight: 'bold', width: '22px', textAlign: 'center', flexShrink: 0 }}>{letter}</div>
+      {/* HAUPT-CONTAINER - Desktop: row, Mobile: column */}
+      <div style={{ 
+        maxWidth: '1800px', 
+        margin: '0 auto', 
+        display: 'flex', 
+        flexDirection: isMobile ? 'column' : 'row',
+        gap: '2rem', 
+        alignItems: 'flex-start', 
+        paddingBottom: '2rem',
+        paddingTop: isMobile ? '90px' : '0',
+      }}>
 
-                      <div style={{ display: 'flex', gap: '0px' }}>
-                        {leftSeats.map(number => (
-                          <SeatChair
-                            key={`${letter}-${number}`}
-                            row={letter}
-                            number={number}
-                            isOccupied={isSeatOccupied(letter, number)}
-                            isSelected={isSeatSelected(letter, number)}
-                            isAdmin={isAdmin}
-                            onToggleSelect={handleToggleSelect}
-                          />
-                        ))}
-                      </div>
+        {/* SITZPLAN - mit CSS Scale auf Mobile */}
+        <div style={{ 
+          flex: 1, 
+          display: 'flex',
+          justifyContent: 'center',
+          overflow: isMobile ? 'auto' : 'visible',
+          width: isMobile ? '100%' : 'auto',
+        }}>
+          
+          {/* SCALE WRAPPER */}
+          <div style={{
+            transform: isMobile ? 'scale(0.45)' : 'none',
+            transformOrigin: isMobile ? 'top left' : 'center',
+            width: isMobile ? '1400px' : 'auto',
+            marginLeft: isMobile ? '50px' : '0',
+          }}>
+            
+            <div style={{ 
+              backgroundColor: 'rgba(0, 0, 0, 0.3)', 
+              backdropFilter: 'blur(10px)', 
+              borderRadius: '1rem', 
+              padding: '2rem', 
+              border: '1px solid rgba(255, 255, 255, 0.2)' 
+            }}>
 
-                      <div style={{ color: 'white', fontSize: '20px', fontWeight: 'bold', width: '35px', textAlign: 'center', flexShrink: 0, padding: '0 12px' }}>{letter}</div>
+              <p style={{ color: 'white', marginBottom: '1.5rem', fontSize: '1.125rem', textAlign: 'center' }}>
+                Sitzplan {isAdmin && <span style={{ color: '#d4af37' }}>(Admin-Modus)</span>}
+              </p>
 
-                      <div style={{ display: 'flex', gap: '0px' }}>
-                        {rightSeats.map(number => (
-                          <SeatChair
-                            key={`${letter}-${number}`}
-                            row={letter}
-                            number={number}
-                            isOccupied={isSeatOccupied(letter, number)}
-                            isSelected={isSeatSelected(letter, number)}
-                            isAdmin={isAdmin}
-                            onToggleSelect={handleToggleSelect}
-                          />
-                        ))}
-                      </div>
-
-                      <div style={{ color: 'white', fontSize: '16px', fontWeight: 'bold', width: '22px', textAlign: 'center', flexShrink: 0 }}>{letter}</div>
-                    </div>
-
-                    {letter === 'N' && <div style={{ height: '2rem' }}></div>}
-                  </Fragment>
-                ))}
-
-                {/* HINTERE REIHEN Z-ZE */}
-                <div style={{ marginTop: '2px' }}>
-                  {backRows.map(({ letter, leftRange, leftActual, rightRange, rightActual }) => (
-                    <div key={letter} style={{ display: 'flex', alignItems: 'center', marginBottom: '2px', gap: '20px' }}>
-                      <div style={{ color: 'white', fontSize: '16px', fontWeight: 'bold', width: '22px', textAlign: 'center', flexShrink: 0 }}>{letter}</div>
-
-                      <div style={{ display: 'flex', gap: '0px' }}>
-                        {Array.from({ length: leftRange.end - leftRange.start + 1 }, (_, i) => leftRange.start + i).map(number => (
-                          <div key={`${letter}-${number}`}>
-                            {leftActual.includes(number) ? (
-                              <SeatChair
-                                row={letter}
-                                number={number}
-                                isOccupied={isSeatOccupied(letter, number)}
-                                isSelected={isSeatSelected(letter, number)}
-                                isAdmin={isAdmin}
-                                onToggleSelect={handleToggleSelect}
-                              />
-                            ) : (
-                              <EmptySeat />
-                            )}
-                          </div>
-                        ))}
-                      </div>
-
-                      <div style={{ color: 'white', fontSize: '20px', fontWeight: 'bold', width: '35px', textAlign: 'center', flexShrink: 0, padding: '0 12px' }}>{letter}</div>
-
-                      <div style={{ display: 'flex', gap: '0px' }}>
-                        {Array.from({ length: rightRange.end - rightRange.start + 1 }, (_, i) => rightRange.start + i).map(number => (
-                          <div key={`${letter}-${number}`}>
-                            {rightActual.includes(number) ? (
-                              <SeatChair
-                                row={letter}
-                                number={number}
-                                isOccupied={isSeatOccupied(letter, number)}
-                                isSelected={isSeatSelected(letter, number)}
-                                isAdmin={isAdmin}
-                                onToggleSelect={handleToggleSelect}
-                              />
-                            ) : (
-                              <EmptySeat />
-                            )}
-                          </div>
-                        ))}
-                      </div>
-
-                      <div style={{ color: 'white', fontSize: '16px', fontWeight: 'bold', width: '22px', textAlign: 'center', flexShrink: 0 }}>{letter}</div>
-                    </div>
-                  ))}
+              {/* BÜHNE */}
+              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '2rem' }}>
+                <div style={{ width: '600px', height: '200px', background: 'linear-gradient(180deg, rgba(90, 74, 66, 0.4) 0%, rgba(90, 74, 66, 0.2) 100%)', border: '2px solid rgba(255, 255, 255, 0.2)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <span style={{ color: '#d4af37', fontSize: '22px', fontWeight: '300', letterSpacing: '4px', textTransform: 'uppercase', fontFamily: 'Georgia, serif', textShadow: '0 2px 8px rgba(212, 175, 55, 0.3)' }}>Bühne</span>
                 </div>
+              </div>
 
-                {/* TREPPEN */}
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', marginTop: '1rem', marginBottom: '1rem', width: '100%' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginLeft: '-70px' }}>
-                    <div style={{ width: '292px', height: '8px', background: 'linear-gradient(180deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0.1) 100%)', border: '1px solid rgba(255, 255, 255, 0.3)', borderRadius: '2px' }}></div>
-                    <div style={{ width: '292px', height: '8px', background: 'linear-gradient(180deg, rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0.08) 100%)', border: '1px solid rgba(255, 255, 255, 0.25)', borderRadius: '2px' }}></div>
-                    <div style={{ width: '292px', height: '8px', background: 'linear-gradient(180deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.05) 100%)', border: '1px solid rgba(255, 255, 255, 0.2)', borderRadius: '2px' }}></div>
+              {/* HAUPT-CONTAINER - 100% ORIGINAL! */}
+              <div style={{ position: 'relative' }}>
+
+                {/* GALERIE-EBENE */}
+                <div style={{ position: 'absolute', top: '-230px', left: 0, right: 0, bottom: 0 }}>
+
+                  {/* LINKE GALERIE (BA, BB) */}
+                  <div style={{ position: 'absolute', top: 0, left: 0, bottom: 0, width: '150px', border: '2px solid rgba(255, 255, 255, 0.3)', borderRadius: '1rem', backgroundColor: 'rgba(0, 0, 0, 0.2)', padding: '1.5rem 1rem', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                    <div style={{ color: '#d4af37', fontSize: '14px', fontWeight: 'bold', marginBottom: '1rem', letterSpacing: '1px' }}>GALERIE</div>
+
+                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                      {['BA', 'BB'].map(col => (
+                        <div key={col} style={{ display: 'flex', flexDirection: 'column' }}>
+                          <div style={{ color: 'white', fontSize: '14px', fontWeight: 'bold', textAlign: 'center', marginBottom: '0.5rem', width: '32px' }}>{col}</div>
+
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '3rem' }}>
+                            {sideRowsLeft.map((group, groupIdx) => (
+                              <div key={groupIdx} style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                                {group.map(seatNum => (
+                                  <SeatChair
+                                    key={`${col}-${seatNum}`}
+                                    row={col}
+                                    number={seatNum}
+                                    rotation={90}
+                                    isOccupied={isSeatOccupied(col, seatNum)}
+                                    isSelected={isSeatSelected(col, seatNum)}
+                                    isAdmin={isAdmin}
+                                    onToggleSelect={handleToggleSelect}
+                                  />
+                                ))}
+                              </div>
+                            ))}
+                          </div>
+
+                          <div style={{ color: 'white', fontSize: '14px', fontWeight: 'bold', textAlign: 'center', marginTop: '0.5rem', width: '32px' }}>{col}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* RECHTE GALERIE (BC, BD) */}
+                  <div style={{ position: 'absolute', top: 0, right: 0, bottom: 0, width: '150px', border: '2px solid rgba(255, 255, 255, 0.3)', borderRadius: '1rem', backgroundColor: 'rgba(0, 0, 0, 0.2)', padding: '1.5rem 1rem', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                    <div style={{ color: '#d4af37', fontSize: '14px', fontWeight: 'bold', marginBottom: '1rem', letterSpacing: '1px' }}>GALERIE</div>
+
+                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                      {['BC', 'BD'].map(col => (
+                        <div key={col} style={{ display: 'flex', flexDirection: 'column' }}>
+                          <div style={{ color: 'white', fontSize: '14px', fontWeight: 'bold', textAlign: 'center', marginBottom: '0.5rem', width: '32px' }}>{col}</div>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '3rem' }}>
+                            {sideRowsLeft.map((group, groupIdx) => (
+                              <div key={groupIdx} style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                                {group.map(seatNum => (
+                                  <SeatChair
+                                    key={`${col}-${seatNum}`}
+                                    row={col}
+                                    number={seatNum}
+                                    rotation={-90}
+                                    isOccupied={isSeatOccupied(col, seatNum)}
+                                    isSelected={isSeatSelected(col, seatNum)}
+                                    isAdmin={isAdmin}
+                                    onToggleSelect={handleToggleSelect}
+                                  />
+                                ))}
+                              </div>
+                            ))}
+                          </div>
+                          <div style={{ color: 'white', fontSize: '14px', fontWeight: 'bold', textAlign: 'center', marginTop: '0.5rem', width: '32px' }}>{col}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* UNTERE GALERIE (BM) */}
+                  <div style={{ position: 'absolute', bottom: '20px', left: '200px', right: '200px', border: '2px solid rgba(255, 255, 255, 0.3)', borderRadius: '1rem', backgroundColor: 'rgba(0, 0, 0, 0.2)', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.75rem' }}>
+                      <div style={{ color: 'white', fontSize: '14px', fontWeight: 'bold' }}>BM</div>
+
+                      <div style={{ display: 'flex', gap: '0px' }}>
+                        {[1, 2, 3, 4].map(num => (
+                          <SeatChair
+                            key={`BM-${num}`}
+                            row="BM"
+                            number={num}
+                            isOccupied={isSeatOccupied('BM', num)}
+                            isSelected={isSeatSelected('BM', num)}
+                            isAdmin={isAdmin}
+                            onToggleSelect={handleToggleSelect}
+                          />
+                        ))}
+                      </div>
+
+                      <div style={{ display: 'flex', gap: '0px' }}>
+                        {[5, 6, 7, 8, 9, 10, 11, 12].map(num => (
+                          <SeatChair
+                            key={`BM-${num}`}
+                            row="BM"
+                            number={num}
+                            isOccupied={isSeatOccupied('BM', num)}
+                            isSelected={isSeatSelected('BM', num)}
+                            isAdmin={isAdmin}
+                            onToggleSelect={handleToggleSelect}
+                          />
+                        ))}
+                      </div>
+
+                      <div style={{ display: 'flex', gap: '0px' }}>
+                        {[13, 14, 15, 16].map(num => (
+                          <SeatChair
+                            key={`BM-${num}`}
+                            row="BM"
+                            number={num}
+                            isOccupied={isSeatOccupied('BM', num)}
+                            isSelected={isSeatSelected('BM', num)}
+                            isAdmin={isAdmin}
+                            onToggleSelect={handleToggleSelect}
+                          />
+                        ))}
+                      </div>
+
+                      <div style={{ color: 'white', fontSize: '14px', fontWeight: 'bold' }}>BM</div>
+                    </div>
+
+                    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.75rem' }}>
+                      <div style={{ color: 'white', fontSize: '14px', fontWeight: 'bold' }}>BM</div>
+                      <div style={{ display: 'flex', gap: '0px' }}>
+                        {[17, 18, 19, 20, 21, 22].map(num => (
+                          <SeatChair
+                            key={`BM-${num}`}
+                            row="BM"
+                            number={num}
+                            isOccupied={isSeatOccupied('BM', num)}
+                            isSelected={isSeatSelected('BM', num)}
+                            isAdmin={isAdmin}
+                            onToggleSelect={handleToggleSelect}
+                          />
+                        ))}
+                      </div>
+                      <div style={{ color: 'white', fontSize: '14px', fontWeight: 'bold' }}>BM</div>
+                    </div>
                   </div>
                 </div>
 
-                {/* GANZ HINTERE REIHEN ZF-ZK */}
-                <div style={{ marginTop: '0px', position: 'relative' }}>
-                  {veryBackRows.map(({ letter, leftActual, rightActual }) => (
-                    <div key={letter} style={{ display: 'flex', alignItems: 'center', marginBottom: '2px', position: 'relative', height: '32px' }}>
+                {/* PARKETT-EBENE */}
+                <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '2rem 10rem 9rem 10rem', pointerEvents: 'none' }}>
+                  <div style={{ pointerEvents: 'auto' }}>
 
-                      <div style={{ position: 'absolute', left: '0px', color: 'white', fontSize: '16px', fontWeight: 'bold', width: '22px', textAlign: 'center' }}>{letter}</div>
+                    {/* HAUPTREIHEN E-Y */}
+                    {mainRows.map(({ letter, leftSeats, rightSeats }) => (
+                      <Fragment key={letter}>
+                        <div style={{ display: 'flex', alignItems: 'center', marginBottom: '2px', gap: '20px' }}>
+                          <div style={{ color: 'white', fontSize: '16px', fontWeight: 'bold', width: '22px', textAlign: 'center', flexShrink: 0 }}>{letter}</div>
 
-                      <div style={{ display: 'flex', alignItems: 'center', marginLeft: '130px', gap: '5px' }}>
-                        <div style={{ display: 'flex', gap: '0px' }}>
-                          {[10, 11].map(number => (
-                            leftActual.includes(number) ? (
+                          <div style={{ display: 'flex', gap: '0px' }}>
+                            {leftSeats.map(number => (
                               <SeatChair
                                 key={`${letter}-${number}`}
                                 row={letter}
@@ -817,17 +861,13 @@ export default function SeatMap() {
                                 isAdmin={isAdmin}
                                 onToggleSelect={handleToggleSelect}
                               />
-                            ) : (
-                              <EmptySeat key={`${letter}-empty-${number}`} />
-                            )
-                          ))}
-                        </div>
+                            ))}
+                          </div>
 
-                        <div style={{ width: '20px' }}></div>
+                          <div style={{ color: 'white', fontSize: '20px', fontWeight: 'bold', width: '35px', textAlign: 'center', flexShrink: 0, padding: '0 12px' }}>{letter}</div>
 
-                        <div style={{ display: 'flex', gap: '0px' }}>
-                          {[12, 13, 14, 15].map(number => (
-                            leftActual.includes(number) ? (
+                          <div style={{ display: 'flex', gap: '0px' }}>
+                            {rightSeats.map(number => (
                               <SeatChair
                                 key={`${letter}-${number}`}
                                 row={letter}
@@ -837,60 +877,177 @@ export default function SeatMap() {
                                 isAdmin={isAdmin}
                                 onToggleSelect={handleToggleSelect}
                               />
-                            ) : (
-                              <EmptySeat key={`${letter}-empty-${number}`} />
-                            )
-                          ))}
+                            ))}
+                          </div>
+
+                          <div style={{ color: 'white', fontSize: '16px', fontWeight: 'bold', width: '22px', textAlign: 'center', flexShrink: 0 }}>{letter}</div>
                         </div>
-                      </div>
 
-                      <div style={{ position: 'absolute', left: '300px', color: 'white', fontSize: '20px', fontWeight: 'bold', width: '35px', textAlign: 'center', padding: '0 12px' }}>{letter}</div>
+                        {letter === 'N' && <div style={{ height: '2rem' }}></div>}
+                      </Fragment>
+                    ))}
 
-                      <div style={{ position: 'absolute', left: '360px', display: 'flex', gap: '0px' }}>
-                        {[16, 17, 18, 19].map(number => (
-                          rightActual.includes(number) ? (
-                            <SeatChair
-                              key={`${letter}-${number}`}
-                              row={letter}
-                              number={number}
-                              isOccupied={isSeatOccupied(letter, number)}
-                              isSelected={isSeatSelected(letter, number)}
-                              isAdmin={isAdmin}
-                              onToggleSelect={handleToggleSelect}
-                            />
-                          ) : (
-                            <EmptySeat key={`${letter}-empty-${number}`} />
-                          )
-                        ))}
-                      </div>
+                    {/* HINTERE REIHEN Z-ZE */}
+                    <div style={{ marginTop: '2px' }}>
+                      {backRows.map(({ letter, leftRange, leftActual, rightRange, rightActual }) => (
+                        <div key={letter} style={{ display: 'flex', alignItems: 'center', marginBottom: '2px', gap: '20px' }}>
+                          <div style={{ color: 'white', fontSize: '16px', fontWeight: 'bold', width: '22px', textAlign: 'center', flexShrink: 0 }}>{letter}</div>
 
-                      <div style={{ position: 'absolute', right: '0px', color: 'white', fontSize: '16px', fontWeight: 'bold', width: '22px', textAlign: 'center' }}>{letter}</div>
+                          <div style={{ display: 'flex', gap: '0px' }}>
+                            {Array.from({ length: leftRange.end - leftRange.start + 1 }, (_, i) => leftRange.start + i).map(number => (
+                              <div key={`${letter}-${number}`}>
+                                {leftActual.includes(number) ? (
+                                  <SeatChair
+                                    row={letter}
+                                    number={number}
+                                    isOccupied={isSeatOccupied(letter, number)}
+                                    isSelected={isSeatSelected(letter, number)}
+                                    isAdmin={isAdmin}
+                                    onToggleSelect={handleToggleSelect}
+                                  />
+                                ) : (
+                                  <EmptySeat />
+                                )}
+                              </div>
+                            ))}
+                          </div>
+
+                          <div style={{ color: 'white', fontSize: '20px', fontWeight: 'bold', width: '35px', textAlign: 'center', flexShrink: 0, padding: '0 12px' }}>{letter}</div>
+
+                          <div style={{ display: 'flex', gap: '0px' }}>
+                            {Array.from({ length: rightRange.end - rightRange.start + 1 }, (_, i) => rightRange.start + i).map(number => (
+                              <div key={`${letter}-${number}`}>
+                                {rightActual.includes(number) ? (
+                                  <SeatChair
+                                    row={letter}
+                                    number={number}
+                                    isOccupied={isSeatOccupied(letter, number)}
+                                    isSelected={isSeatSelected(letter, number)}
+                                    isAdmin={isAdmin}
+                                    onToggleSelect={handleToggleSelect}
+                                  />
+                                ) : (
+                                  <EmptySeat />
+                                )}
+                              </div>
+                            ))}
+                          </div>
+
+                          <div style={{ color: 'white', fontSize: '16px', fontWeight: 'bold', width: '22px', textAlign: 'center', flexShrink: 0 }}>{letter}</div>
+                        </div>
+                      ))}
                     </div>
-                  ))}
+
+                    {/* TREPPEN */}
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', marginTop: '1rem', marginBottom: '1rem', width: '100%' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginLeft: '-70px' }}>
+                        <div style={{ width: '292px', height: '8px', background: 'linear-gradient(180deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0.1) 100%)', border: '1px solid rgba(255, 255, 255, 0.3)', borderRadius: '2px' }}></div>
+                        <div style={{ width: '292px', height: '8px', background: 'linear-gradient(180deg, rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0.08) 100%)', border: '1px solid rgba(255, 255, 255, 0.25)', borderRadius: '2px' }}></div>
+                        <div style={{ width: '292px', height: '8px', background: 'linear-gradient(180deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.05) 100%)', border: '1px solid rgba(255, 255, 255, 0.2)', borderRadius: '2px' }}></div>
+                      </div>
+                    </div>
+
+                    {/* GANZ HINTERE REIHEN ZF-ZK */}
+                    <div style={{ marginTop: '0px', position: 'relative' }}>
+                      {veryBackRows.map(({ letter, leftActual, rightActual }) => (
+                        <div key={letter} style={{ display: 'flex', alignItems: 'center', marginBottom: '2px', position: 'relative', height: '32px' }}>
+
+                          <div style={{ position: 'absolute', left: '0px', color: 'white', fontSize: '16px', fontWeight: 'bold', width: '22px', textAlign: 'center' }}>{letter}</div>
+
+                          <div style={{ display: 'flex', alignItems: 'center', marginLeft: '130px', gap: '5px' }}>
+                            <div style={{ display: 'flex', gap: '0px' }}>
+                              {[10, 11].map(number => (
+                                leftActual.includes(number) ? (
+                                  <SeatChair
+                                    key={`${letter}-${number}`}
+                                    row={letter}
+                                    number={number}
+                                    isOccupied={isSeatOccupied(letter, number)}
+                                    isSelected={isSeatSelected(letter, number)}
+                                    isAdmin={isAdmin}
+                                    onToggleSelect={handleToggleSelect}
+                                  />
+                                ) : (
+                                  <EmptySeat key={`${letter}-empty-${number}`} />
+                                )
+                              ))}
+                            </div>
+
+                            <div style={{ width: '20px' }}></div>
+
+                            <div style={{ display: 'flex', gap: '0px' }}>
+                              {[12, 13, 14, 15].map(number => (
+                                leftActual.includes(number) ? (
+                                  <SeatChair
+                                    key={`${letter}-${number}`}
+                                    row={letter}
+                                    number={number}
+                                    isOccupied={isSeatOccupied(letter, number)}
+                                    isSelected={isSeatSelected(letter, number)}
+                                    isAdmin={isAdmin}
+                                    onToggleSelect={handleToggleSelect}
+                                  />
+                                ) : (
+                                  <EmptySeat key={`${letter}-empty-${number}`} />
+                                )
+                              ))}
+                            </div>
+                          </div>
+
+                          <div style={{ position: 'absolute', left: '300px', color: 'white', fontSize: '20px', fontWeight: 'bold', width: '35px', textAlign: 'center', padding: '0 12px' }}>{letter}</div>
+
+                          <div style={{ position: 'absolute', left: '360px', display: 'flex', gap: '0px' }}>
+                            {[16, 17, 18, 19].map(number => (
+                              rightActual.includes(number) ? (
+                                <SeatChair
+                                  key={`${letter}-${number}`}
+                                  row={letter}
+                                  number={number}
+                                  isOccupied={isSeatOccupied(letter, number)}
+                                  isSelected={isSeatSelected(letter, number)}
+                                  isAdmin={isAdmin}
+                                  onToggleSelect={handleToggleSelect}
+                                />
+                              ) : (
+                                <EmptySeat key={`${letter}-empty-${number}`} />
+                              )
+                            ))}
+                          </div>
+
+                          <div style={{ position: 'absolute', right: '0px', color: 'white', fontSize: '16px', fontWeight: 'bold', width: '22px', textAlign: 'center' }}>{letter}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* SIDEBAR - Admin oder User */}
-        {isAdmin ? (
-          <AdminSidebar
-            selectedSeats={selectedSeats}
-            occupiedSeats={occupiedSeats}
-            isSeatOccupied={isSeatOccupied}
-            onReserve={handleReserveClick}
-            onRelease={handleAdminRelease}
-            onReleaseAll={handleAdminReleaseAll}
-            onSeatClick={handleSidebarSeatClick}
-            onAddDataClick={handleAddDataClick}
-          />
-        ) : (
-          <UserSidebar
-            selectedSeats={selectedSeats}
-            onRemoveSeat={handleRemoveSeat}
-          />
-        )}
+        {/* SIDEBAR - Desktop: rechts, Mobile: unten */}
+        <div style={{ 
+          width: isMobile ? '100%' : 'auto',
+          marginTop: isMobile ? '2rem' : '0'
+        }}>
+          {isAdmin ? (
+            <AdminSidebar
+              selectedSeats={selectedSeats}
+              occupiedSeats={occupiedSeats}
+              isSeatOccupied={isSeatOccupied}
+              onReserve={handleReserveClick}
+              onRelease={handleAdminRelease}
+              onReleaseAll={handleAdminReleaseAll}
+              onSeatClick={handleSidebarSeatClick}
+              onAddDataClick={handleAddDataClick}
+            />
+          ) : (
+            <UserSidebar
+              selectedSeats={selectedSeats}
+              onRemoveSeat={handleRemoveSeat}
+            />
+          )}
+        </div>
       </div>
     </>
   );
