@@ -183,14 +183,11 @@ export default function SeatMap() {
   }, []);
 
   const loadSeats = async () => {
-    console.log('🔄 loadSeats gestartet...');
     try {
       const response = await fetch('/api/seats');
-      console.log('📡 API Response:', response.ok, response.status);
 
       if (response.ok) {
         const data = await response.json();
-        console.log('📦 Rohdaten von API:', data);
 
         const mappedSeats = data.map((seat: any) => ({
           row: seat.row,
@@ -204,14 +201,9 @@ export default function SeatMap() {
           user: seat.user,
         }));
 
-        console.log('🎯 Mapped Sitze:', mappedSeats);
-        console.log('📊 Anzahl Sitze:', mappedSeats.length);
-
         setOccupiedSeats(mappedSeats);
-        console.log('✅ setOccupiedSeats aufgerufen!');
         setLoading(false);
       } else {
-        console.error('❌ API Fehler:', response.status);
         setLoading(false);
       }
     } catch (error) {
@@ -227,7 +219,6 @@ export default function SeatMap() {
 
     // USER: Belegte Sitze NICHT anklickbar!
     if (isOcc && !isAdmin) {
-      console.log('❌ Sitz ist bereits belegt!');
       toast.error(`Sitz ${row}${number} ist bereits reserviert`, { duration: 2000 });
       return;
     }
@@ -545,7 +536,7 @@ export default function SeatMap() {
         currentUserId={Number((session?.user as any)?.id)}
       />
 
-      {/* MOBILE HEADER - nur auf Mobile */}
+      {/* MOBILE HEADER - NUR auf Mobile */}
       {isMobile && (
         <div style={{
           position: 'fixed',
@@ -567,7 +558,7 @@ export default function SeatMap() {
           {/* LEFT: Event Info */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
             <div style={{ 
-              fontSize: '16px', 
+              fontSize: '15px', 
               fontWeight: '700', 
               color: '#d4af37',
               letterSpacing: '0.5px',
@@ -576,7 +567,7 @@ export default function SeatMap() {
               Josefi Konzert
             </div>
             <div style={{ 
-              fontSize: '13px', 
+              fontSize: '12px', 
               fontWeight: '600', 
               color: 'white',
               lineHeight: '1.2',
@@ -593,7 +584,7 @@ export default function SeatMap() {
             background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.15) 0%, rgba(212, 175, 55, 0.05) 100%)',
             border: '1px solid rgba(212, 175, 55, 0.4)',
             borderRadius: '10px',
-            padding: '6px 14px',
+            padding: '6px 12px',
             display: 'flex',
             alignItems: 'center',
             gap: '6px',
@@ -605,7 +596,7 @@ export default function SeatMap() {
               background: '#d4af37',
             }}></div>
             <span style={{
-              fontSize: '12px',
+              fontSize: '11px',
               fontWeight: '600',
               color: '#d4af37',
               letterSpacing: '1px',
@@ -615,13 +606,12 @@ export default function SeatMap() {
           </div>
 
           {/* RIGHT: User & Logout */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            {/* User Name */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <div style={{
-              fontSize: '11px',
+              fontSize: '10px',
               color: 'rgba(255, 255, 255, 0.7)',
               fontWeight: '500',
-              maxWidth: '70px',
+              maxWidth: '60px',
               overflow: 'hidden',
               textOverflow: 'ellipsis',
               whiteSpace: 'nowrap',
@@ -629,19 +619,17 @@ export default function SeatMap() {
               {(session?.user as any)?.name || (session?.user as any)?.email?.split('@')[0] || 'Admin'}
             </div>
 
-            {/* Logout Button */}
             <button
               onClick={() => window.location.href = '/api/auth/signout'}
               style={{
                 background: 'rgba(239, 68, 68, 0.1)',
                 border: '1px solid rgba(239, 68, 68, 0.3)',
-                borderRadius: '7px',
-                padding: '5px 10px',
-                fontSize: '10px',
+                borderRadius: '6px',
+                padding: '4px 8px',
+                fontSize: '9px',
                 fontWeight: '600',
                 color: '#ef4444',
                 cursor: 'pointer',
-                transition: 'all 0.2s',
               }}
             >
               Abmelden
@@ -652,33 +640,33 @@ export default function SeatMap() {
 
       {/* HAUPT-CONTAINER */}
       <div style={{ 
-        maxWidth: isMobile ? 'none' : '1800px',
+        maxWidth: '1800px', 
         margin: '0 auto', 
-        display: 'flex',
+        display: 'flex', 
         flexDirection: isMobile ? 'column' : 'row',
-        gap: isMobile ? '0' : '2rem',
+        gap: '2rem', 
         alignItems: 'flex-start', 
         paddingBottom: '2rem',
         paddingTop: isMobile ? '80px' : '0',
       }}>
 
-        {/* SITZPLAN CONTAINER */}
+        {/* SITZPLAN */}
         <div style={{ 
           flex: 1,
           width: '100%',
           display: 'flex',
-          justifyContent: 'center',
+          justifyContent: isMobile ? 'flex-start' : 'center',
           overflow: isMobile ? 'auto' : 'visible',
         }}>
-
-          {/* SCALE WRAPPER - NUR auf Mobile! */}
+          
+          {/* SCALE WRAPPER */}
           <div style={{
-            transform: isMobile ? 'scale(0.55)' : 'none',
+            transform: isMobile ? 'scale(0.35)' : 'none',
             transformOrigin: isMobile ? 'top left' : 'center',
-            width: isMobile ? '1600px' : 'auto',
-            marginLeft: isMobile ? '180px' : '0',
+            width: isMobile ? '1800px' : 'auto',
+            marginLeft: isMobile ? '280px' : '0',
           }}>
-
+            
             <div style={{ 
               backgroundColor: 'rgba(0, 0, 0, 0.3)', 
               backdropFilter: 'blur(10px)', 
@@ -687,15 +675,17 @@ export default function SeatMap() {
               border: '1px solid rgba(255, 255, 255, 0.2)' 
             }}>
 
-              <p style={{ 
-                color: 'white', 
-                marginBottom: '1.5rem', 
-                fontSize: '1.125rem', 
-                textAlign: 'center',
-                display: isMobile ? 'none' : 'block',
-              }}>
-                Sitzplan {isAdmin && <span style={{ color: '#d4af37' }}>(Admin-Modus)</span>}
-              </p>
+              {/* "Sitzplan (Admin-Modus)" Text - NUR auf Desktop */}
+              {!isMobile && (
+                <p style={{ 
+                  color: 'white', 
+                  marginBottom: '1.5rem', 
+                  fontSize: '1.125rem', 
+                  textAlign: 'center' 
+                }}>
+                  Sitzplan {isAdmin && <span style={{ color: '#d4af37' }}>(Admin-Modus)</span>}
+                </p>
+              )}
 
               {/* BÜHNE */}
               <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '2rem' }}>
@@ -1031,7 +1021,7 @@ export default function SeatMap() {
           </div>
         </div>
 
-        {/* SIDEBAR - Desktop: rechts, Mobile: unten */}
+        {/* SIDEBAR - Nur auf Desktop rechts */}
         {!isMobile && (
           <div>
             {isAdmin ? (
@@ -1056,7 +1046,7 @@ export default function SeatMap() {
 
         {/* MOBILE SIDEBAR - nur auf Mobile unten */}
         {isMobile && (
-          <div style={{ width: '100%', marginTop: '2rem', padding: '0 1rem' }}>
+          <div style={{ width: '100%', marginTop: '1rem', padding: '0 1rem' }}>
             {isAdmin ? (
               <AdminSidebar
                 selectedSeats={selectedSeats}
