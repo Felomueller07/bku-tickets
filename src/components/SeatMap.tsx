@@ -655,13 +655,14 @@ export default function SeatMap() {
         paddingTop: isMobile ? '80px' : '0',
       }}>
 
-        {/* SITZPLAN OUTER CONTAINER */}
+        {/* SITZPLAN */}
         <div style={{ 
           flex: 1,
+          width: '100%',
           display: 'flex',
           justifyContent: isMobile ? 'flex-start' : 'center',
           overflow: isMobile ? 'auto' : 'visible',
-          maxHeight: isMobile ? '680px' : 'none',
+          maxHeight: isMobile ? '700px' : 'none',
         }}>
           
           {/* SCALE WRAPPER */}
@@ -672,13 +673,12 @@ export default function SeatMap() {
             marginLeft: isMobile ? '20px' : '0',
           }}>
             
-            {/* SITZPLAN INNER CONTAINER */}
             <div style={{ 
               backgroundColor: 'rgba(0, 0, 0, 0.3)', 
               backdropFilter: 'blur(10px)', 
               borderRadius: '1rem', 
               padding: '2rem', 
-              border: '1px solid rgba(255, 255, 255, 0.2)',
+              border: '1px solid rgba(255, 255, 255, 0.2)' 
             }}>
 
               {/* "Sitzplan (Admin-Modus)" Text - NUR auf Desktop */}
@@ -1029,7 +1029,7 @@ export default function SeatMap() {
 
         {/* DESKTOP SIDEBAR - Nur auf Desktop rechts */}
         {!isMobile && (
-          <>
+          <div>
             {isAdmin ? (
               <AdminSidebar
                 selectedSeats={selectedSeats}
@@ -1047,7 +1047,7 @@ export default function SeatMap() {
                 onRemoveSeat={handleRemoveSeat}
               />
             )}
-          </>
+          </div>
         )}
       </div>
 
