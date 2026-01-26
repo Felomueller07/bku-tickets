@@ -664,7 +664,7 @@ export default function SeatMap() {
             transform: isMobile ? 'scale(0.35)' : 'none',
             transformOrigin: isMobile ? 'top left' : 'center',
             width: isMobile ? '1800px' : 'auto',
-            marginLeft: isMobile ? '200px' : '0',
+            marginLeft: isMobile ? '40px' : '0',
           }}>
             
             <div style={{ 
