@@ -1,13 +1,15 @@
 'use client';
 
 import { useState, Fragment, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import { useSession } from 'next-auth/react';
 import SeatDetailsModal from './SeatDetailsModal';
 import AdminSidebar from './AdminSidebar';
 import SeatInfoPanel from './SeatInfoPanel';
 import UserSidebar from './UserSidebar';
+import MobileCheckoutButton from './MobileCheckoutButton';
+import MobileCheckoutPanel from './MobileCheckoutPanel';
 
 // ========================================
 // SITZPLATZ-KOMPONENTE (SVG-STUHL)
@@ -163,6 +165,9 @@ export default function SeatMap() {
 
   // Mobile State
   const [isMobile, setIsMobile] = useState(false);
+
+  // Mobile Checkout Panel State
+  const [checkoutPanelOpen, setCheckoutPanelOpen] = useState(false);
 
   // ========================================
   // DATEN AUS DATENBANK LADEN (beim Start)
@@ -664,7 +669,7 @@ export default function SeatMap() {
             transform: isMobile ? 'scale(0.35)' : 'none',
             transformOrigin: isMobile ? 'top left' : 'center',
             width: isMobile ? '1800px' : 'auto',
-            marginLeft: isMobile ? '30px' : '0',
+            marginLeft: isMobile ? '20px' : '0',
           }}>
             
             <div style={{ 
@@ -1044,29 +1049,43 @@ export default function SeatMap() {
           </div>
         )}
 
-        {/* MOBILE SIDEBAR - nur auf Mobile unten */}
-        {isMobile && (
+        {/* MOBILE SIDEBAR - nur Admin auf Mobile unten */}
+        {isMobile && isAdmin && (
           <div style={{ width: '100%', marginTop: '1rem', padding: '0 1rem' }}>
-            {isAdmin ? (
-              <AdminSidebar
-                selectedSeats={selectedSeats}
-                occupiedSeats={occupiedSeats}
-                isSeatOccupied={isSeatOccupied}
-                onReserve={handleReserveClick}
-                onRelease={handleAdminRelease}
-                onReleaseAll={handleAdminReleaseAll}
-                onSeatClick={handleSidebarSeatClick}
-                onAddDataClick={handleAddDataClick}
-              />
-            ) : (
-              <UserSidebar
-                selectedSeats={selectedSeats}
-                onRemoveSeat={handleRemoveSeat}
-              />
-            )}
+            <AdminSidebar
+              selectedSeats={selectedSeats}
+              occupiedSeats={occupiedSeats}
+              isSeatOccupied={isSeatOccupied}
+              onReserve={handleReserveClick}
+              onRelease={handleAdminRelease}
+              onReleaseAll={handleAdminReleaseAll}
+              onSeatClick={handleSidebarSeatClick}
+              onAddDataClick={handleAddDataClick}
+            />
           </div>
         )}
       </div>
+
+      {/* MOBILE CHECKOUT - nur für normale User auf Mobile */}
+      {isMobile && !isAdmin && (
+        <>
+          <MobileCheckoutButton
+            selectedCount={selectedSeats.length}
+            onClick={() => setCheckoutPanelOpen(true)}
+          />
+
+          <AnimatePresence>
+            {checkoutPanelOpen && (
+              <MobileCheckoutPanel
+                isOpen={checkoutPanelOpen}
+                onClose={() => setCheckoutPanelOpen(false)}
+                selectedSeats={selectedSeats}
+                onClearSeats={() => setSelectedSeats([])}
+              />
+            )}
+          </AnimatePresence>
+        </>
+      )}
     </>
   );
 }
