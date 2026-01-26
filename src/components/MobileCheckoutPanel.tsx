@@ -27,7 +27,7 @@ export default function MobileCheckoutPanel({
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const TICKET_PRICE = 25; // €25 pro Ticket
+  const TICKET_PRICE = 20; // €25 pro Ticket
   const totalPrice = selectedSeats.length * TICKET_PRICE;
 
   // Drag to close
