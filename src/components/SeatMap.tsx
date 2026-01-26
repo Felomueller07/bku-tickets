@@ -1027,9 +1027,9 @@ export default function SeatMap() {
           </div>
         </div>
 
-        {/* DESKTOP SIDEBAR - Nur auf Desktop rechts */}
+ {/* DESKTOP SIDEBAR - Nur auf Desktop rechts */}
         {!isMobile && (
-          <div>
+          <>
             {isAdmin ? (
               <AdminSidebar
                 selectedSeats={selectedSeats}
@@ -1047,7 +1047,7 @@ export default function SeatMap() {
                 onRemoveSeat={handleRemoveSeat}
               />
             )}
-          </div>
+          </>
         )}
       </div>
 
