@@ -651,8 +651,8 @@ export default function SeatMap() {
         flexDirection: isMobile ? 'column' : 'row',
         gap: '2rem', 
         alignItems: 'flex-start', 
-        paddingBottom: isMobile ? '100px' : '2rem',  // Platz für Button!
-  paddingTop: isMobile ? '80px' : '0',
+        paddingBottom: isMobile ? '0' : '2rem',  // ✅ Kein Padding auf Mobile!
+        paddingTop: isMobile ? '80px' : '0',
       }}>
 
         {/* SITZPLAN */}
