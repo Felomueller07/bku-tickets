@@ -35,7 +35,7 @@ export async function sendTicketConfirmation(data: TicketEmailData) {
 
   try {
     const { data: emailData, error } = await resend.emails.send({
-      from: 'BKU Tickets <onboarding@resend.dev>',
+      from: 'BKU Tickets <noreply@untgab.com>',
       to: customerEmail,
       subject: '�� Ticket-Bestätigung - Josefi Konzert 2026',
       html: `
