@@ -51,7 +51,7 @@ export async function GET(request: NextRequest) {
             email: seat.email || '',
           },
         });
-console.log(`✅ ${seat.row}${seat.number} → PAID mit Kontaktdaten gespeichert`);
+        console.log(`✅ ${seat.row}${seat.number} → PAID mit Kontaktdaten gespeichert`);
       }
       
       // ✅ EMAIL-BESTÄTIGUNG SENDEN
@@ -160,6 +160,45 @@ export async function POST(request: NextRequest) {
           },
         });
         console.log(`✅ ${seat.row}${seat.number} → PAID mit Kontaktdaten gespeichert`);
+      }
+      
+      // ✅ EMAIL-BESTÄTIGUNG SENDEN
+      try {
+        const { sendTicketConfirmation } = await import('@/lib/email');
+        
+        const customerEmail = seats[0]?.email || session.customer_details?.email || '';
+        const customerName = `${seats[0]?.firstName || ''} ${seats[0]?.lastName || ''}`.trim();
+        
+        if (customerEmail) {
+          const emailResult = await sendTicketConfirmation({
+            customerEmail: customerEmail,
+            customerName: customerName || 'Kunde',
+            seats: seats.map((s: any) => ({
+              row: s.row,
+              number: s.number,
+              firstName: s.firstName || '',
+              lastName: s.lastName || '',
+            })),
+            totalAmount: session.amount_total || 0,
+            paymentDate: new Date().toLocaleDateString('de-DE', {
+              day: '2-digit',
+              month: '2-digit',
+              year: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit'
+            }),
+          });
+          
+          if (emailResult.success) {
+            console.log('✅ Ticket-Email gesendet an:', customerEmail);
+          } else {
+            console.error('❌ Email konnte nicht gesendet werden:', emailResult.error);
+          }
+        } else {
+          console.error('❌ Keine Email-Adresse gefunden!');
+        }
+      } catch (emailError) {
+        console.error('❌ Email-Fehler:', emailError);
       }
       
       console.log('=== FERTIG ===');
