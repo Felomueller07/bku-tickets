@@ -8,19 +8,20 @@ datasource db {
 }
 
 model Seat {
-  id        Int      @id @default(autoincrement())
-  row       String
-  number    Int
-  status    String
-  firstName String?
-  lastName  String?
-  email     String?   // ⭐ NEU HINZUGEFÜGT
-  note      String?
-  userId    Int?
-  user      User?    @relation(fields: [userId], references: [id])
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
+  id              Int      @id @default(autoincrement())
+  row             String
+  number          Int
+  status          String
+  firstName       String?
+  lastName        String?
+  email           String?
+  note            String?
+  userId          Int?
+  user            User?    @relation(fields: [userId], references: [id])
+  reservationType String?  // ⬅️ FÜGE DIESE ZEILE HINZU!
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
   @@unique([row, number])
 }
 

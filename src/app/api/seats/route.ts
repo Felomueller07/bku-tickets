@@ -56,16 +56,18 @@ export async function POST(request: NextRequest) {
           firstName: seat.firstName || '',
           lastName: seat.lastName || '',
           email: seat.email || '',
+          reservationType: 'user',  // ⬅️ HINZUFÜGEN!
         },
-        create: {
-          row: seat.row,
-          number: seat.number,
-          status: 'reserved',
-          userId: userId,
-          firstName: seat.firstName || '',
-          lastName: seat.lastName || '',
-          email: seat.email || '',
-        },
+create: {
+  row: seat.row,
+  number: seat.number,
+  status: 'reserved',
+  userId: userId,
+  firstName: seat.firstName || '',
+  lastName: seat.lastName || '',
+  note: seat.note || '',
+  reservationType: 'admin',  // ⬅️ HINZUFÜGEN!
+},
       });
     }
 

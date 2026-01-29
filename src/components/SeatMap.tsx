@@ -21,7 +21,8 @@ function SeatChair({
   isOccupied,
   isSelected,
   isAdmin,
-  onToggleSelect
+  onToggleSelect,
+  occupiedSeats,  // ⬅️ NEU HINZUFÜGEN!
 }: {
   row: string;
   number: number;
@@ -30,6 +31,11 @@ function SeatChair({
   isSelected: boolean;
   isAdmin: boolean;
   onToggleSelect: (row: string, number: number) => void;
+  occupiedSeats: Array<{  // ⬅️ NEU HINZUFÜGEN!
+    row: string;
+    number: number;
+    reservationType?: string | null;
+  }>;
 }) {
 
   const handleClick = () => {
@@ -37,11 +43,43 @@ function SeatChair({
   };
 
   // 4 FARBEN basierend auf Zustand
-  const getColor = () => {
+const getColor = () => {
+    // ADMIN SICHT - Verschiedene Farben nach Typ
+    if (isAdmin) {
+      if (isOccupied && isSelected) {
+        return '#7c2d12';  // DUNKELBRAUN = reserviert + ausgewählt
+      }
+      
+      if (isOccupied) {
+        // Hole Sitz-Details um reservationType zu prüfen
+        const seat = occupiedSeats.find(s => s.row === row && s.number === number);
+        
+        switch (seat?.reservationType) {
+          case 'admin':
+            return '#f97316';    // 🟧 ORANGE = Admin reserviert
+          case 'voucher':
+            return '#22c55e';    // 🟩 GRÜN = Freikarte
+          case 'marked':
+            return '#facc15';    // 🟨 GELB = Vorgemerkt
+          case 'user':
+            return '#ef4444';    // 🔴 ROT = User bezahlt
+          default:
+            return '#ef4444';    // 🔴 ROT = Fallback
+        }
+      }
+      
+      if (isSelected) {
+        return '#4ade80';  // GRÜN = ausgewählt
+      }
+      
+      return '#e8e8e8';  // WEISS = verfügbar
+    }
+    
+    // USER SICHT - Alles Reservierte ist ROT
     if (isOccupied && isSelected) {
       return '#b91c1c';  // DUNKELROT = reserviert + ausgewählt
     } else if (isOccupied) {
-      return '#ef4444';  // ROT = reserviert
+      return '#ef4444';  // ROT = reserviert (egal welcher Typ)
     } else if (isSelected) {
       return '#4ade80';  // GRÜN = ausgewählt
     } else {
@@ -728,6 +766,7 @@ export default function SeatMap() {
                                     isSelected={isSeatSelected(col, seatNum)}
                                     isAdmin={isAdmin}
                                     onToggleSelect={handleToggleSelect}
+                                    occupiedSeats={occupiedSeats}  // ⬅️ NEU!
                                   />
                                 ))}
                               </div>
@@ -761,6 +800,7 @@ export default function SeatMap() {
                                     isSelected={isSeatSelected(col, seatNum)}
                                     isAdmin={isAdmin}
                                     onToggleSelect={handleToggleSelect}
+                                    occupiedSeats={occupiedSeats}  // ⬅️ NEU!
                                   />
                                 ))}
                               </div>
@@ -787,6 +827,7 @@ export default function SeatMap() {
                             isSelected={isSeatSelected('BM', num)}
                             isAdmin={isAdmin}
                             onToggleSelect={handleToggleSelect}
+                            occupiedSeats={occupiedSeats}  // ⬅️ NEU!
                           />
                         ))}
                       </div>
@@ -801,6 +842,7 @@ export default function SeatMap() {
                             isSelected={isSeatSelected('BM', num)}
                             isAdmin={isAdmin}
                             onToggleSelect={handleToggleSelect}
+                            occupiedSeats={occupiedSeats}  // ⬅️ NEU!
                           />
                         ))}
                       </div>
@@ -815,6 +857,7 @@ export default function SeatMap() {
                             isSelected={isSeatSelected('BM', num)}
                             isAdmin={isAdmin}
                             onToggleSelect={handleToggleSelect}
+                            occupiedSeats={occupiedSeats}  // ⬅️ NEU!
                           />
                         ))}
                       </div>
@@ -834,6 +877,7 @@ export default function SeatMap() {
                             isSelected={isSeatSelected('BM', num)}
                             isAdmin={isAdmin}
                             onToggleSelect={handleToggleSelect}
+                            occupiedSeats={occupiedSeats}  // ⬅️ NEU!
                           />
                         ))}
                       </div>
@@ -862,6 +906,7 @@ export default function SeatMap() {
                                 isSelected={isSeatSelected(letter, number)}
                                 isAdmin={isAdmin}
                                 onToggleSelect={handleToggleSelect}
+                                occupiedSeats={occupiedSeats}  // ⬅️ NEU!
                               />
                             ))}
                           </div>
@@ -878,6 +923,7 @@ export default function SeatMap() {
                                 isSelected={isSeatSelected(letter, number)}
                                 isAdmin={isAdmin}
                                 onToggleSelect={handleToggleSelect}
+                                occupiedSeats={occupiedSeats}  // ⬅️ NEU!
                               />
                             ))}
                           </div>
@@ -906,6 +952,7 @@ export default function SeatMap() {
                                     isSelected={isSeatSelected(letter, number)}
                                     isAdmin={isAdmin}
                                     onToggleSelect={handleToggleSelect}
+                                    occupiedSeats={occupiedSeats}  // ⬅️ NEU!
                                   />
                                 ) : (
                                   <EmptySeat />
@@ -927,6 +974,7 @@ export default function SeatMap() {
                                     isSelected={isSeatSelected(letter, number)}
                                     isAdmin={isAdmin}
                                     onToggleSelect={handleToggleSelect}
+                                    occupiedSeats={occupiedSeats}  // ⬅️ NEU!
                                   />
                                 ) : (
                                   <EmptySeat />
@@ -968,6 +1016,7 @@ export default function SeatMap() {
                                     isSelected={isSeatSelected(letter, number)}
                                     isAdmin={isAdmin}
                                     onToggleSelect={handleToggleSelect}
+                                    occupiedSeats={occupiedSeats}  // ⬅️ NEU!
                                   />
                                 ) : (
                                   <EmptySeat key={`${letter}-empty-${number}`} />
@@ -988,6 +1037,7 @@ export default function SeatMap() {
                                     isSelected={isSeatSelected(letter, number)}
                                     isAdmin={isAdmin}
                                     onToggleSelect={handleToggleSelect}
+                                    occupiedSeats={occupiedSeats}  // ⬅️ NEU!
                                   />
                                 ) : (
                                   <EmptySeat key={`${letter}-empty-${number}`} />
@@ -1009,6 +1059,7 @@ export default function SeatMap() {
                                   isSelected={isSeatSelected(letter, number)}
                                   isAdmin={isAdmin}
                                   onToggleSelect={handleToggleSelect}
+                                  occupiedSeats={occupiedSeats}  // ⬅️ NEU!
                                 />
                               ) : (
                                 <EmptySeat key={`${letter}-empty-${number}`} />

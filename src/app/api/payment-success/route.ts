@@ -40,6 +40,7 @@ export async function GET(request: NextRequest) {
             firstName: seat.firstName || '',
             lastName: seat.lastName || '',
             email: seat.email || '',
+            reservationType: 'user',  // ⬅️ HINZUFÜGEN!
           },
           create: {
             row: seat.row,
@@ -148,16 +149,18 @@ export async function POST(request: NextRequest) {
             firstName: seat.firstName || '',
             lastName: seat.lastName || '',
             email: seat.email || '',
+            reservationType: 'user',  // ⬅️ HINZUFÜGEN!
           },
-          create: {
-            row: seat.row,
-            number: seat.number,
-            status: 'paid',
-            userId: userId,
-            firstName: seat.firstName || '',
-            lastName: seat.lastName || '',
-            email: seat.email || '',
-          },
+create: {
+  row: seat.row,
+  number: seat.number,
+  status: 'paid',
+  userId: userId,
+  firstName: seat.firstName || '',
+  lastName: seat.lastName || '',
+  email: seat.email || '',
+  reservationType: 'user',  // ⬅️ NEU!
+},
         });
         console.log(`✅ ${seat.row}${seat.number} → PAID mit Kontaktdaten gespeichert`);
       }
