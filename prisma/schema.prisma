@@ -47,6 +47,7 @@ model VoucherCode {
   usedBy    Int?
   user      User?     @relation("VoucherUser", fields: [usedBy], references: [id])
   usedAt    DateTime?
+  expiresAt DateTime? // ⬅️ NEU HINZUFÜGEN!
   createdAt DateTime  @default(now())
 }
 
