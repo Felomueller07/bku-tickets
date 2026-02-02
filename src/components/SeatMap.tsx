@@ -182,6 +182,7 @@ export default function SeatMap() {
     note?: string;
     createdAt?: string;
     userId?: number;
+    reservationType?: string | null;
     user?: {
       id: number;
       email: string;
@@ -242,6 +243,7 @@ export default function SeatMap() {
           createdAt: seat.createdAt,
           userId: seat.userId,
           user: seat.user,
+          reservationType: seat.reservationType,
         }));
 
         setOccupiedSeats(mappedSeats);
