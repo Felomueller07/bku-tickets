@@ -48,27 +48,27 @@ export async function POST(request: NextRequest) {
     console.log('👤 User ID:', userId);
 
     for (const seat of seats) {
-      await prisma.seat.upsert({
-        where: { row_number: { row: seat.row, number: seat.number } },
-        update: {
-          status: 'reserved',
-          userId: userId,
-          firstName: seat.firstName || '',
-          lastName: seat.lastName || '',
-          email: seat.email || '',
-          reservationType: 'user',  // ⬅️ HINZUFÜGEN!
-        },
-create: {
-  row: seat.row,
-  number: seat.number,
-  status: 'reserved',
-  userId: userId,
-  firstName: seat.firstName || '',
-  lastName: seat.lastName || '',
-  note: seat.note || '',
-  reservationType: 'admin',  // ⬅️ HINZUFÜGEN!
-},
-      });
+await prisma.seat.upsert({
+  where: { row_number: { row: seat.row, number: seat.number } },
+  update: {
+    status: 'reserved',
+    userId: userId,
+    firstName: seat.firstName || '',
+    lastName: seat.lastName || '',
+    email: seat.email || '',
+    reservationType: 'admin',  // ⬅️ HINZUFÜGEN!
+  },
+  create: {
+    row: seat.row,
+    number: seat.number,
+    status: 'reserved',
+    userId: userId,
+    firstName: seat.firstName || '',
+    lastName: seat.lastName || '',
+    note: seat.note || '',
+    reservationType: 'admin',
+  },
+});
     }
 
     console.log('✅ POST erfolgreich!');
