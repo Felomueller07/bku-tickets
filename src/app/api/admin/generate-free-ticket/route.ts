@@ -19,14 +19,13 @@ export async function POST() {
       return NextResponse.json({ error: 'Nicht autorisiert' }, { status: 403 });
     }
 
-    const code = generateCode();
+const code = generateCode();
 
-    await prisma.freeTicket.create({
-      data: { code }
-    });
+await prisma.voucherCode.create({  // ⬅️ ÄNDERN von freeTicket!
+  data: { code }
+});
 
-    console.log('✅ Freikarten-Code generiert:', code);
-
+console.log('✅ Freikarten-Code generiert:', code);
     return NextResponse.json({ 
       success: true,
       code 
