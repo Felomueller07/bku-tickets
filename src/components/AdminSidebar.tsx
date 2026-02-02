@@ -15,6 +15,7 @@ interface SeatData {
   note?: string;
   createdAt?: string;
   updatedAt?: string;
+  reservationType?: string | null;
 }
 
 interface AdminSidebarProps {
@@ -168,16 +169,47 @@ export default function AdminSidebar({
                       : '1px solid rgba(16, 185, 129, 0.3)',
                   }}
                 >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                    <div style={{ flex: 1 }}>
-                      <p style={{
-                        color: 'white',
-                        fontWeight: '600',
-                        margin: '0 0 0.25rem 0',
-                        fontSize: isMobile ? '0.9rem' : '1rem'
-                      }}>
-                        Reihe {seat.row}, Platz {seat.number}
-                      </p>
+<div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+  <div style={{ flex: 1 }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
+      {/* COLOR INDICATOR */}
+      {isOccupied && details && (
+        <div style={{
+          width: '10px',
+          height: '10px',
+          borderRadius: '50%',
+          backgroundColor: 
+            (details as any).reservationType === 'admin' ? '#f97316' :    // 🟧 ORANGE
+            (details as any).reservationType === 'voucher' ? '#22c55e' :  // 🟩 GRÜN
+            (details as any).reservationType === 'marked' ? '#facc15' :   // 🟨 GELB
+            '#ef4444',  // 🔴 ROT (user)
+          flexShrink: 0,
+        }} />
+      )}
+      
+      <p style={{
+        color: 'white',
+        fontWeight: '600',
+        margin: 0,
+        fontSize: isMobile ? '0.9rem' : '1rem'
+      }}>
+        Reihe {seat.row}, Platz {seat.number}
+      </p>
+      
+      {/* TYPE LABEL */}
+      {isOccupied && details && (
+        <span style={{
+          fontSize: '0.7rem',
+          color: 'rgba(255, 255, 255, 0.6)',
+          fontWeight: '500',
+        }}>
+          {(details as any).reservationType === 'admin' && '(Admin)'}
+          {(details as any).reservationType === 'voucher' && '(Freikarte)'}
+          {(details as any).reservationType === 'marked' && '(Vorgemerkt)'}
+          {(details as any).reservationType === 'user' && '(Bezahlt)'}
+        </span>
+      )}
+    </div>
                       {isOccupied && details && (
                         <div style={{ marginTop: '0.5rem' }}>
                           {(details.firstName || details.lastName) && (
