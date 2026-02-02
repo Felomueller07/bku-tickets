@@ -2,9 +2,10 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Lock, Check, Trash2, BarChart3, Plus, User, Mail, Calendar, Info } from 'lucide-react';
+import { Lock, Check, Trash2, BarChart3, Plus, User, Mail, Calendar, Info, Bookmark } from 'lucide-react';
 import DeleteAllConfirmModal from './DeleteAllConfirmModal';
 import FreeTicketGenerator from './FreeTicketGenerator';
+
 
 interface SeatData {
   row: string;
@@ -25,6 +26,7 @@ interface AdminSidebarProps {
   onReserve: () => void;
   onRelease: () => void;
   onReleaseAll: () => void;
+  onMark: () => void; 
   onSeatClick: (row: string, number: number) => void;
   onAddDataClick: (row: string, number: number) => void;
   isMobile?: boolean;
@@ -37,6 +39,7 @@ export default function AdminSidebar({
   onReserve,
   onRelease,
   onReleaseAll,
+  onMark,
   onSeatClick,
   onAddDataClick,
   isMobile = false,
@@ -178,11 +181,11 @@ export default function AdminSidebar({
           width: '10px',
           height: '10px',
           borderRadius: '50%',
-          backgroundColor: 
-            (details as any).reservationType === 'admin' ? '#f97316' :    // 🟧 ORANGE
-            (details as any).reservationType === 'voucher' ? '#22c55e' :  // 🟩 GRÜN
-            (details as any).reservationType === 'marked' ? '#facc15' :   // 🟨 GELB
-            '#ef4444',  // 🔴 ROT (user)
+backgroundColor: 
+  details.reservationType === 'admin' ? '#f97316' :    // ORANGE
+  details.reservationType === 'voucher' ? '#10b981' :  // ⬅️ ÄNDERN!
+  details.reservationType === 'marked' ? '#facc15' :   // GELB
+  '#ef4444',  // ROT (user)
           flexShrink: 0,
         }} />
       )}
@@ -300,53 +303,54 @@ export default function AdminSidebar({
         {/* ACTIONS */}
         {selectedSeats.length > 0 && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-            {selectedFreeCount > 0 && (
-              <button
-                onClick={onReserve}
-                style={{
-                  width: '100%',
-                  padding: isMobile ? '0.875rem' : '0.875rem',
-                  background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-                  border: 'none',
-                  borderRadius: '0.5rem',
-                  color: 'white',
-                  fontSize: isMobile ? '0.875rem' : '0.875rem',
-                  fontWeight: '700',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '0.5rem',
-                }}
-              >
-                <Check style={{ width: '18px', height: '18px' }} />
-                Reservieren ({selectedFreeCount})
-              </button>
-            )}
+{selectedFreeCount > 0 && (
+  <>
+    <button
+      onClick={onReserve}
+      style={{
+        width: '100%',
+        padding: isMobile ? '0.875rem' : '0.875rem',
+        background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+        border: 'none',
+        borderRadius: '0.5rem',
+        color: 'white',
+        fontSize: isMobile ? '0.875rem' : '0.875rem',
+        fontWeight: '700',
+        cursor: 'pointer',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: '0.5rem',
+      }}
+    >
+      <Check style={{ width: '18px', height: '18px' }} />
+      Reservieren ({selectedFreeCount})
+    </button>
 
-            {selectedOccupiedCount > 0 && (
-              <button
-                onClick={onRelease}
-                style={{
-                  width: '100%',
-                  padding: isMobile ? '0.875rem' : '0.875rem',
-                  background: 'rgba(239, 68, 68, 0.2)',
-                  border: '1px solid rgba(239, 68, 68, 0.5)',
-                  borderRadius: '0.5rem',
-                  color: '#ef4444',
-                  fontSize: isMobile ? '0.875rem' : '0.875rem',
-                  fontWeight: '700',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '0.5rem',
-                }}
-              >
-                <Trash2 style={{ width: '18px', height: '18px' }} />
-                Freigeben ({selectedOccupiedCount})
-              </button>
-            )}
+    {/* ⬇️ NEUER BUTTON - VORMERKEN */}
+    <button
+      onClick={onMark}  // ⬅️ NEU!
+      style={{
+        width: '100%',
+        padding: isMobile ? '0.875rem' : '0.875rem',
+        background: 'linear-gradient(135deg, #facc15 0%, #eab308 100%)',
+        border: 'none',
+        borderRadius: '0.5rem',
+        color: '#000',
+        fontSize: isMobile ? '0.875rem' : '0.875rem',
+        fontWeight: '700',
+        cursor: 'pointer',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: '0.5rem',
+      }}
+    >
+      <Bookmark style={{ width: '18px', height: '18px' }} />
+      Vormerken ({selectedFreeCount})
+    </button>
+  </>
+)}
           </div>
         )}
 

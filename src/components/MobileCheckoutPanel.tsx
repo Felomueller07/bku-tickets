@@ -13,6 +13,7 @@ interface MobileCheckoutPanelProps {
   onClearSeats: () => void;
   isAdmin?: boolean;
   onReserve?: () => void;
+  onMark?: () => void;
 }
 
 export default function MobileCheckoutPanel({

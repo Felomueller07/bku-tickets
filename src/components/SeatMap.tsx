@@ -54,18 +54,18 @@ const getColor = () => {
         // Hole Sitz-Details um reservationType zu prüfen
         const seat = occupiedSeats.find(s => s.row === row && s.number === number);
         
-        switch (seat?.reservationType) {
-          case 'admin':
-            return '#f97316';    // 🟧 ORANGE = Admin reserviert
-          case 'voucher':
-            return '#22c55e';    // 🟩 GRÜN = Freikarte
-          case 'marked':
-            return '#facc15';    // 🟨 GELB = Vorgemerkt
-          case 'user':
-            return '#ef4444';    // 🔴 ROT = User bezahlt
-          default:
-            return '#ef4444';    // 🔴 ROT = Fallback
-        }
+switch (seat?.reservationType) {
+  case 'admin':
+    return '#f97316';    // 🟧 ORANGE = Admin reserviert
+  case 'voucher':
+    return '#10b981';    // 🟩 GRÜN (wie Panel!) = Freikarte
+  case 'marked':
+    return '#facc15';    // 🟨 GELB = Vorgemerkt
+  case 'user':
+    return '#ef4444';    // 🔴 ROT = User bezahlt
+  default:
+    return '#ef4444';    // 🔴 ROT = Fallback
+}
       }
       
       if (isSelected) {
@@ -340,6 +340,49 @@ export default function SeatMap() {
       toast.error('Fehler beim Reservieren');
     }
   };
+
+
+  // ========================================
+// ADMIN: VORMERKEN (SPEICHERT IN DATENBANK)
+// ========================================
+const handleMarkClick = async () => {
+  if (selectedSeats.length === 0) {
+    toast.error('Keine Sitze ausgewählt');
+    return;
+  }
+
+  const freeSeats = selectedSeats.filter(s => !isSeatOccupied(s.row, s.number));
+
+  if (freeSeats.length === 0) {
+    toast.error('Nur besetzte Sitze ausgewählt');
+    return;
+  }
+
+  try {
+    const response = await fetch('/api/seats/mark', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        seats: freeSeats.map(s => ({
+          row: s.row,
+          number: s.number,
+        }))
+      })
+    });
+
+    if (response.ok) {
+      await loadSeats();
+      setSelectedSeats([]);
+      toast.success(`${freeSeats.length} Sitz(e) vorgemerkt`, { duration: 2000 });
+    } else {
+      toast.error('Fehler beim Vormerken');
+    }
+  } catch (error) {
+    console.error('Fehler:', error);
+    toast.error('Fehler beim Vormerken');
+  }
+};
+
 
   // ========================================
   // DATEN SPEICHERN (UPDATE IN DATENBANK)
@@ -1091,6 +1134,7 @@ export default function SeatMap() {
                 onReserve={handleReserveClick}
                 onRelease={handleAdminRelease}
                 onReleaseAll={handleAdminReleaseAll}
+                onMark={handleMarkClick} 
                 onSeatClick={handleSidebarSeatClick}
                 onAddDataClick={handleAddDataClick}
               />
@@ -1104,7 +1148,7 @@ export default function SeatMap() {
         )}
       </div>
 
-      {/* MOBILE CHECKOUT - für ALLE auf Mobile */}
+  {/* MOBILE CHECKOUT - für ALLE auf Mobile */}
       {isMobile && selectedSeats.length > 0 && (
         <>
           <MobileCheckoutButton
@@ -1121,6 +1165,7 @@ export default function SeatMap() {
                 onClearSeats={() => setSelectedSeats([])}
                 isAdmin={isAdmin}
                 onReserve={handleReserveClick}
+                onMark={handleMarkClick}
               />
             )}
           </AnimatePresence>

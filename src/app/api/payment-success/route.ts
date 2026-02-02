@@ -19,39 +19,45 @@ export async function GET(request: NextRequest) {
     
     console.log('Payment Status:', session.payment_status);
     
-    if (session.payment_status === 'paid') {
-      const seats = JSON.parse(session.metadata?.seats || '[]');
-      const userId = parseInt(session.metadata?.userId || '0');
-      
-      console.log('Sitze:', seats);
-      console.log('User ID:', userId);
-      
-      for (const seat of seats) {
-        console.log(`Erstelle/Update Sitz ${seat.row}${seat.number}...`);
-        console.log(`📝 Kontaktdaten: ${seat.firstName} ${seat.lastName} (${seat.email})`);
-        
-        await prisma.seat.upsert({
-          where: {
-            row_number: { row: seat.row, number: seat.number }
-          },
-          update: {
-            status: 'paid',
-            userId: userId,
-            firstName: seat.firstName || '',
-            lastName: seat.lastName || '',
-            email: seat.email || '',
-            reservationType: 'user',  // ⬅️ HINZUFÜGEN!
-          },
-          create: {
-            row: seat.row,
-            number: seat.number,
-            status: 'paid',
-            userId: userId,
-            firstName: seat.firstName || '',
-            lastName: seat.lastName || '',
-            email: seat.email || '',
-          },
-        });
+if (session.payment_status === 'paid') {
+  const seats = JSON.parse(session.metadata?.seats || '[]');
+  const userId = parseInt(session.metadata?.userId || '0');
+  const voucherCode = session.metadata?.voucherCode || null;  // ⬅️ NEU!
+  
+  console.log('Sitze:', seats);
+  console.log('User ID:', userId);
+  console.log('Voucher Code:', voucherCode);  // ⬅️ NEU!
+  
+  for (const seat of seats) {
+    console.log(`Erstelle/Update Sitz ${seat.row}${seat.number}...`);
+    console.log(`📝 Kontaktdaten: ${seat.firstName} ${seat.lastName} (${seat.email})`);
+    
+    // BESTIMME TYP BASIEREND AUF VOUCHER
+    const reservationType = voucherCode ? 'voucher' : 'user';  // ⬅️ NEU!
+    
+    await prisma.seat.upsert({
+      where: {
+        row_number: { row: seat.row, number: seat.number }
+      },
+      update: {
+        status: 'paid',
+        userId: userId,
+        firstName: seat.firstName || '',
+        lastName: seat.lastName || '',
+        email: seat.email || '',
+        reservationType: reservationType,  // ⬅️ ÄNDERN!
+      },
+      create: {
+        row: seat.row,
+        number: seat.number,
+        status: 'paid',
+        userId: userId,
+        firstName: seat.firstName || '',
+        lastName: seat.lastName || '',
+        email: seat.email || '',
+        reservationType: reservationType,  // ⬅️ ÄNDERN!
+      },
+    });
         console.log(`✅ ${seat.row}${seat.number} → PAID mit Kontaktdaten gespeichert`);
       }
       
@@ -128,40 +134,45 @@ export async function POST(request: NextRequest) {
     
     console.log('Payment Status:', session.payment_status);
     
-    if (session.payment_status === 'paid') {
-      const seats = JSON.parse(session.metadata?.seats || '[]');
-      const userId = parseInt(session.metadata?.userId || '0');
-      
-      console.log('Sitze:', seats);
-      console.log('User ID:', userId);
-      
-      for (const seat of seats) {
-        console.log(`Erstelle/Update Sitz ${seat.row}${seat.number}...`);
-        console.log(`📝 Kontaktdaten: ${seat.firstName} ${seat.lastName} (${seat.email})`);
-        
-        await prisma.seat.upsert({
-          where: {
-            row_number: { row: seat.row, number: seat.number }
-          },
-          update: {
-            status: 'paid',
-            userId: userId,
-            firstName: seat.firstName || '',
-            lastName: seat.lastName || '',
-            email: seat.email || '',
-            reservationType: 'user',  // ⬅️ HINZUFÜGEN!
-          },
-create: {
-  row: seat.row,
-  number: seat.number,
-  status: 'paid',
-  userId: userId,
-  firstName: seat.firstName || '',
-  lastName: seat.lastName || '',
-  email: seat.email || '',
-  reservationType: 'user',  // ⬅️ NEU!
-},
-        });
+if (session.payment_status === 'paid') {
+  const seats = JSON.parse(session.metadata?.seats || '[]');
+  const userId = parseInt(session.metadata?.userId || '0');
+  const voucherCode = session.metadata?.voucherCode || null;  // ⬅️ NEU!
+  
+  console.log('Sitze:', seats);
+  console.log('User ID:', userId);
+  console.log('Voucher Code:', voucherCode);  // ⬅️ NEU!
+  
+  for (const seat of seats) {
+    console.log(`Erstelle/Update Sitz ${seat.row}${seat.number}...`);
+    console.log(`📝 Kontaktdaten: ${seat.firstName} ${seat.lastName} (${seat.email})`);
+    
+    // BESTIMME TYP BASIEREND AUF VOUCHER
+    const reservationType = voucherCode ? 'voucher' : 'user';  // ⬅️ NEU!
+    
+    await prisma.seat.upsert({
+      where: {
+        row_number: { row: seat.row, number: seat.number }
+      },
+      update: {
+        status: 'paid',
+        userId: userId,
+        firstName: seat.firstName || '',
+        lastName: seat.lastName || '',
+        email: seat.email || '',
+        reservationType: reservationType,  // ⬅️ ÄNDERN!
+      },
+      create: {
+        row: seat.row,
+        number: seat.number,
+        status: 'paid',
+        userId: userId,
+        firstName: seat.firstName || '',
+        lastName: seat.lastName || '',
+        email: seat.email || '',
+        reservationType: reservationType,  // ⬅️ ÄNDERN!
+      },
+    });
         console.log(`✅ ${seat.row}${seat.number} → PAID mit Kontaktdaten gespeichert`);
       }
       
