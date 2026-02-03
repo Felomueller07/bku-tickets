@@ -1,37 +1,36 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { auth } from '@/auth';
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await auth();
-    
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Nicht angemeldet' }, { status: 401 });
+    const body = await request.json();
+    const { code } = body;
+
+    console.log('🎫 Checking voucher code:', code);
+
+    if (!code || typeof code !== 'string') {
+      return NextResponse.json({ valid: false }, { status: 400 });
     }
 
-    const { code } = await request.json();
-
-    if (!code) {
-      return NextResponse.json({ error: 'Kein Code angegeben' }, { status: 400 });
-    }
-
-    // Prüfe ob Code existiert und nicht verwendet wurde
     const voucher = await prisma.voucherCode.findUnique({
       where: { code: code.toUpperCase() }
     });
 
     if (!voucher) {
-      return NextResponse.json({ error: 'Ungültiger Code' }, { status: 404 });
+      console.log('❌ Voucher nicht gefunden');
+      return NextResponse.json({ valid: false });
     }
 
     if (voucher.used) {
-      return NextResponse.json({ error: 'Code bereits verwendet' }, { status: 400 });
+      console.log('❌ Voucher bereits benutzt');
+      return NextResponse.json({ valid: false, error: 'Code bereits verwendet' });
     }
 
-    return NextResponse.json({ valid: true, voucher });
+    console.log('✅ Voucher gültig!');
+    return NextResponse.json({ valid: true });
+
   } catch (error: any) {
-    console.error('Voucher validation error:', error);
-    return NextResponse.json({ error: 'Fehler bei der Validierung' }, { status: 500 });
+    console.error('❌ Voucher Check Error:', error);
+    return NextResponse.json({ valid: false, error: error.message }, { status: 500 });
   }
 }
