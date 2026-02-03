@@ -58,7 +58,7 @@ switch (seat?.reservationType) {
   case 'admin':
     return '#f97316';    // 🟧 ORANGE = Admin reserviert
   case 'voucher':
-    return '#10b981';    // 🟩 GRÜN (wie Panel!) = Freikarte
+    return '#089383';    // 🟩 GRÜN (wie Panel!) = Freikarte
   case 'marked':
     return '#facc15';    // 🟨 GELB = Vorgemerkt
   case 'user':
