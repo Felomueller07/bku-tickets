@@ -18,36 +18,66 @@ export default function UserSidebar({ selectedSeats, onRemoveSeat, isMobile = fa
   const ticketPrice = 20.0;
   const totalPrice = selectedSeats.length * ticketPrice;
 
-  const handleCheckout = async (seatsWithData: any[]) => {
-    try {
-      // 1. Sitze reservieren
+ const handleCheckout = async (seatsWithData: any[], voucherCode?: string) => {
+  try {
+    // Wenn Voucher-Code vorhanden → Direkt reservieren ohne Zahlung!
+    if (voucherCode) {
+      console.log('🎫 Freikarte - Direkte Reservierung');
+      
       const reserveResponse = await fetch('/api/seats', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ seats: seatsWithData }),
+        body: JSON.stringify({ 
+          seats: seatsWithData.map(s => ({
+            ...s,
+            voucherCode: voucherCode  // ⬅️ VOUCHER MITGEBEN!
+          }))
+        }),
       });
 
       if (!reserveResponse.ok) {
         throw new Error('Reservierung fehlgeschlagen');
       }
 
-      // 2. Stripe Checkout Session erstellen
-      const checkoutResponse = await fetch('/api/create-checkout-session', {
+      // Voucher als verwendet markieren
+      await fetch('/api/voucher/use', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ seats: seatsWithData }),
+        body: JSON.stringify({ code: voucherCode }),
       });
 
-      const { url } = await checkoutResponse.json();
-
-      if (url) {
-        window.location.href = url;
-      }
-    } catch (error) {
-      console.error('❌ Checkout Fehler:', error);
-      alert('Fehler beim Checkout. Bitte versuche es erneut.');
+      // Direkt zur Success-Seite
+      window.location.href = '/dashboard';
+      return;
     }
-  };
+
+    // Normale Zahlung mit Stripe
+    const reserveResponse = await fetch('/api/seats', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ seats: seatsWithData }),
+    });
+
+    if (!reserveResponse.ok) {
+      throw new Error('Reservierung fehlgeschlagen');
+    }
+
+    const checkoutResponse = await fetch('/api/create-checkout-session', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ seats: seatsWithData }),
+    });
+
+    const { url } = await checkoutResponse.json();
+    
+    if (url) {
+      window.location.href = url;
+    }
+  } catch (error) {
+    console.error('❌ Checkout Fehler:', error);
+    alert('Fehler beim Checkout. Bitte versuche es erneut.');
+  }
+};
 
   return (
     <>

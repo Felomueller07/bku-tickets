@@ -48,27 +48,29 @@ export async function POST(request: NextRequest) {
     console.log('👤 User ID:', userId);
 
     for (const seat of seats) {
-await prisma.seat.upsert({
-  where: { row_number: { row: seat.row, number: seat.number } },
-  update: {
-    status: 'reserved',
-    userId: userId,
-    firstName: seat.firstName || '',
-    lastName: seat.lastName || '',
-    email: seat.email || '',
-    reservationType: 'admin',  // ⬅️ HINZUFÜGEN!
-  },
-  create: {
-    row: seat.row,
-    number: seat.number,
-    status: 'reserved',
-    userId: userId,
-    firstName: seat.firstName || '',
-    lastName: seat.lastName || '',
-    note: seat.note || '',
-    reservationType: 'admin',
-  },
-});
+      const voucherCode = seat.voucherCode;  // ⬅️ PRÜFE VOUCHER CODE!
+      
+      await prisma.seat.upsert({
+        where: { row_number: { row: seat.row, number: seat.number } },
+        update: {
+          status: 'reserved',
+          userId: userId,
+          firstName: seat.firstName || '',
+          lastName: seat.lastName || '',
+          email: seat.email || '',
+          reservationType: voucherCode ? 'voucher' : 'admin',  // ⬅️ ÄNDERUNG!
+        },
+        create: {
+          row: seat.row,
+          number: seat.number,
+          status: 'reserved',
+          userId: userId,
+          firstName: seat.firstName || '',
+          lastName: seat.lastName || '',
+          note: seat.note || '',
+          reservationType: voucherCode ? 'voucher' : 'admin',  // ⬅️ ÄNDERUNG!
+        },
+      });
     }
 
     console.log('✅ POST erfolgreich!');
