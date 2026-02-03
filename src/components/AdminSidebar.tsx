@@ -5,8 +5,6 @@ import { motion } from 'framer-motion';
 import { Lock, Check, Trash2, BarChart3, Plus, User, Mail, Calendar, Info, Bookmark } from 'lucide-react';
 import DeleteAllConfirmModal from './DeleteAllConfirmModal';
 
-
-
 interface SeatData {
   row: string;
   number: number;
@@ -111,24 +109,169 @@ export default function AdminSidebar({
               Statistik
             </h3>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '0.875rem' }}>Gesamt belegt:</span>
-              <span style={{ color: '#d4af37', fontSize: '0.875rem', fontWeight: '600' }}>{occupiedSeats.length}</span>
-            </div>
-            {selectedSeats.length > 0 && (
-              <>
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '0.875rem' }}>Ausgewählt frei:</span>
-                  <span style={{ color: '#10b981', fontSize: '0.875rem', fontWeight: '600' }}>{selectedFreeCount}</span>
+          
+          {(() => {
+            // GESAMTANZAHL SITZE - Ändere diese Zahl falls nötig!
+            const totalSeats = 1200;
+            
+            // BERECHNE STATISTIK
+            const userSeats = occupiedSeats.filter(s => s.reservationType === 'user').length;
+            const adminSeats = occupiedSeats.filter(s => s.reservationType === 'admin').length;
+            const voucherSeats = occupiedSeats.filter(s => s.reservationType === 'voucher').length;
+            const markedSeats = occupiedSeats.filter(s => s.reservationType === 'marked').length;
+            const availableSeats = totalSeats - occupiedSeats.length;
+            
+            const getPercentage = (count: number) => ((count / totalSeats) * 100).toFixed(1);
+            
+            return (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                {/* GESAMT */}
+                <div style={{ 
+                  paddingBottom: '0.75rem', 
+                  borderBottom: '1px solid rgba(255, 255, 255, 0.1)' 
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
+                    <span style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '0.875rem' }}>
+                      📍 Gesamt
+                    </span>
+                    <span style={{ color: '#d4af37', fontSize: '0.875rem', fontWeight: '700' }}>
+                      {totalSeats} Sitze
+                    </span>
+                  </div>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '0.875rem' }}>Ausgewählt belegt:</span>
-                  <span style={{ color: '#ef4444', fontSize: '0.875rem', fontWeight: '600' }}>{selectedOccupiedCount}</span>
+
+                {/* VERKAUFT (USER) */}
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
+                    <span style={{ color: 'rgba(255, 255, 255, 0.8)', fontSize: '0.875rem' }}>
+                      ✅ Verkauft
+                    </span>
+                    <span style={{ color: '#ef4444', fontSize: '0.875rem', fontWeight: '600' }}>
+                      {userSeats} ({getPercentage(userSeats)}%)
+                    </span>
+                  </div>
+                  <div style={{ 
+                    width: '100%', 
+                    height: '6px', 
+                    backgroundColor: 'rgba(255, 255, 255, 0.1)', 
+                    borderRadius: '3px',
+                    overflow: 'hidden'
+                  }}>
+                    <div style={{ 
+                      width: `${getPercentage(userSeats)}%`, 
+                      height: '100%', 
+                      backgroundColor: '#ef4444',
+                      transition: 'width 0.3s ease'
+                    }} />
+                  </div>
                 </div>
-              </>
-            )}
-          </div>
+
+                {/* ADMIN */}
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
+                    <span style={{ color: 'rgba(255, 255, 255, 0.8)', fontSize: '0.875rem' }}>
+                      🟧 Admin
+                    </span>
+                    <span style={{ color: '#f97316', fontSize: '0.875rem', fontWeight: '600' }}>
+                      {adminSeats} ({getPercentage(adminSeats)}%)
+                    </span>
+                  </div>
+                  <div style={{ 
+                    width: '100%', 
+                    height: '6px', 
+                    backgroundColor: 'rgba(255, 255, 255, 0.1)', 
+                    borderRadius: '3px',
+                    overflow: 'hidden'
+                  }}>
+                    <div style={{ 
+                      width: `${getPercentage(adminSeats)}%`, 
+                      height: '100%', 
+                      backgroundColor: '#f97316',
+                      transition: 'width 0.3s ease'
+                    }} />
+                  </div>
+                </div>
+
+                {/* FREIKARTEN */}
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
+                    <span style={{ color: 'rgba(255, 255, 255, 0.8)', fontSize: '0.875rem' }}>
+                      🎁 Freikarten
+                    </span>
+                    <span style={{ color: '#089383', fontSize: '0.875rem', fontWeight: '600' }}>
+                      {voucherSeats} ({getPercentage(voucherSeats)}%)
+                    </span>
+                  </div>
+                  <div style={{ 
+                    width: '100%', 
+                    height: '6px', 
+                    backgroundColor: 'rgba(255, 255, 255, 0.1)', 
+                    borderRadius: '3px',
+                    overflow: 'hidden'
+                  }}>
+                    <div style={{ 
+                      width: `${getPercentage(voucherSeats)}%`, 
+                      height: '100%', 
+                      backgroundColor: '#089383',
+                      transition: 'width 0.3s ease'
+                    }} />
+                  </div>
+                </div>
+
+                {/* VORGEMERKT */}
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
+                    <span style={{ color: 'rgba(255, 255, 255, 0.8)', fontSize: '0.875rem' }}>
+                      🟨 Vorgemerkt
+                    </span>
+                    <span style={{ color: '#facc15', fontSize: '0.875rem', fontWeight: '600' }}>
+                      {markedSeats} ({getPercentage(markedSeats)}%)
+                    </span>
+                  </div>
+                  <div style={{ 
+                    width: '100%', 
+                    height: '6px', 
+                    backgroundColor: 'rgba(255, 255, 255, 0.1)', 
+                    borderRadius: '3px',
+                    overflow: 'hidden'
+                  }}>
+                    <div style={{ 
+                      width: `${getPercentage(markedSeats)}%`, 
+                      height: '100%', 
+                      backgroundColor: '#facc15',
+                      transition: 'width 0.3s ease'
+                    }} />
+                  </div>
+                </div>
+
+                {/* VERFÜGBAR */}
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
+                    <span style={{ color: 'rgba(255, 255, 255, 0.8)', fontSize: '0.875rem' }}>
+                      ⚪ Verfügbar
+                    </span>
+                    <span style={{ color: '#10b981', fontSize: '0.875rem', fontWeight: '600' }}>
+                      {availableSeats} ({getPercentage(availableSeats)}%)
+                    </span>
+                  </div>
+                  <div style={{ 
+                    width: '100%', 
+                    height: '6px', 
+                    backgroundColor: 'rgba(255, 255, 255, 0.1)', 
+                    borderRadius: '3px',
+                    overflow: 'hidden'
+                  }}>
+                    <div style={{ 
+                      width: `${getPercentage(availableSeats)}%`, 
+                      height: '100%', 
+                      backgroundColor: '#10b981',
+                      transition: 'width 0.3s ease'
+                    }} />
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
         </div>
 
         {/* AUSGEWÄHLTE SITZE */}
@@ -172,47 +315,47 @@ export default function AdminSidebar({
                       : '1px solid rgba(16, 185, 129, 0.3)',
                   }}
                 >
-<div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-  <div style={{ flex: 1 }}>
-    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
-      {/* COLOR INDICATOR */}
-      {isOccupied && details && (
-        <div style={{
-          width: '10px',
-          height: '10px',
-          borderRadius: '50%',
-backgroundColor: 
-  details.reservationType === 'admin' ? '#f97316' :    // ORANGE
-  details.reservationType === 'voucher' ? '#089383ff' :  // ⬅️ ÄNDERN!
-  details.reservationType === 'marked' ? '#facc15' :   // GELB
-  '#ef4444',  // ROT (user)
-          flexShrink: 0,
-        }} />
-      )}
-      
-      <p style={{
-        color: 'white',
-        fontWeight: '600',
-        margin: 0,
-        fontSize: isMobile ? '0.9rem' : '1rem'
-      }}>
-        Reihe {seat.row}, Platz {seat.number}
-      </p>
-      
-      {/* TYPE LABEL */}
-      {isOccupied && details && (
-        <span style={{
-          fontSize: '0.7rem',
-          color: 'rgba(255, 255, 255, 0.6)',
-          fontWeight: '500',
-        }}>
-          {(details as any).reservationType === 'admin' && '(Admin)'}
-          {(details as any).reservationType === 'voucher' && '(Freikarte)'}
-          {(details as any).reservationType === 'marked' && '(Vorgemerkt)'}
-          {(details as any).reservationType === 'user' && '(Bezahlt)'}
-        </span>
-      )}
-    </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
+                        {/* COLOR INDICATOR */}
+                        {isOccupied && details && (
+                          <div style={{
+                            width: '10px',
+                            height: '10px',
+                            borderRadius: '50%',
+                            backgroundColor: 
+                              details.reservationType === 'admin' ? '#f97316' :
+                              details.reservationType === 'voucher' ? '#089383' :
+                              details.reservationType === 'marked' ? '#facc15' :
+                              '#ef4444',
+                            flexShrink: 0,
+                          }} />
+                        )}
+                        
+                        <p style={{
+                          color: 'white',
+                          fontWeight: '600',
+                          margin: 0,
+                          fontSize: isMobile ? '0.9rem' : '1rem'
+                        }}>
+                          Reihe {seat.row}, Platz {seat.number}
+                        </p>
+                        
+                        {/* TYPE LABEL */}
+                        {isOccupied && details && (
+                          <span style={{
+                            fontSize: '0.7rem',
+                            color: 'rgba(255, 255, 255, 0.6)',
+                            fontWeight: '500',
+                          }}>
+                            {details.reservationType === 'admin' && '(Admin)'}
+                            {details.reservationType === 'voucher' && '(Freikarte)'}
+                            {details.reservationType === 'marked' && '(Vorgemerkt)'}
+                            {details.reservationType === 'user' && '(Bezahlt)'}
+                          </span>
+                        )}
+                      </div>
                       {isOccupied && details && (
                         <div style={{ marginTop: '0.5rem' }}>
                           {(details.firstName || details.lastName) && (
@@ -303,54 +446,53 @@ backgroundColor:
         {/* ACTIONS */}
         {selectedSeats.length > 0 && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-{selectedFreeCount > 0 && (
-  <>
-    <button
-      onClick={onReserve}
-      style={{
-        width: '100%',
-        padding: isMobile ? '0.875rem' : '0.875rem',
-        background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-        border: 'none',
-        borderRadius: '0.5rem',
-        color: 'white',
-        fontSize: isMobile ? '0.875rem' : '0.875rem',
-        fontWeight: '700',
-        cursor: 'pointer',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: '0.5rem',
-      }}
-    >
-      <Check style={{ width: '18px', height: '18px' }} />
-      Reservieren ({selectedFreeCount})
-    </button>
+            {selectedFreeCount > 0 && (
+              <>
+                <button
+                  onClick={onReserve}
+                  style={{
+                    width: '100%',
+                    padding: isMobile ? '0.875rem' : '0.875rem',
+                    background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                    border: 'none',
+                    borderRadius: '0.5rem',
+                    color: 'white',
+                    fontSize: isMobile ? '0.875rem' : '0.875rem',
+                    fontWeight: '700',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.5rem',
+                  }}
+                >
+                  <Check style={{ width: '18px', height: '18px' }} />
+                  Reservieren ({selectedFreeCount})
+                </button>
 
-    {/* ⬇️ NEUER BUTTON - VORMERKEN */}
-    <button
-      onClick={onMark}  // ⬅️ NEU!
-      style={{
-        width: '100%',
-        padding: isMobile ? '0.875rem' : '0.875rem',
-        background: 'linear-gradient(135deg, #facc15 0%, #eab308 100%)',
-        border: 'none',
-        borderRadius: '0.5rem',
-        color: '#000',
-        fontSize: isMobile ? '0.875rem' : '0.875rem',
-        fontWeight: '700',
-        cursor: 'pointer',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: '0.5rem',
-      }}
-    >
-      <Bookmark style={{ width: '18px', height: '18px' }} />
-      Vormerken ({selectedFreeCount})
-    </button>
-  </>
-)}
+                <button
+                  onClick={onMark}
+                  style={{
+                    width: '100%',
+                    padding: isMobile ? '0.875rem' : '0.875rem',
+                    background: 'linear-gradient(135deg, #facc15 0%, #eab308 100%)',
+                    border: 'none',
+                    borderRadius: '0.5rem',
+                    color: '#000',
+                    fontSize: isMobile ? '0.875rem' : '0.875rem',
+                    fontWeight: '700',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.5rem',
+                  }}
+                >
+                  <Bookmark style={{ width: '18px', height: '18px' }} />
+                  Vormerken ({selectedFreeCount})
+                </button>
+              </>
+            )}
           </div>
         )}
 
@@ -378,9 +520,6 @@ backgroundColor:
             Alle Reservierungen löschen ({occupiedSeats.length})
           </button>
         )}
-
-        {/* FREIKARTEN GENERATOR */}
-    
 
         {/* INFO BOX */}
         {!isMobile && (
