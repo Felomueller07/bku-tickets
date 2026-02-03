@@ -9,7 +9,7 @@ interface CheckoutModalProps {
   isOpen: boolean;
   onClose: () => void;
   selectedSeats: Array<{ row: string; number: number }>;
-  onCheckout: (seats: any[]) => void;
+  onCheckout: (seats: any[], voucherCode?: string) => void;  // ⬅️ ÄNDERN!
 }
 
 export default function CheckoutModal({
@@ -92,19 +92,20 @@ export default function CheckoutModal({
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+const handleSubmit = (e: React.FormEvent) => {
+  e.preventDefault();
 
-    const seatsWithData = seatData.map((seat) => ({
-      row: seat.row,
-      number: seat.number,
-      firstName: seat.firstName || contactData.firstName,
-      lastName: seat.lastName || contactData.lastName,
-      email: contactData.email,
-    }));
+  const seatsWithData = seatData.map((seat) => ({
+    row: seat.row,
+    number: seat.number,
+    firstName: seat.firstName || contactData.firstName,
+    lastName: seat.lastName || contactData.lastName,
+    email: contactData.email,
+    voucherCode: voucherValid ? voucherCode : undefined,  // ⬅️ NEU HINZUFÜGEN!
+  }));
 
-    onCheckout(seatsWithData);
-  };
+  onCheckout(seatsWithData, voucherValid ? voucherCode : undefined);  // ⬅️ VOUCHER MITGEBEN!
+};
 
   const totalPrice = voucherValid ? 0 : selectedSeats.length * 20;
 
