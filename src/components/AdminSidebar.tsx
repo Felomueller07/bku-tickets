@@ -112,7 +112,7 @@ export default function AdminSidebar({
           
           {(() => {
             // GESAMTANZAHL SITZE - Ändere diese Zahl falls nötig!
-            const totalSeats = 1200;
+            const totalSeats = 799;
             
             // BERECHNE STATISTIK
             const userSeats = occupiedSeats.filter(s => s.reservationType === 'user').length;
