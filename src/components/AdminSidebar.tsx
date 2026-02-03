@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Lock, Check, Trash2, BarChart3, Plus, User, Mail, Calendar, Info, Bookmark } from 'lucide-react';
 import DeleteAllConfirmModal from './DeleteAllConfirmModal';
-import FreeTicketGenerator from './FreeTicketGenerator';
+
 
 
 interface SeatData {
@@ -380,7 +380,7 @@ backgroundColor:
         )}
 
         {/* FREIKARTEN GENERATOR */}
-        {!isMobile && <FreeTicketGenerator />}
+    
 
         {/* INFO BOX */}
         {!isMobile && (
