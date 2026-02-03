@@ -132,7 +132,7 @@ export default function AdminSidebar({
                 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
                     <span style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '0.875rem' }}>
-                      📍 Gesamt
+                      Gesamt
                     </span>
                     <span style={{ color: '#d4af37', fontSize: '0.875rem', fontWeight: '700' }}>
                       {totalSeats} Sitze
@@ -144,7 +144,7 @@ export default function AdminSidebar({
                 <div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
                     <span style={{ color: 'rgba(255, 255, 255, 0.8)', fontSize: '0.875rem' }}>
-                      ✅ Verkauft
+                      Verkauft
                     </span>
                     <span style={{ color: '#ef4444', fontSize: '0.875rem', fontWeight: '600' }}>
                       {userSeats} ({getPercentage(userSeats)}%)
@@ -170,7 +170,7 @@ export default function AdminSidebar({
                 <div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
                     <span style={{ color: 'rgba(255, 255, 255, 0.8)', fontSize: '0.875rem' }}>
-                      🟧 Admin
+                      Admin
                     </span>
                     <span style={{ color: '#f97316', fontSize: '0.875rem', fontWeight: '600' }}>
                       {adminSeats} ({getPercentage(adminSeats)}%)
@@ -196,7 +196,7 @@ export default function AdminSidebar({
                 <div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
                     <span style={{ color: 'rgba(255, 255, 255, 0.8)', fontSize: '0.875rem' }}>
-                      🎁 Freikarten
+                      Freikarten
                     </span>
                     <span style={{ color: '#089383', fontSize: '0.875rem', fontWeight: '600' }}>
                       {voucherSeats} ({getPercentage(voucherSeats)}%)
@@ -222,7 +222,7 @@ export default function AdminSidebar({
                 <div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
                     <span style={{ color: 'rgba(255, 255, 255, 0.8)', fontSize: '0.875rem' }}>
-                      🟨 Vorgemerkt
+                      Vorgemerkt
                     </span>
                     <span style={{ color: '#facc15', fontSize: '0.875rem', fontWeight: '600' }}>
                       {markedSeats} ({getPercentage(markedSeats)}%)
@@ -248,7 +248,7 @@ export default function AdminSidebar({
                 <div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
                     <span style={{ color: 'rgba(255, 255, 255, 0.8)', fontSize: '0.875rem' }}>
-                      ⚪ Verfügbar
+                      Verfügbar
                     </span>
                     <span style={{ color: '#10b981', fontSize: '0.875rem', fontWeight: '600' }}>
                       {availableSeats} ({getPercentage(availableSeats)}%)
