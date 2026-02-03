@@ -183,7 +183,7 @@ export default function AdminSidebar({
           borderRadius: '50%',
 backgroundColor: 
   details.reservationType === 'admin' ? '#f97316' :    // ORANGE
-  details.reservationType === 'voucher' ? '#10b981' :  // ⬅️ ÄNDERN!
+  details.reservationType === 'voucher' ? '#089383ff' :  // ⬅️ ÄNDERN!
   details.reservationType === 'marked' ? '#facc15' :   // GELB
   '#ef4444',  // ROT (user)
           flexShrink: 0,
