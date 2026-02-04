@@ -6,10 +6,10 @@ import { toast } from 'sonner';
 import { useSession } from 'next-auth/react';
 import SeatDetailsModal from './SeatDetailsModal';
 import AdminSidebar from './AdminSidebar';
-import SeatInfoPanel from './SeatInfoPanel';
 import UserSidebar from './UserSidebar';
 import MobileCheckoutButton from './MobileCheckoutButton';
 import MobileCheckoutPanel from './MobileCheckoutPanel';
+import ReleaseConfirmModal from './ReleaseConfirmModal';
 
 // ========================================
 // SITZPLATZ-KOMPONENTE (SVG-STUHL)
@@ -198,9 +198,8 @@ export default function SeatMap() {
   const [modalMode, setModalMode] = useState<'reserve' | 'edit'>('reserve');
   const [currentEditSeat, setCurrentEditSeat] = useState<{ row: string; number: number } | null>(null);
 
-  // Info-Panel State
-  const [infoPanelOpen, setInfoPanelOpen] = useState(false);
-  const [infoPanelSeat, setInfoPanelSeat] = useState<{ row: string; number: number } | null>(null);
+  // Release Confirm Modal State
+  const [releaseModalOpen, setReleaseModalOpen] = useState(false);
 
   // Mobile State
   const [isMobile, setIsMobile] = useState(false);
@@ -268,15 +267,7 @@ export default function SeatMap() {
       return;
     }
 
-    // ADMIN: Klick auf ROTEN Sitz → zu selectedSeats hinzufügen UND Info-Panel öffnen
-    if (isOcc && isAdmin && !isCurrentlySelected) {
-      setSelectedSeats([...selectedSeats, { row, number }]);  // ← ZUERST HINZUFÜGEN!
-      setInfoPanelSeat({ row, number });
-      setInfoPanelOpen(true);
-      toast.success(`Sitz ${row}${number} ausgewählt`, { duration: 1500 });
-      return;
-    }
-
+    // Toggle selection
     if (isCurrentlySelected) {
       setSelectedSeats(selectedSeats.filter(s => !(s.row === row && s.number === number)));
       toast.info(`Sitz ${row}${number} abgewählt`, { duration: 1500 });
@@ -436,9 +427,9 @@ const handleMarkClick = async () => {
   };
 
   // ========================================
-  // ADMIN: FREIGEBEN (LÖSCHT AUS DATENBANK)
+  // ADMIN: FREIGEBEN (MIT BESTÄTIGUNG)
   // ========================================
-  const handleAdminRelease = async () => {
+  const handleAdminReleaseClick = () => {
     if (selectedSeats.length === 0) {
       toast.error('Keine Sitze ausgewählt');
       return;
@@ -450,6 +441,14 @@ const handleMarkClick = async () => {
       toast.error('Nur freie Sitze ausgewählt');
       return;
     }
+
+    // Öffne Bestätigungs-Modal
+    setReleaseModalOpen(true);
+  };
+
+  // Nach Bestätigung im Modal
+  const handleAdminReleaseConfirm = async () => {
+    const occupiedSelected = selectedSeats.filter(s => isSeatOccupied(s.row, s.number));
 
     try {
       const response = await fetch('/api/seats', {
@@ -485,24 +484,6 @@ const handleMarkClick = async () => {
     setCurrentEditSeat({ row, number });
     setModalMode('edit');
     setModalOpen(true);
-  };
-
-  // Info-Panel: Edit Button geklickt
-  const handleInfoPanelEdit = () => {
-    if (infoPanelSeat) {
-      setCurrentEditSeat(infoPanelSeat);
-      setModalMode('edit');
-      setModalOpen(true);
-      setInfoPanelOpen(false);
-    }
-  };
-
-  // Info-Panel Daten holen
-  const getInfoPanelData = () => {
-    if (infoPanelSeat) {
-      return getSeatDetails(infoPanelSeat.row, infoPanelSeat.number);
-    }
-    return undefined;
   };
 
   const handleRemoveSeat = (row: string, number: number) => {
@@ -582,19 +563,12 @@ const handleMarkClick = async () => {
         hasMultipleSeats={selectedSeats.filter(s => isSeatOccupied(s.row, s.number)).length > 1}
       />
 
-      <SeatInfoPanel
-        isOpen={infoPanelOpen}
-        onClose={() => setInfoPanelOpen(false)}
-        onEdit={handleInfoPanelEdit}
-        seatLabel={infoPanelSeat ? `${infoPanelSeat.row}${infoPanelSeat.number}` : ''}
-        firstName={getInfoPanelData()?.firstName}
-        lastName={getInfoPanelData()?.lastName}
-        email={getInfoPanelData()?.email}
-        note={getInfoPanelData()?.note}
-        createdAt={getInfoPanelData()?.createdAt}
-        reservedByUserId={getInfoPanelData()?.userId}
-        reservedByUser={getInfoPanelData()?.user}
-        currentUserId={Number((session?.user as any)?.id)}
+      {/* RELEASE CONFIRM MODAL */}
+      <ReleaseConfirmModal
+        isOpen={releaseModalOpen}
+        onClose={() => setReleaseModalOpen(false)}
+        onConfirm={handleAdminReleaseConfirm}
+        seatCount={selectedSeats.filter(s => isSeatOccupied(s.row, s.number)).length}
       />
 
       {/* MOBILE HEADER - NUR auf Mobile */}
@@ -1105,7 +1079,7 @@ const handleMarkClick = async () => {
                 occupiedSeats={occupiedSeats}
                 isSeatOccupied={isSeatOccupied}
                 onReserve={handleReserveClick}
-                onRelease={handleAdminRelease}
+                onRelease={handleAdminReleaseClick}
                 onMark={handleMarkClick} 
                 onSeatClick={handleSidebarSeatClick}
                 onAddDataClick={handleAddDataClick}
