@@ -268,10 +268,12 @@ export default function SeatMap() {
       return;
     }
 
-    // ADMIN: Klick auf ROTEN Sitz → Info-Panel öffnen
+    // ADMIN: Klick auf ROTEN Sitz → zu selectedSeats hinzufügen UND Info-Panel öffnen
     if (isOcc && isAdmin && !isCurrentlySelected) {
+      setSelectedSeats([...selectedSeats, { row, number }]);  // ← ZUERST HINZUFÜGEN!
       setInfoPanelSeat({ row, number });
       setInfoPanelOpen(true);
+      toast.success(`Sitz ${row}${number} ausgewählt`, { duration: 1500 });
       return;
     }
 
