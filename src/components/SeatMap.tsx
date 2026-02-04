@@ -22,7 +22,7 @@ function SeatChair({
   isSelected,
   isAdmin,
   onToggleSelect,
-  occupiedSeats,  // ⬅️ NEU HINZUFÜGEN!
+  occupiedSeats,
 }: {
   row: string;
   number: number;
@@ -31,7 +31,7 @@ function SeatChair({
   isSelected: boolean;
   isAdmin: boolean;
   onToggleSelect: (row: string, number: number) => void;
-  occupiedSeats: Array<{  // ⬅️ NEU HINZUFÜGEN!
+  occupiedSeats: Array<{
     row: string;
     number: number;
     reservationType?: string | null;
@@ -469,35 +469,6 @@ const handleMarkClick = async () => {
     }
   };
 
-  // ========================================
-  // ADMIN: ALLE FREIGEBEN
-  // ========================================
-  const handleAdminReleaseAll = async () => {
-    if (occupiedSeats.length === 0) {
-      toast.info('Keine Sitze zu löschen');
-      return;
-    }
-
-    try {
-      const response = await fetch('/api/seats', {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ seats: occupiedSeats })
-      });
-
-      if (response.ok) {
-        await loadSeats();
-        setSelectedSeats([]);
-        toast.success('Alle Sitze freigegeben', { duration: 2000 });
-      } else {
-        toast.error('Fehler beim Freigeben');
-      }
-    } catch (error) {
-      console.error('Fehler:', error);
-      toast.error('Fehler beim Freigeben');
-    }
-  };
-
   // Sidebar: Klick auf Sitz
   const handleSidebarSeatClick = (row: string, number: number) => {
     if (isSeatOccupied(row, number)) {
@@ -738,7 +709,7 @@ const handleMarkClick = async () => {
         paddingTop: isMobile ? '80px' : '0',
       }}>
 
-        {/* SITZPLAN */}
+        {/* SITZPLAN - Hier bleibt alles gleich, nur die Galerie-Sitze bekommen occupiedSeats prop */}
         <div style={{ 
           flex: 1,
           width: '100%',
@@ -811,7 +782,7 @@ const handleMarkClick = async () => {
                                     isSelected={isSeatSelected(col, seatNum)}
                                     isAdmin={isAdmin}
                                     onToggleSelect={handleToggleSelect}
-                                    occupiedSeats={occupiedSeats}  // ⬅️ NEU!
+                                    occupiedSeats={occupiedSeats}
                                   />
                                 ))}
                               </div>
@@ -845,7 +816,7 @@ const handleMarkClick = async () => {
                                     isSelected={isSeatSelected(col, seatNum)}
                                     isAdmin={isAdmin}
                                     onToggleSelect={handleToggleSelect}
-                                    occupiedSeats={occupiedSeats}  // ⬅️ NEU!
+                                    occupiedSeats={occupiedSeats}
                                   />
                                 ))}
                               </div>
@@ -872,7 +843,7 @@ const handleMarkClick = async () => {
                             isSelected={isSeatSelected('BM', num)}
                             isAdmin={isAdmin}
                             onToggleSelect={handleToggleSelect}
-                            occupiedSeats={occupiedSeats}  // ⬅️ NEU!
+                            occupiedSeats={occupiedSeats}
                           />
                         ))}
                       </div>
@@ -887,7 +858,7 @@ const handleMarkClick = async () => {
                             isSelected={isSeatSelected('BM', num)}
                             isAdmin={isAdmin}
                             onToggleSelect={handleToggleSelect}
-                            occupiedSeats={occupiedSeats}  // ⬅️ NEU!
+                            occupiedSeats={occupiedSeats}
                           />
                         ))}
                       </div>
@@ -902,7 +873,7 @@ const handleMarkClick = async () => {
                             isSelected={isSeatSelected('BM', num)}
                             isAdmin={isAdmin}
                             onToggleSelect={handleToggleSelect}
-                            occupiedSeats={occupiedSeats}  // ⬅️ NEU!
+                            occupiedSeats={occupiedSeats}
                           />
                         ))}
                       </div>
@@ -922,7 +893,7 @@ const handleMarkClick = async () => {
                             isSelected={isSeatSelected('BM', num)}
                             isAdmin={isAdmin}
                             onToggleSelect={handleToggleSelect}
-                            occupiedSeats={occupiedSeats}  // ⬅️ NEU!
+                            occupiedSeats={occupiedSeats}
                           />
                         ))}
                       </div>
@@ -931,7 +902,7 @@ const handleMarkClick = async () => {
                   </div>
                 </div>
 
-                {/* PARKETT-EBENE */}
+                {/* PARKETT-EBENE - Hier alle Hauptreihen mit occupiedSeats */}
                 <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '2rem 10rem 9rem 10rem', pointerEvents: 'none' }}>
                   <div style={{ pointerEvents: 'auto' }}>
 
@@ -951,7 +922,7 @@ const handleMarkClick = async () => {
                                 isSelected={isSeatSelected(letter, number)}
                                 isAdmin={isAdmin}
                                 onToggleSelect={handleToggleSelect}
-                                occupiedSeats={occupiedSeats}  // ⬅️ NEU!
+                                occupiedSeats={occupiedSeats}
                               />
                             ))}
                           </div>
@@ -968,7 +939,7 @@ const handleMarkClick = async () => {
                                 isSelected={isSeatSelected(letter, number)}
                                 isAdmin={isAdmin}
                                 onToggleSelect={handleToggleSelect}
-                                occupiedSeats={occupiedSeats}  // ⬅️ NEU!
+                                occupiedSeats={occupiedSeats}
                               />
                             ))}
                           </div>
@@ -997,7 +968,7 @@ const handleMarkClick = async () => {
                                     isSelected={isSeatSelected(letter, number)}
                                     isAdmin={isAdmin}
                                     onToggleSelect={handleToggleSelect}
-                                    occupiedSeats={occupiedSeats}  // ⬅️ NEU!
+                                    occupiedSeats={occupiedSeats}
                                   />
                                 ) : (
                                   <EmptySeat />
@@ -1019,7 +990,7 @@ const handleMarkClick = async () => {
                                     isSelected={isSeatSelected(letter, number)}
                                     isAdmin={isAdmin}
                                     onToggleSelect={handleToggleSelect}
-                                    occupiedSeats={occupiedSeats}  // ⬅️ NEU!
+                                    occupiedSeats={occupiedSeats}
                                   />
                                 ) : (
                                   <EmptySeat />
@@ -1061,7 +1032,7 @@ const handleMarkClick = async () => {
                                     isSelected={isSeatSelected(letter, number)}
                                     isAdmin={isAdmin}
                                     onToggleSelect={handleToggleSelect}
-                                    occupiedSeats={occupiedSeats}  // ⬅️ NEU!
+                                    occupiedSeats={occupiedSeats}
                                   />
                                 ) : (
                                   <EmptySeat key={`${letter}-empty-${number}`} />
@@ -1082,7 +1053,7 @@ const handleMarkClick = async () => {
                                     isSelected={isSeatSelected(letter, number)}
                                     isAdmin={isAdmin}
                                     onToggleSelect={handleToggleSelect}
-                                    occupiedSeats={occupiedSeats}  // ⬅️ NEU!
+                                    occupiedSeats={occupiedSeats}
                                   />
                                 ) : (
                                   <EmptySeat key={`${letter}-empty-${number}`} />
@@ -1104,7 +1075,7 @@ const handleMarkClick = async () => {
                                   isSelected={isSeatSelected(letter, number)}
                                   isAdmin={isAdmin}
                                   onToggleSelect={handleToggleSelect}
-                                  occupiedSeats={occupiedSeats}  // ⬅️ NEU!
+                                  occupiedSeats={occupiedSeats}
                                 />
                               ) : (
                                 <EmptySeat key={`${letter}-empty-${number}`} />
@@ -1123,7 +1094,7 @@ const handleMarkClick = async () => {
           </div>
         </div>
 
- {/* DESKTOP SIDEBAR - Nur auf Desktop rechts */}
+        {/* DESKTOP SIDEBAR - Nur auf Desktop rechts */}
         {!isMobile && (
           <>
             {isAdmin ? (
@@ -1133,7 +1104,6 @@ const handleMarkClick = async () => {
                 isSeatOccupied={isSeatOccupied}
                 onReserve={handleReserveClick}
                 onRelease={handleAdminRelease}
-                onReleaseAll={handleAdminReleaseAll}
                 onMark={handleMarkClick} 
                 onSeatClick={handleSidebarSeatClick}
                 onAddDataClick={handleAddDataClick}
@@ -1148,7 +1118,7 @@ const handleMarkClick = async () => {
         )}
       </div>
 
-  {/* MOBILE CHECKOUT - für ALLE auf Mobile */}
+      {/* MOBILE CHECKOUT - für ALLE auf Mobile */}
       {isMobile && selectedSeats.length > 0 && (
         <>
           <MobileCheckoutButton

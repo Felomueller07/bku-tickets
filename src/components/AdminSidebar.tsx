@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Lock, Check, Trash2, BarChart3, Plus, User, Mail, Calendar, Info, Bookmark } from 'lucide-react';
-import DeleteAllConfirmModal from './DeleteAllConfirmModal';
 
 interface SeatData {
   row: string;
@@ -23,7 +22,6 @@ interface AdminSidebarProps {
   isSeatOccupied: (row: string, number: number) => boolean;
   onReserve: () => void;
   onRelease: () => void;
-  onReleaseAll: () => void;
   onMark: () => void; 
   onSeatClick: (row: string, number: number) => void;
   onAddDataClick: (row: string, number: number) => void;
@@ -36,14 +34,11 @@ export default function AdminSidebar({
   isSeatOccupied,
   onReserve,
   onRelease,
-  onReleaseAll,
   onMark,
   onSeatClick,
   onAddDataClick,
   isMobile = false,
 }: AdminSidebarProps) {
-
-  const [confirmModalOpen, setConfirmModalOpen] = useState(false);
 
   const selectedFreeCount = selectedSeats.filter(s => !isSeatOccupied(s.row, s.number)).length;
   const selectedOccupiedCount = selectedSeats.filter(s => isSeatOccupied(s.row, s.number)).length;
@@ -493,32 +488,32 @@ export default function AdminSidebar({
                 </button>
               </>
             )}
+            
+            {/* FREIGEBEN Button - nur wenn belegte Sitze ausgewählt sind */}
+            {selectedOccupiedCount > 0 && (
+              <button
+                onClick={onRelease}
+                style={{
+                  width: '100%',
+                  padding: isMobile ? '0.875rem' : '0.875rem',
+                  background: 'rgba(239, 68, 68, 0.1)',
+                  border: '1px solid rgba(239, 68, 68, 0.3)',
+                  borderRadius: '0.5rem',
+                  color: '#ef4444',
+                  fontSize: isMobile ? '0.875rem' : '0.875rem',
+                  fontWeight: '700',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.5rem',
+                }}
+              >
+                <Trash2 style={{ width: '18px', height: '18px' }} />
+                Freigeben ({selectedOccupiedCount})
+              </button>
+            )}
           </div>
-        )}
-
-        {/* ALLE FREIGEBEN */}
-        {occupiedSeats.length > 0 && (
-          <button
-            onClick={() => setConfirmModalOpen(true)}
-            style={{
-              width: '100%',
-              padding: isMobile ? '0.875rem' : '0.875rem',
-              background: 'rgba(239, 68, 68, 0.1)',
-              border: '1px solid rgba(239, 68, 68, 0.3)',
-              borderRadius: '0.5rem',
-              color: '#ef4444',
-              fontSize: isMobile ? '0.875rem' : '0.875rem',
-              fontWeight: '700',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '0.5rem',
-            }}
-          >
-            <Trash2 style={{ width: '18px', height: '18px' }} />
-            Alle Reservierungen löschen ({occupiedSeats.length})
-          </button>
         )}
 
         {/* INFO BOX */}
@@ -537,22 +532,11 @@ export default function AdminSidebar({
               </h3>
             </div>
             <p style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '0.75rem', margin: 0, lineHeight: '1.5' }}>
-              Wähle Sitzplätze aus um Details wie Name, E-Mail und Reservierungsdatum anzuzeigen.
+              Wähle Sitzplätze aus um Details wie Name, E-Mail und Reservierungsdatum anzuzeigen. Um einen Sitz freizugeben, wähle ihn aus und klicke auf "Freigeben".
             </p>
           </div>
         )}
       </div>
-
-      {/* MODALS */}
-      <DeleteAllConfirmModal
-        isOpen={confirmModalOpen}
-        onClose={() => setConfirmModalOpen(false)}
-        onConfirm={() => {
-          onReleaseAll();
-          setConfirmModalOpen(false);
-        }}
-        seatCount={occupiedSeats.length}
-      />
     </>
   );
 }
