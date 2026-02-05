@@ -26,6 +26,8 @@ await prisma.voucherCode.create({  // ⬅️ ÄNDERN von freeTicket!
 });
 
 console.log('✅ Freikarten-Code generiert:', code);
+
+
     return NextResponse.json({ 
       success: true,
       code 

@@ -9,12 +9,15 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 export async function POST(request: NextRequest) {
   try {
     const session = await auth();
+    
+    // ⭐ NEU: Session ist OPTIONAL!
     const userId = session?.user ? Number((session.user as any).id) : null;
 
     const { seats } = await request.json();
 
     console.log('💳 Create Checkout Session - Seats:', JSON.stringify(seats, null, 2));
     console.log('💳 Anzahl Sitze:', seats?.length);
+    console.log('👤 User ID:', userId || 'GUEST');
 
     if (!seats || seats.length === 0) {
       console.log('❌ Keine Sitze erhalten!');
@@ -41,11 +44,12 @@ export async function POST(request: NextRequest) {
 
     // Metadata für später
     const metadata = {
-      userId: userId?.toString() || '',
+      userId: userId?.toString() || 'guest', // ⭐ NEU: 'guest' wenn kein User
       seats: JSON.stringify(seats),
       customerEmail: seats[0]?.email || '',
       customerFirstName: seats[0]?.firstName || '',
       customerLastName: seats[0]?.lastName || '',
+      isGuest: userId ? 'false' : 'true', // ⭐ NEU: Flag für Guest
     };
 
     console.log('💳 Metadata:', metadata);
@@ -56,7 +60,7 @@ export async function POST(request: NextRequest) {
       line_items: lineItems,
       mode: 'payment',
       success_url: `${process.env.NEXT_PUBLIC_APP_URL}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/`,
+      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/`, // ⭐ NEU: Zurück zur Homepage
       metadata,
       customer_email: seats[0]?.email,
     });
