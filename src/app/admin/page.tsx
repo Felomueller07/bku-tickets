@@ -1,19 +1,29 @@
 'use client';
 
-import { signIn } from 'next-auth/react';
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { toast } from 'sonner';
+import { signIn, useSession } from 'next-auth/react';
+import { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 
 export default function AdminLoginPage() {
+  const { data: session, status } = useSession();
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // ⭐ Wenn eingeloggt → redirect zu /dashboard
+  useEffect(() => {
+    if (status === 'authenticated') {
+      router.push('/dashboard');
+    }
+  }, [status, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError('');
     setLoading(true);
 
     try {
@@ -24,45 +34,67 @@ export default function AdminLoginPage() {
       });
 
       if (result?.error) {
-        toast.error('Login fehlgeschlagen');
+        setError('Ungültige Anmeldedaten');
         setLoading(false);
       } else {
-        toast.success('Erfolgreich angemeldet!');
-        router.push('/admin/dashboard');
+        // ⭐ Nach erfolgreichem Login → redirect zu /dashboard
+        router.push('/dashboard');
       }
-    } catch (error) {
-      toast.error('Ein Fehler ist aufgetreten');
+    } catch (err) {
+      setError('Ein Fehler ist aufgetreten');
       setLoading(false);
     }
   };
 
+  // Wenn bereits eingeloggt, zeige Loading
+  if (status === 'loading' || status === 'authenticated') {
+    return (
+      <div style={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: 'linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%)',
+      }}>
+        <div style={{ color: 'white', fontSize: '1.5rem' }}>Lädt...</div>
+      </div>
+    );
+  }
+
   return (
     <div style={{
       minHeight: '100vh',
-      background: 'linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%)',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
+      background: 'linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%)',
       padding: '2rem',
     }}>
-      <div style={{
-        backgroundColor: 'rgba(20, 20, 20, 0.98)',
-        borderRadius: '1rem',
-        padding: '2rem',
-        maxWidth: '400px',
-        width: '100%',
-        border: '1px solid rgba(212, 175, 55, 0.3)',
-      }}>
-        {/* Logo */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        style={{
+          width: '100%',
+          maxWidth: '400px',
+          background: 'rgba(255, 255, 255, 0.05)',
+          backdropFilter: 'blur(20px)',
+          border: '1px solid rgba(212, 175, 55, 0.3)',
+          borderRadius: '1rem',
+          padding: '2rem',
+        }}
+      >
         <div style={{
           display: 'flex',
-          justifyContent: 'center',
-          marginBottom: '1.5rem',
+          flexDirection: 'column',
+          alignItems: 'center',
+          marginBottom: '2rem',
         }}>
           <div style={{
             position: 'relative',
-            width: '60px',
-            height: '60px',
+            width: '80px',
+            height: '80px',
+            marginBottom: '1rem',
             borderRadius: '12px',
             overflow: 'hidden',
           }}>
@@ -73,29 +105,27 @@ export default function AdminLoginPage() {
               style={{ objectFit: 'cover' }}
             />
           </div>
+          <h1 style={{
+            fontSize: '1.5rem',
+            fontWeight: '700',
+            background: 'linear-gradient(135deg, #d4af37 0%, #f4e7c3 100%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            marginBottom: '0.5rem',
+          }}>
+            Admin Login
+          </h1>
+          <p style={{
+            color: 'rgba(255, 255, 255, 0.6)',
+            fontSize: '0.875rem',
+          }}>
+            BKU Tickets - Josefi Konzert 2026
+          </p>
         </div>
-
-        <h1 style={{
-          color: '#d4af37',
-          fontSize: '1.5rem',
-          fontWeight: '700',
-          marginBottom: '0.5rem',
-          textAlign: 'center',
-        }}>
-          Admin Login
-        </h1>
-        <p style={{
-          color: 'rgba(255, 255, 255, 0.6)',
-          fontSize: '0.875rem',
-          marginBottom: '2rem',
-          textAlign: 'center',
-        }}>
-          BKU Tickets Verwaltung
-        </p>
 
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
           <div>
-            <label style={{ color: 'rgba(255, 255, 255, 0.8)', fontSize: '0.875rem', marginBottom: '0.5rem', display: 'block' }}>
+            <label style={{ display: 'block', color: 'rgba(255, 255, 255, 0.8)', fontSize: '0.875rem', marginBottom: '0.5rem' }}>
               E-Mail
             </label>
             <input
@@ -106,19 +136,17 @@ export default function AdminLoginPage() {
               style={{
                 width: '100%',
                 padding: '0.75rem',
-                backgroundColor: 'rgba(0, 0, 0, 0.4)',
+                background: 'rgba(255, 255, 255, 0.1)',
                 border: '1px solid rgba(255, 255, 255, 0.2)',
                 borderRadius: '0.5rem',
                 color: 'white',
-                fontSize: '0.875rem',
-                outline: 'none',
-                boxSizing: 'border-box',
+                fontSize: '1rem',
               }}
             />
           </div>
 
           <div>
-            <label style={{ color: 'rgba(255, 255, 255, 0.8)', fontSize: '0.875rem', marginBottom: '0.5rem', display: 'block' }}>
+            <label style={{ display: 'block', color: 'rgba(255, 255, 255, 0.8)', fontSize: '0.875rem', marginBottom: '0.5rem' }}>
               Passwort
             </label>
             <input
@@ -129,38 +157,47 @@ export default function AdminLoginPage() {
               style={{
                 width: '100%',
                 padding: '0.75rem',
-                backgroundColor: 'rgba(0, 0, 0, 0.4)',
+                background: 'rgba(255, 255, 255, 0.1)',
                 border: '1px solid rgba(255, 255, 255, 0.2)',
                 borderRadius: '0.5rem',
                 color: 'white',
-                fontSize: '0.875rem',
-                outline: 'none',
-                boxSizing: 'border-box',
+                fontSize: '1rem',
               }}
             />
           </div>
+
+          {error && (
+            <div style={{
+              padding: '0.75rem',
+              background: 'rgba(239, 68, 68, 0.1)',
+              border: '1px solid rgba(239, 68, 68, 0.3)',
+              borderRadius: '0.5rem',
+              color: '#ef4444',
+              fontSize: '0.875rem',
+            }}>
+              {error}
+            </div>
+          )}
 
           <button
             type="submit"
             disabled={loading}
             style={{
-              width: '100%',
-              padding: '0.875rem',
-              background: loading
-                ? 'rgba(212, 175, 55, 0.5)'
-                : 'linear-gradient(135deg, #d4af37 0%, #c19e2e 100%)',
+              padding: '0.75rem',
+              background: loading ? 'rgba(212, 175, 55, 0.5)' : 'linear-gradient(135deg, #d4af37 0%, #f4e7c3 100%)',
               border: 'none',
               borderRadius: '0.5rem',
-              color: 'white',
-              fontSize: '0.875rem',
-              fontWeight: '700',
+              color: '#1a1a1a',
+              fontSize: '1rem',
+              fontWeight: '600',
               cursor: loading ? 'not-allowed' : 'pointer',
+              opacity: loading ? 0.7 : 1,
             }}
           >
-            {loading ? 'Lädt...' : 'Anmelden'}
+            {loading ? 'Wird angemeldet...' : 'Anmelden'}
           </button>
         </form>
-      </div>
+      </motion.div>
     </div>
   );
 }
