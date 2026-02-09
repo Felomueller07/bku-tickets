@@ -1,44 +1,46 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import { triggerSeatUnlock } from '@/lib/pusher-server';
+import { prisma } from '@/lib/prisma'; // ⭐ GEÄNDERT!
 
 export async function POST(request: NextRequest) {
   try {
-    const { seats, sessionId } = await request.json();
+    const { seatIds, sessionId } = await request.json();
 
-    if (!seats || !Array.isArray(seats) || seats.length === 0) {
+    if (!seatIds || !Array.isArray(seatIds) || seatIds.length === 0) {
       return NextResponse.json(
         { error: 'Keine Sitze angegeben' },
         { status: 400 }
       );
     }
 
-    // Lösche nur Sitze die dieser Session gehören und status='locked' haben
-    const deletePromises = seats.map(seat =>
-      prisma.seat.deleteMany({
-        where: {
-          row: seat.row,
-          number: seat.number,
-          sessionId: sessionId,
-          status: 'locked',
-        },
-      })
-    );
+    if (!sessionId) {
+      return NextResponse.json(
+        { error: 'Keine Session ID' },
+        { status: 400 }
+      );
+    }
 
-    await Promise.all(deletePromises);
-
-    // Trigger Pusher Event
-    await triggerSeatUnlock(seats);
-
-    return NextResponse.json({
-      success: true,
-      unlockedSeats: seats,
+    // Unlock nur die Sitze die von dieser Session gelockt sind
+    await prisma.seat.updateMany({
+      where: {
+        id: { in: seatIds },
+        sessionId: sessionId,
+        status: 'locked',
+      },
+      data: {
+        status: 'available',
+        sessionId: null,
+        lockExpiry: null,
+        lockedBy: null,
+      },
     });
 
-  } catch (error) {
+    console.log(`✅ Sitze freigegeben:`, seatIds);
+
+    return NextResponse.json({ success: true });
+  } catch (error: any) {
     console.error('❌ Unlock Fehler:', error);
     return NextResponse.json(
-      { error: 'Server Fehler' },
+      { error: 'Unlock fehlgeschlagen' },
       { status: 500 }
     );
   }

@@ -11,6 +11,11 @@ import MobileCheckoutButton from './MobileCheckoutButton';
 import MobileCheckoutPanel from './MobileCheckoutPanel';
 import ReleaseConfirmModal from './ReleaseConfirmModal';
 
+// ⭐ LOCK-SYSTEM: Session ID generieren
+const generateSessionId = () => {
+  return `session_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
+};
+
 // ========================================
 // SITZPLATZ-KOMPONENTE (SVG-STUHL)
 // ========================================
@@ -21,6 +26,7 @@ function SeatChair({
   isOccupied,
   isSelected,
   isAdmin,
+  isLockedByOther,
   onToggleSelect,
   occupiedSeats,
 }: {
@@ -30,6 +36,7 @@ function SeatChair({
   isOccupied: boolean;
   isSelected: boolean;
   isAdmin: boolean;
+  isLockedByOther: boolean;
   onToggleSelect: (row: string, number: number) => void;
   occupiedSeats: Array<{
     row: string;
@@ -42,48 +49,51 @@ function SeatChair({
     onToggleSelect(row, number);
   };
 
-  // 4 FARBEN basierend auf Zustand
-const getColor = () => {
-    // ADMIN SICHT - Verschiedene Farben nach Typ
+  const getColor = () => {
+    // ⭐ LOCKED BY OTHER = DUNKELGRAU (nicht anklickbar)
+    if (isLockedByOther && !isAdmin) {
+      return '#6b7280';
+    }
+
+    // ADMIN SICHT
     if (isAdmin) {
       if (isOccupied && isSelected) {
-        return '#7c2d12';  // DUNKELBRAUN = reserviert + ausgewählt
+        return '#7c2d12';
       }
       
       if (isOccupied) {
-        // Hole Sitz-Details um reservationType zu prüfen
         const seat = occupiedSeats.find(s => s.row === row && s.number === number);
         
-switch (seat?.reservationType) {
-  case 'admin':
-    return '#f97316';    // 🟧 ORANGE = Admin reserviert
-  case 'voucher':
-    return '#089383';    // 🟩 GRÜN (wie Panel!) = Freikarte
-  case 'marked':
-    return '#facc15';    // 🟨 GELB = Vorgemerkt
-  case 'user':
-    return '#ef4444';    // 🔴 ROT = User bezahlt
-  default:
-    return '#ef4444';    // 🔴 ROT = Fallback
-}
+        switch (seat?.reservationType) {
+          case 'admin':
+            return '#f97316';
+          case 'voucher':
+            return '#089383';
+          case 'marked':
+            return '#facc15';
+          case 'user':
+            return '#ef4444';
+          default:
+            return '#ef4444';
+        }
       }
       
       if (isSelected) {
-        return '#4ade80';  // GRÜN = ausgewählt
+        return '#4ade80';
       }
       
-      return '#e8e8e8';  // WEISS = verfügbar
+      return '#e8e8e8';
     }
     
-    // USER SICHT - Alles Reservierte ist ROT
+    // USER SICHT
     if (isOccupied && isSelected) {
-      return '#b91c1c';  // DUNKELROT = reserviert + ausgewählt
+      return '#b91c1c';
     } else if (isOccupied) {
-      return '#ef4444';  // ROT = reserviert (egal welcher Typ)
+      return '#ef4444';
     } else if (isSelected) {
-      return '#4ade80';  // GRÜN = ausgewählt
+      return '#4ade80';
     } else {
-      return '#e8e8e8';  // WEISS = verfügbar
+      return '#e8e8e8';
     }
   };
 
@@ -94,17 +104,17 @@ switch (seat?.reservationType) {
       viewBox="0 0 50 50"
       onClick={handleClick}
       style={{
-        cursor: isOccupied && !isAdmin ? 'not-allowed' : 'pointer',
+        cursor: (isOccupied && !isAdmin) || isLockedByOther ? 'not-allowed' : 'pointer',
         marginLeft: rotation === 0 ? '-6px' : '0',
         marginRight: rotation === 0 ? '-6px' : '0',
         marginTop: rotation !== 0 ? '-6px' : '0',
         marginBottom: rotation !== 0 ? '-6px' : '0',
+        opacity: isLockedByOther ? 0.6 : 1,
       }}
       animate={{ rotate: rotation }}
-      whileHover={{ scale: 1.15, zIndex: 10, rotate: rotation }}
-      whileTap={{ scale: 0.95, rotate: rotation }}
+      whileHover={{ scale: isLockedByOther ? 1 : 1.15, zIndex: 10, rotate: rotation }}
+      whileTap={{ scale: isLockedByOther ? 1 : 0.95, rotate: rotation }}
     >
-      {/* Rückenlehne */}
       <path
         d="M 10 26 L 10 12 Q 10 3, 25 3 Q 40 3, 40 12 L 40 26 L 10 26 Z"
         fill={getColor()}
@@ -112,7 +122,6 @@ switch (seat?.reservationType) {
         strokeWidth="2.5"
       />
 
-      {/* Sitzfläche */}
       <rect
         x="10"
         y="30"
@@ -124,7 +133,6 @@ switch (seat?.reservationType) {
         strokeWidth="2.5"
       />
 
-      {/* Platznummer */}
       <text
         x="25"
         y="19"
@@ -137,8 +145,7 @@ switch (seat?.reservationType) {
         {number}
       </text>
 
-      {/* Schloss für besetzte Plätze */}
-      {isOccupied && (
+      {(isOccupied || isLockedByOther) && (
         <text
           x="25"
           y="36"
@@ -154,7 +161,7 @@ switch (seat?.reservationType) {
 }
 
 // ========================================
-// LEERER PLATZHALTER (UNSICHTBAR)
+// LEERER PLATZHALTER
 // ========================================
 function EmptySeat() {
   return (
@@ -163,19 +170,23 @@ function EmptySeat() {
 }
 
 // ========================================
-// HAUPTKOMPONENTE: SITZPLAN MIT DATENBANK
+// HAUPTKOMPONENTE: SITZPLAN MIT LOCK-SYSTEM
 // ========================================
 export default function SeatMap() {
   const { data: session } = useSession();
   const isAdmin = (session?.user as any)?.role === 'admin';
 
-  // State für ausgewählte Sitze
-  const [selectedSeats, setSelectedSeats] = useState<Array<{ row: string; number: number }>>([]);
+  const [sessionId] = useState(() => generateSessionId());
 
-  // State für reservierte Sitze
+  const [selectedSeats, setSelectedSeats] = useState<Array<{ row: string; number: number; id?: number }>>([]);
+
   const [occupiedSeats, setOccupiedSeats] = useState<Array<{
+    id: number;
     row: string;
     number: number;
+    status: string;
+    sessionId?: string | null;
+    lockExpiry?: Date | null;
     firstName?: string;
     lastName?: string;
     email?: string;
@@ -190,31 +201,39 @@ export default function SeatMap() {
     };
   }>>([]);
 
-  // Loading State
   const [loading, setLoading] = useState(true);
-
-  // Modal State
   const [modalOpen, setModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<'reserve' | 'edit'>('reserve');
   const [currentEditSeat, setCurrentEditSeat] = useState<{ row: string; number: number } | null>(null);
-
-  // Release Confirm Modal State
   const [releaseModalOpen, setReleaseModalOpen] = useState(false);
-
-  // Mobile State
   const [isMobile, setIsMobile] = useState(false);
-
-  // Mobile Checkout Panel State
   const [checkoutPanelOpen, setCheckoutPanelOpen] = useState(false);
 
-  // ========================================
-  // DATEN AUS DATENBANK LADEN (beim Start)
-  // ========================================
+  // ⭐ AUTO-REFRESH alle 5 Sekunden
   useEffect(() => {
     loadSeats();
+
+    const interval = setInterval(() => {
+      loadSeats();
+    }, 5000);
+
+    return () => clearInterval(interval);
   }, []);
 
-  // Mobile Detection
+  // ⭐ AUTO-CLEANUP alle 5 Minuten
+  useEffect(() => {
+    const cleanupInterval = setInterval(async () => {
+      try {
+        await fetch('/api/seats/cleanup', { method: 'POST' });
+        console.log('🧹 Cleanup durchgeführt');
+      } catch (error) {
+        console.error('❌ Cleanup Fehler:', error);
+      }
+    }, 5 * 60 * 1000);
+
+    return () => clearInterval(cleanupInterval);
+  }, []);
+
   useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 1024);
@@ -233,8 +252,12 @@ export default function SeatMap() {
         const data = await response.json();
 
         const mappedSeats = data.map((seat: any) => ({
+          id: seat.id,
           row: seat.row,
           number: seat.number,
+          status: seat.status,
+          sessionId: seat.sessionId,
+          lockExpiry: seat.lockExpiry ? new Date(seat.lockExpiry) : null,
           firstName: seat.firstName || '',
           lastName: seat.lastName || '',
           email: seat.email || '',
@@ -256,30 +279,91 @@ export default function SeatMap() {
     }
   };
 
-  // Toggle Auswahl - MIT USER-SCHUTZ!
-  const handleToggleSelect = (row: string, number: number) => {
+  // ⭐ LOCK-SYSTEM: Toggle mit Lock/Unlock
+  const handleToggleSelect = async (row: string, number: number) => {
     const isCurrentlySelected = selectedSeats.some(s => s.row === row && s.number === number);
-    const isOcc = isSeatOccupied(row, number);
+    const seat = occupiedSeats.find(s => s.row === row && s.number === number);
+    
+    const isLockedByOther = seat?.status === 'locked' && 
+                            seat.sessionId !== sessionId && 
+                            seat.lockExpiry && 
+                            new Date(seat.lockExpiry) > new Date();
 
-    // USER: Belegte Sitze NICHT anklickbar!
-    if (isOcc && !isAdmin) {
-      toast.error(`Sitz ${row}${number} ist bereits reserviert`, { duration: 2000 });
+    if (!isAdmin && ((seat?.status === 'reserved') || isLockedByOther)) {
+      toast.error(`Sitz ${row}${number} ist ${isLockedByOther ? 'gerade in Bearbeitung' : 'bereits reserviert'}`, { duration: 2000 });
       return;
     }
 
-    // Toggle selection
     if (isCurrentlySelected) {
+      // UNLOCK
+      if (seat?.id) {
+        try {
+          await fetch('/api/seats/unlock', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              seatIds: [seat.id],
+              sessionId: sessionId,
+            }),
+          });
+        } catch (error) {
+          console.error('Unlock error:', error);
+        }
+      }
+      
       setSelectedSeats(selectedSeats.filter(s => !(s.row === row && s.number === number)));
       toast.info(`Sitz ${row}${number} abgewählt`, { duration: 1500 });
+      setTimeout(() => loadSeats(), 500);
+      
     } else {
-      setSelectedSeats([...selectedSeats, { row, number }]);
+      // LOCK
+      if (!seat || seat.status === 'available' || (seat.status === 'locked' && seat.sessionId === sessionId)) {
+        const seatId = seat?.id || occupiedSeats.find(s => s.row === row && s.number === number)?.id;
+        
+        if (seatId) {
+          try {
+            const lockResponse = await fetch('/api/seats/lock', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                seatIds: [seatId],
+                sessionId: sessionId,
+              }),
+            });
+
+            if (!lockResponse.ok) {
+              const data = await lockResponse.json();
+              toast.error(data.error || 'Sitz konnte nicht reserviert werden');
+              loadSeats();
+              return;
+            }
+          } catch (error) {
+            console.error('Lock error:', error);
+            toast.error('Fehler beim Sperren');
+            return;
+          }
+        }
+      }
+      
+      setSelectedSeats([...selectedSeats, { row, number, id: seat?.id }]);
       toast.success(`Sitz ${row}${number} ausgewählt`, { duration: 1500 });
+      setTimeout(() => loadSeats(), 500);
     }
   };
 
-  // Hilfsfunktionen
   const isSeatOccupied = (row: string, number: number) => {
-    return occupiedSeats.some(s => s.row === row && s.number === number);
+    const seat = occupiedSeats.find(s => s.row === row && s.number === number);
+    return seat?.status === 'reserved' || seat?.status === 'marked';
+  };
+
+  const isSeatLockedByOther = (row: string, number: number) => {
+    const seat = occupiedSeats.find(s => s.row === row && s.number === number);
+    
+    if (!seat || seat.status !== 'locked') return false;
+    if (seat.sessionId === sessionId) return false;
+    if (!seat.lockExpiry) return false;
+    
+    return new Date(seat.lockExpiry) > new Date();
   };
 
   const isSeatSelected = (row: string, number: number) => {
@@ -290,9 +374,6 @@ export default function SeatMap() {
     return occupiedSeats.find(s => s.row === row && s.number === number);
   };
 
-  // ========================================
-  // ADMIN: RESERVIEREN (SPEICHERT IN DATENBANK)
-  // ========================================
   const handleReserveClick = async () => {
     if (selectedSeats.length === 0) {
       toast.error('Keine Sitze ausgewählt');
@@ -334,52 +415,44 @@ export default function SeatMap() {
     }
   };
 
+  const handleMarkClick = async () => {
+    if (selectedSeats.length === 0) {
+      toast.error('Keine Sitze ausgewählt');
+      return;
+    }
 
-  // ========================================
-// ADMIN: VORMERKEN (SPEICHERT IN DATENBANK)
-// ========================================
-const handleMarkClick = async () => {
-  if (selectedSeats.length === 0) {
-    toast.error('Keine Sitze ausgewählt');
-    return;
-  }
+    const freeSeats = selectedSeats.filter(s => !isSeatOccupied(s.row, s.number));
 
-  const freeSeats = selectedSeats.filter(s => !isSeatOccupied(s.row, s.number));
+    if (freeSeats.length === 0) {
+      toast.error('Nur besetzte Sitze ausgewählt');
+      return;
+    }
 
-  if (freeSeats.length === 0) {
-    toast.error('Nur besetzte Sitze ausgewählt');
-    return;
-  }
+    try {
+      const response = await fetch('/api/seats/mark', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          seats: freeSeats.map(s => ({
+            row: s.row,
+            number: s.number,
+          }))
+        })
+      });
 
-  try {
-    const response = await fetch('/api/seats/mark', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        seats: freeSeats.map(s => ({
-          row: s.row,
-          number: s.number,
-        }))
-      })
-    });
-
-    if (response.ok) {
-      await loadSeats();
-      setSelectedSeats([]);
-      toast.success(`${freeSeats.length} Sitz(e) vorgemerkt`, { duration: 2000 });
-    } else {
+      if (response.ok) {
+        await loadSeats();
+        setSelectedSeats([]);
+        toast.success(`${freeSeats.length} Sitz(e) vorgemerkt`, { duration: 2000 });
+      } else {
+        toast.error('Fehler beim Vormerken');
+      }
+    } catch (error) {
+      console.error('Fehler:', error);
       toast.error('Fehler beim Vormerken');
     }
-  } catch (error) {
-    console.error('Fehler:', error);
-    toast.error('Fehler beim Vormerken');
-  }
-};
+  };
 
-
-  // ========================================
-  // DATEN SPEICHERN (UPDATE IN DATENBANK)
-  // ========================================
   const handleModalSave = async (data: { firstName: string; lastName: string; email: string; applyToAll: boolean }) => {
     if (modalMode === 'edit' && currentEditSeat) {
       try {
@@ -426,9 +499,6 @@ const handleMarkClick = async () => {
     }
   };
 
-  // ========================================
-  // ADMIN: FREIGEBEN (MIT BESTÄTIGUNG)
-  // ========================================
   const handleAdminReleaseClick = () => {
     if (selectedSeats.length === 0) {
       toast.error('Keine Sitze ausgewählt');
@@ -442,11 +512,9 @@ const handleMarkClick = async () => {
       return;
     }
 
-    // Öffne Bestätigungs-Modal
     setReleaseModalOpen(true);
   };
 
-  // Nach Bestätigung im Modal
   const handleAdminReleaseConfirm = async () => {
     const occupiedSelected = selectedSeats.filter(s => isSeatOccupied(s.row, s.number));
 
@@ -470,7 +538,6 @@ const handleMarkClick = async () => {
     }
   };
 
-  // Sidebar: Klick auf Sitz
   const handleSidebarSeatClick = (row: string, number: number) => {
     if (isSeatOccupied(row, number)) {
       setCurrentEditSeat({ row, number });
@@ -479,7 +546,6 @@ const handleMarkClick = async () => {
     }
   };
 
-  // Sidebar: Klick auf + Daten Button
   const handleAddDataClick = (row: string, number: number) => {
     setCurrentEditSeat({ row, number });
     setModalMode('edit');
@@ -488,9 +554,8 @@ const handleMarkClick = async () => {
 
   const handleRemoveSeat = (row: string, number: number) => {
     setSelectedSeats(prev => prev.filter(s => !(s.row === row && s.number === number)));
-  };  
+  };
 
-  // REIHEN-DEFINITIONEN
   const mainRowLetters = ['E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y'];
 
   const mainRows = mainRowLetters.map(letter => ({
@@ -523,7 +588,6 @@ const handleMarkClick = async () => {
     [3, 2, 1],
   ];
 
-  // Label für Modal
   const getModalLabel = () => {
     if (modalMode === 'edit' && currentEditSeat) {
       return `${currentEditSeat.row}${currentEditSeat.number}`;
@@ -534,7 +598,6 @@ const handleMarkClick = async () => {
     return `${selectedSeats.length} Sitze`;
   };
 
-  // Initial Data für Modal
   const getModalInitialData = () => {
     if (modalMode === 'edit' && currentEditSeat) {
       return getSeatDetails(currentEditSeat.row, currentEditSeat.number);
@@ -542,7 +605,6 @@ const handleMarkClick = async () => {
     return undefined;
   };
 
-  // LOADING SPINNER
   if (loading) {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '400px' }}>
@@ -553,7 +615,6 @@ const handleMarkClick = async () => {
 
   return (
     <>
-      {/* MODAL */}
       <SeatDetailsModal
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}
@@ -563,7 +624,6 @@ const handleMarkClick = async () => {
         hasMultipleSeats={selectedSeats.filter(s => isSeatOccupied(s.row, s.number)).length > 1}
       />
 
-      {/* RELEASE CONFIRM MODAL */}
       <ReleaseConfirmModal
         isOpen={releaseModalOpen}
         onClose={() => setReleaseModalOpen(false)}
@@ -571,7 +631,6 @@ const handleMarkClick = async () => {
         seatCount={selectedSeats.filter(s => isSeatOccupied(s.row, s.number)).length}
       />
 
-      {/* MOBILE HEADER - NUR auf Mobile */}
       {isMobile && (
         <div style={{
           position: 'fixed',
@@ -590,7 +649,6 @@ const handleMarkClick = async () => {
           boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
         }}>
           
-          {/* LEFT: Event Info */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
             <div style={{ 
               fontSize: '15px', 
@@ -611,7 +669,6 @@ const handleMarkClick = async () => {
             </div>
           </div>
 
-          {/* CENTER: BKU Badge */}
           <div style={{
             position: 'absolute',
             left: '50%',
@@ -640,7 +697,6 @@ const handleMarkClick = async () => {
             </span>
           </div>
 
-          {/* RIGHT: User & Logout */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <div style={{
               fontSize: '10px',
@@ -651,29 +707,30 @@ const handleMarkClick = async () => {
               textOverflow: 'ellipsis',
               whiteSpace: 'nowrap',
             }}>
-              {(session?.user as any)?.name || (session?.user as any)?.email?.split('@')[0] || 'Admin'}
+              {(session?.user as any)?.name || (session?.user as any)?.email?.split('@')[0] || 'Gast'}
             </div>
 
-            <button
-              onClick={() => window.location.href = '/api/auth/signout'}
-              style={{
-                background: 'rgba(239, 68, 68, 0.1)',
-                border: '1px solid rgba(239, 68, 68, 0.3)',
-                borderRadius: '6px',
-                padding: '4px 8px',
-                fontSize: '9px',
-                fontWeight: '600',
-                color: '#ef4444',
-                cursor: 'pointer',
-              }}
-            >
-              Abmelden
-            </button>
+            {session && (
+              <button
+                onClick={() => window.location.href = '/api/auth/signout'}
+                style={{
+                  background: 'rgba(239, 68, 68, 0.1)',
+                  border: '1px solid rgba(239, 68, 68, 0.3)',
+                  borderRadius: '6px',
+                  padding: '4px 8px',
+                  fontSize: '9px',
+                  fontWeight: '600',
+                  color: '#ef4444',
+                  cursor: 'pointer',
+                }}
+              >
+                Abmelden
+              </button>
+            )}
           </div>
         </div>
       )}
 
-      {/* HAUPT-CONTAINER */}
       <div style={{ 
         maxWidth: '1800px', 
         margin: '0 auto', 
@@ -685,7 +742,6 @@ const handleMarkClick = async () => {
         paddingTop: isMobile ? '80px' : '0',
       }}>
 
-        {/* SITZPLAN - Hier bleibt alles gleich, nur die Galerie-Sitze bekommen occupiedSeats prop */}
         <div style={{ 
           flex: 1,
           width: '100%',
@@ -695,7 +751,6 @@ const handleMarkClick = async () => {
           maxHeight: isMobile ? '700px' : 'none',
         }}>
           
-          {/* SCALE WRAPPER */}
           <div style={{
             transform: isMobile ? 'scale(0.35)' : 'none',
             transformOrigin: isMobile ? 'top left' : 'center',
@@ -711,7 +766,6 @@ const handleMarkClick = async () => {
               border: '1px solid rgba(255, 255, 255, 0.2)' 
             }}>
 
-              {/* "Sitzplan (Admin-Modus)" Text - NUR auf Desktop */}
               {!isMobile && (
                 <p style={{ 
                   color: 'white', 
@@ -723,14 +777,12 @@ const handleMarkClick = async () => {
                 </p>
               )}
 
-              {/* BÜHNE */}
               <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '2rem' }}>
                 <div style={{ width: '600px', height: '200px', background: 'linear-gradient(180deg, rgba(90, 74, 66, 0.4) 0%, rgba(90, 74, 66, 0.2) 100%)', border: '2px solid rgba(255, 255, 255, 0.2)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <span style={{ color: '#d4af37', fontSize: '22px', fontWeight: '300', letterSpacing: '4px', textTransform: 'uppercase', fontFamily: 'Georgia, serif', textShadow: '0 2px 8px rgba(212, 175, 55, 0.3)' }}>Bühne</span>
                 </div>
               </div>
 
-              {/* HAUPT-CONTAINER */}
               <div style={{ position: 'relative' }}>
 
                 {/* GALERIE-EBENE */}
@@ -757,6 +809,7 @@ const handleMarkClick = async () => {
                                     isOccupied={isSeatOccupied(col, seatNum)}
                                     isSelected={isSeatSelected(col, seatNum)}
                                     isAdmin={isAdmin}
+                                    isLockedByOther={isSeatLockedByOther(col, seatNum)}
                                     onToggleSelect={handleToggleSelect}
                                     occupiedSeats={occupiedSeats}
                                   />
@@ -791,6 +844,7 @@ const handleMarkClick = async () => {
                                     isOccupied={isSeatOccupied(col, seatNum)}
                                     isSelected={isSeatSelected(col, seatNum)}
                                     isAdmin={isAdmin}
+                                    isLockedByOther={isSeatLockedByOther(col, seatNum)}
                                     onToggleSelect={handleToggleSelect}
                                     occupiedSeats={occupiedSeats}
                                   />
@@ -818,6 +872,7 @@ const handleMarkClick = async () => {
                             isOccupied={isSeatOccupied('BM', num)}
                             isSelected={isSeatSelected('BM', num)}
                             isAdmin={isAdmin}
+                            isLockedByOther={isSeatLockedByOther('BM', num)}
                             onToggleSelect={handleToggleSelect}
                             occupiedSeats={occupiedSeats}
                           />
@@ -833,6 +888,7 @@ const handleMarkClick = async () => {
                             isOccupied={isSeatOccupied('BM', num)}
                             isSelected={isSeatSelected('BM', num)}
                             isAdmin={isAdmin}
+                            isLockedByOther={isSeatLockedByOther('BM', num)}
                             onToggleSelect={handleToggleSelect}
                             occupiedSeats={occupiedSeats}
                           />
@@ -848,6 +904,7 @@ const handleMarkClick = async () => {
                             isOccupied={isSeatOccupied('BM', num)}
                             isSelected={isSeatSelected('BM', num)}
                             isAdmin={isAdmin}
+                            isLockedByOther={isSeatLockedByOther('BM', num)}
                             onToggleSelect={handleToggleSelect}
                             occupiedSeats={occupiedSeats}
                           />
@@ -868,6 +925,7 @@ const handleMarkClick = async () => {
                             isOccupied={isSeatOccupied('BM', num)}
                             isSelected={isSeatSelected('BM', num)}
                             isAdmin={isAdmin}
+                            isLockedByOther={isSeatLockedByOther('BM', num)}
                             onToggleSelect={handleToggleSelect}
                             occupiedSeats={occupiedSeats}
                           />
@@ -878,7 +936,7 @@ const handleMarkClick = async () => {
                   </div>
                 </div>
 
-                {/* PARKETT-EBENE - Hier alle Hauptreihen mit occupiedSeats */}
+                {/* PARKETT-EBENE */}
                 <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '2rem 10rem 9rem 10rem', pointerEvents: 'none' }}>
                   <div style={{ pointerEvents: 'auto' }}>
 
@@ -897,6 +955,7 @@ const handleMarkClick = async () => {
                                 isOccupied={isSeatOccupied(letter, number)}
                                 isSelected={isSeatSelected(letter, number)}
                                 isAdmin={isAdmin}
+                                isLockedByOther={isSeatLockedByOther(letter, number)}
                                 onToggleSelect={handleToggleSelect}
                                 occupiedSeats={occupiedSeats}
                               />
@@ -914,6 +973,7 @@ const handleMarkClick = async () => {
                                 isOccupied={isSeatOccupied(letter, number)}
                                 isSelected={isSeatSelected(letter, number)}
                                 isAdmin={isAdmin}
+                                isLockedByOther={isSeatLockedByOther(letter, number)}
                                 onToggleSelect={handleToggleSelect}
                                 occupiedSeats={occupiedSeats}
                               />
@@ -943,6 +1003,7 @@ const handleMarkClick = async () => {
                                     isOccupied={isSeatOccupied(letter, number)}
                                     isSelected={isSeatSelected(letter, number)}
                                     isAdmin={isAdmin}
+                                    isLockedByOther={isSeatLockedByOther(letter, number)}
                                     onToggleSelect={handleToggleSelect}
                                     occupiedSeats={occupiedSeats}
                                   />
@@ -965,6 +1026,7 @@ const handleMarkClick = async () => {
                                     isOccupied={isSeatOccupied(letter, number)}
                                     isSelected={isSeatSelected(letter, number)}
                                     isAdmin={isAdmin}
+                                    isLockedByOther={isSeatLockedByOther(letter, number)}
                                     onToggleSelect={handleToggleSelect}
                                     occupiedSeats={occupiedSeats}
                                   />
@@ -1007,6 +1069,7 @@ const handleMarkClick = async () => {
                                     isOccupied={isSeatOccupied(letter, number)}
                                     isSelected={isSeatSelected(letter, number)}
                                     isAdmin={isAdmin}
+                                    isLockedByOther={isSeatLockedByOther(letter, number)}
                                     onToggleSelect={handleToggleSelect}
                                     occupiedSeats={occupiedSeats}
                                   />
@@ -1028,6 +1091,7 @@ const handleMarkClick = async () => {
                                     isOccupied={isSeatOccupied(letter, number)}
                                     isSelected={isSeatSelected(letter, number)}
                                     isAdmin={isAdmin}
+                                    isLockedByOther={isSeatLockedByOther(letter, number)}
                                     onToggleSelect={handleToggleSelect}
                                     occupiedSeats={occupiedSeats}
                                   />
@@ -1050,6 +1114,7 @@ const handleMarkClick = async () => {
                                   isOccupied={isSeatOccupied(letter, number)}
                                   isSelected={isSeatSelected(letter, number)}
                                   isAdmin={isAdmin}
+                                  isLockedByOther={isSeatLockedByOther(letter, number)}
                                   onToggleSelect={handleToggleSelect}
                                   occupiedSeats={occupiedSeats}
                                 />
@@ -1070,7 +1135,7 @@ const handleMarkClick = async () => {
           </div>
         </div>
 
-        {/* DESKTOP SIDEBAR - Nur auf Desktop rechts */}
+        {/* DESKTOP SIDEBAR */}
         {!isMobile && (
           <>
             {isAdmin ? (
@@ -1080,7 +1145,7 @@ const handleMarkClick = async () => {
                 isSeatOccupied={isSeatOccupied}
                 onReserve={handleReserveClick}
                 onRelease={handleAdminReleaseClick}
-                onMark={handleMarkClick} 
+                onMark={handleMarkClick}
                 onSeatClick={handleSidebarSeatClick}
                 onAddDataClick={handleAddDataClick}
               />
@@ -1094,7 +1159,7 @@ const handleMarkClick = async () => {
         )}
       </div>
 
-      {/* MOBILE CHECKOUT - für ALLE auf Mobile */}
+      {/* MOBILE CHECKOUT */}
       {isMobile && selectedSeats.length > 0 && (
         <>
           <MobileCheckoutButton
