@@ -8,16 +8,10 @@ import { LogOut, User, Ticket, ChevronDown } from 'lucide-react';
 import SeatMap from '@/components/SeatMap';
 
 export default function DashboardPage() {
-  const { data: session, status } = useSession();
+  const { data: session } = useSession();
   const router = useRouter();
   const [showDropdown, setShowDropdown] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
-
-  useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.push('/auth/login');
-    }
-  }, [status, router]);
 
   // Mobile Detection
   useEffect(() => {
@@ -30,33 +24,15 @@ export default function DashboardPage() {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  if (status === 'loading') {
-    return (
-      <div style={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        background: 'linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%)',
-      }}>
-        <div style={{ color: 'white', fontSize: '1.5rem' }}>Lädt...</div>
-      </div>
-    );
-  }
-
-  if (!session) {
-    return null;
-  }
-
-  const isAdmin = (session.user as any)?.role === 'admin';
+  const isAdmin = (session?.user as any)?.role === 'admin';
 
   return (
     <div style={{
       minHeight: '100vh',
       background: 'linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%)',
     }}>
-      {/* DESKTOP HEADER - NUR auf Desktop! */}
-      {!isMobile && (
+      {/* DESKTOP HEADER - NUR für eingeloggte User auf Desktop! */}
+      {!isMobile && session && (
         <div style={{
           backgroundColor: 'rgba(0, 0, 0, 0.4)',
           backdropFilter: 'blur(20px)',
