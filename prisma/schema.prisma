@@ -8,25 +8,25 @@ datasource db {
 }
 
 model Seat {
-  id              Int      @id @default(autoincrement())
+  id              Int       @id @default(autoincrement())
   row             String
   number          Int
-  status          String   @default("available") // available, reserved, locked, marked
-  reservationType String?  // user, admin, free, marked
+  status          String    @default("available")
+  reservationType String?
   userId          Int?
-  user            User?    @relation(fields: [userId], references: [id])
+  user            User?     @relation(fields: [userId], references: [id])
   firstName       String?
   lastName        String?
   email           String?
   note            String?
   
-  // ⭐ NEU: Lock-System Felder
-  sessionId       String?  // Session die den Sitz gelockt hat
-  lockExpiry      DateTime? // Wann läuft das Lock ab
-  lockedBy        String?  // IP oder User-Identifier
+  // Lock-System Felder
+  sessionId       String?
+  lockExpiry      DateTime?
+  lockedBy        String?
   
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
   @@unique([row, number])
 }
