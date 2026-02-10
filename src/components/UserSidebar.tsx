@@ -14,44 +14,73 @@ interface UserSidebarProps {
 export default function UserSidebar({ selectedSeats, onRemoveSeat, isMobile = false }: UserSidebarProps) {
   const router = useRouter();
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
-  
+
   const ticketPrice = 20.0;
   const totalPrice = selectedSeats.length * ticketPrice;
 
-  const handleCheckout = async (seatsWithData: any[], voucherCode?: string) => {
+  // ⭐ MULTI-VOUCHER SUPPORT - Array statt String
+  const handleCheckout = async (seatsWithData: any[], voucherCodes?: string[]) => {
     try {
-      // Wenn Voucher-Code vorhanden → Direkt reservieren ohne Zahlung!
-      if (voucherCode) {
-        console.log('🎫 Freikarte - Direkte Reservierung');
+      // ⭐ Wenn Voucher-Codes vorhanden → Prüfen wie viele
+      if (voucherCodes && voucherCodes.length > 0) {
+        console.log(`🎫 ${voucherCodes.length} Freikarte(n) - Reservierung`);
         
+        // ⭐ Sitze mit Voucher-Codes zuordnen
+        const seatsWithVouchers = seatsWithData.map((seat, index) => ({
+          ...seat,
+          voucherCode: voucherCodes[index] || undefined, // Jeder Sitz bekommt einen Voucher (wenn verfügbar)
+        }));
+
+        // Sitze reservieren
         const reserveResponse = await fetch('/api/seats', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
-            seats: seatsWithData.map(s => ({
-              ...s,
-              voucherCode: voucherCode
-            }))
-          }),
+          body: JSON.stringify({ seats: seatsWithVouchers }),
         });
 
         if (!reserveResponse.ok) {
           throw new Error('Reservierung fehlgeschlagen');
         }
 
-        // Voucher als verwendet markieren
-        await fetch('/api/voucher/use', {
+        // ⭐ ALLE verwendeten Voucher als "verwendet" markieren
+        for (const code of voucherCodes) {
+          await fetch('/api/voucher/use', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ code }),
+          });
+        }
+
+        // ⭐ Wenn ALLE Sitze mit Voucher → Direkt zu Success
+        if (voucherCodes.length >= seatsWithData.length) {
+          console.log('✅ Alle Sitze mit Freikarten - Keine Zahlung nötig');
+          window.location.href = '/dashboard';
+          return;
+        }
+
+        // ⭐ Wenn nur TEILWEISE Voucher → Weiter zu Stripe für restliche Sitze
+        console.log(`💳 ${seatsWithData.length - voucherCodes.length} Sitze müssen bezahlt werden`);
+        
+        // NUR die Sitze OHNE Voucher an Stripe senden
+        const seatsToPayFor = seatsWithData.slice(voucherCodes.length);
+        
+        const checkoutResponse = await fetch('/api/create-checkout-session', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ code: voucherCode }),
+          body: JSON.stringify({ seats: seatsToPayFor }),
         });
 
-        // Direkt zur Success-Seite
-        window.location.href = '/dashboard';
+        const { url } = await checkoutResponse.json();
+        
+        if (url) {
+          window.location.href = url;
+        }
         return;
       }
 
-      // Normale Zahlung mit Stripe
+      // ⭐ KEINE Voucher → Normale Stripe-Zahlung für ALLE Sitze
+      console.log('💳 Normale Zahlung - Keine Freikarten');
+      
       const reserveResponse = await fetch('/api/seats', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -91,10 +120,9 @@ export default function UserSidebar({ selectedSeats, onRemoveSeat, isMobile = fa
         flexDirection: 'column',
         gap: isMobile ? '1rem' : '1.5rem',
         height: isMobile ? 'auto' : '100vh',
-        overflowY: 'hidden', // ⭐ GEÄNDERT: Kein Scroll auf dem Container
+        overflowY: 'hidden',
       }}>
         
-        {/* HEADER */}
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
             <ShoppingCart style={{ width: '24px', height: '24px', color: '#d4af37' }} />
@@ -119,7 +147,7 @@ export default function UserSidebar({ selectedSeats, onRemoveSeat, isMobile = fa
           </div>
         ) : (
           <>
-            {/* ⭐ PREIS + BUTTON - JETZT HIER OBEN! */}
+            {/* PREIS + BUTTON OBEN */}
             <div style={{
               borderTop: '1px solid rgba(255, 255, 255, 0.1)',
               borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
@@ -159,12 +187,12 @@ export default function UserSidebar({ selectedSeats, onRemoveSeat, isMobile = fa
               </button>
             </div>
 
-            {/* ⭐ SITZE LISTE - SCROLLBAR MIT MAX HEIGHT */}
+            {/* SITZE LISTE - SCROLLBAR */}
             <div style={{ 
               flex: 1,
-              overflowY: 'auto', // ⭐ NUR DIE LISTE SCROLLT!
+              overflowY: 'auto',
               paddingRight: '0.5rem',
-              maxHeight: isMobile ? '300px' : '50vh', // ⭐ MAX HEIGHT!
+              maxHeight: isMobile ? '300px' : '50vh',
               display: 'flex', 
               flexDirection: 'column', 
               gap: '0.75rem',
@@ -180,7 +208,7 @@ export default function UserSidebar({ selectedSeats, onRemoveSeat, isMobile = fa
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center',
-                    flexShrink: 0, // ⭐ Verhindert Schrumpfen
+                    flexShrink: 0,
                   }}
                 >
                   <div>
