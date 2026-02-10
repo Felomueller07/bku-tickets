@@ -2,14 +2,15 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, CreditCard, Mail, User, Gift } from 'lucide-react';
+import { X, CreditCard, Mail, User, Gift, Clock, AlertCircle } from 'lucide-react';
 import { useSession } from 'next-auth/react';
+import { toast } from 'sonner';
 
 interface CheckoutModalProps {
   isOpen: boolean;
   onClose: () => void;
   selectedSeats: Array<{ row: string; number: number }>;
-  onCheckout: (seats: any[], voucherCode?: string) => void;  // ⬅️ ÄNDERN!
+  onCheckout: (seats: any[], voucherCode?: string) => void;
 }
 
 export default function CheckoutModal({
@@ -19,6 +20,9 @@ export default function CheckoutModal({
   onCheckout,
 }: CheckoutModalProps) {
   const { data: session } = useSession();
+  
+  // ⭐ COUNTDOWN TIMER STATE
+  const [timeLeft, setTimeLeft] = useState(600); // 10 Minuten = 600 Sekunden
   
   const [voucherCode, setVoucherCode] = useState('');
   const [voucherValid, setVoucherValid] = useState<boolean | null>(null);
@@ -40,6 +44,35 @@ export default function CheckoutModal({
       lastName: '',
     }))
   );
+
+  // ⭐ COUNTDOWN TIMER LOGIC
+  useEffect(() => {
+    if (!isOpen) {
+      setTimeLeft(600); // Reset bei schließen
+      return;
+    }
+
+    const interval = setInterval(() => {
+      setTimeLeft((prev) => {
+        if (prev <= 1) {
+          clearInterval(interval);
+          toast.error('⚠️ Zeit abgelaufen! Sitze wurden freigegeben.');
+          onClose();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [isOpen, onClose]);
+
+  // ⭐ WARNUNG BEI 2 MINUTEN
+  useEffect(() => {
+    if (timeLeft === 120) {
+      toast.warning('⚠️ Nur noch 2 Minuten! Bitte schnell abschließen.');
+    }
+  }, [timeLeft]);
 
   useEffect(() => {
     const checkMobile = () => {
@@ -92,22 +125,34 @@ export default function CheckoutModal({
     }
   };
 
-const handleSubmit = (e: React.FormEvent) => {
-  e.preventDefault();
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
 
-  const seatsWithData = seatData.map((seat) => ({
-    row: seat.row,
-    number: seat.number,
-    firstName: seat.firstName || contactData.firstName,
-    lastName: seat.lastName || contactData.lastName,
-    email: contactData.email,
-    voucherCode: voucherValid ? voucherCode : undefined,  // ⬅️ NEU HINZUFÜGEN!
-  }));
+    const seatsWithData = seatData.map((seat) => ({
+      row: seat.row,
+      number: seat.number,
+      firstName: seat.firstName || contactData.firstName,
+      lastName: seat.lastName || contactData.lastName,
+      email: contactData.email,
+      voucherCode: voucherValid ? voucherCode : undefined,
+    }));
 
-  onCheckout(seatsWithData, voucherValid ? voucherCode : undefined);  // ⬅️ VOUCHER MITGEBEN!
-};
+    onCheckout(seatsWithData, voucherValid ? voucherCode : undefined);
+  };
 
   const totalPrice = voucherValid ? 0 : selectedSeats.length * 20;
+
+  // ⭐ TIMER FORMATTING
+  const minutes = Math.floor(timeLeft / 60);
+  const seconds = timeLeft % 60;
+  const timeString = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  
+  // ⭐ PROGRESS BAR PERCENTAGE
+  const progressPercentage = (timeLeft / 600) * 100;
+  
+  // ⭐ TIMER COLOR (rot bei < 2 Min)
+  const isUrgent = timeLeft < 120;
+  const timerColor = isUrgent ? '#ef4444' : '#d4af37';
 
   if (!isOpen) return null;
 
@@ -190,6 +235,71 @@ const handleSubmit = (e: React.FormEvent) => {
               <X size={24} />
             </button>
           </div>
+
+          {/* ⭐ COUNTDOWN TIMER */}
+          <motion.div
+            animate={isUrgent ? { scale: [1, 1.02, 1] } : {}}
+            transition={isUrgent ? { duration: 1, repeat: Infinity } : {}}
+            style={{
+              backgroundColor: isUrgent ? 'rgba(239, 68, 68, 0.1)' : 'rgba(212, 175, 55, 0.1)',
+              border: `1px solid ${isUrgent ? 'rgba(239, 68, 68, 0.3)' : 'rgba(212, 175, 55, 0.3)'}`,
+              borderRadius: '0.75rem',
+              padding: isMobile ? '1rem' : '1.25rem',
+              marginBottom: isMobile ? '1rem' : '1.5rem',
+            }}
+          >
+            <div style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'space-between',
+              marginBottom: '0.75rem',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                {isUrgent ? (
+                  <AlertCircle style={{ color: timerColor, width: '20px', height: '20px' }} />
+                ) : (
+                  <Clock style={{ color: timerColor, width: '20px', height: '20px' }} />
+                )}
+                <span style={{ 
+                  color: timerColor, 
+                  fontSize: isMobile ? '0.85rem' : '0.9rem',
+                  fontWeight: '600',
+                }}>
+                  {isUrgent ? '⚠️ Bitte schnell abschließen!' : 'Noch verfügbar'}
+                </span>
+              </div>
+              <span style={{ 
+                color: timerColor, 
+                fontSize: isMobile ? '1.25rem' : '1.5rem',
+                fontWeight: '700',
+                fontFamily: 'monospace',
+              }}>
+                {timeString}
+              </span>
+            </div>
+
+            {/* PROGRESS BAR */}
+            <div style={{
+              width: '100%',
+              height: '8px',
+              backgroundColor: 'rgba(255, 255, 255, 0.1)',
+              borderRadius: '4px',
+              overflow: 'hidden',
+            }}>
+              <motion.div
+                initial={{ width: '100%' }}
+                animate={{ width: `${progressPercentage}%` }}
+                transition={{ duration: 1 }}
+                style={{
+                  height: '100%',
+                  background: isUrgent 
+                    ? 'linear-gradient(90deg, #ef4444 0%, #dc2626 100%)'
+                    : 'linear-gradient(90deg, #d4af37 0%, #f4e7c3 100%)',
+                  borderRadius: '4px',
+                }}
+              />
+            </div>
+          </motion.div>
 
           <form onSubmit={handleSubmit}>
             {/* Ausgewählte Sitze */}
