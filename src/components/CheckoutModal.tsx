@@ -176,10 +176,10 @@ export default function CheckoutModal({
           style={{
             backgroundColor: '#1a1a1a',
             borderRadius: isMobile ? '1.5rem 1.5rem 0 0' : '1rem',
-            padding: isMobile ? '1.25rem' : '1.5rem',
-            maxWidth: isMobile ? '100%' : '700px',
+            padding: isMobile ? '1.5rem' : '2rem',
+            maxWidth: isMobile ? '100%' : '850px',
             width: '100%',
-            maxHeight: isMobile ? '90vh' : '85vh',
+            maxHeight: isMobile ? '90vh' : '90vh',
             overflowY: 'auto',
             border: '1px solid rgba(212, 175, 55, 0.3)',
           }}
@@ -189,7 +189,7 @@ export default function CheckoutModal({
             <div style={{
               display: 'flex',
               justifyContent: 'center',
-              marginBottom: '0.75rem',
+              marginBottom: '1rem',
               marginTop: '-0.5rem',
             }}>
               <div style={{
@@ -201,74 +201,75 @@ export default function CheckoutModal({
             </div>
           )}
 
-          {/* HEADER + TIMER IN EINER ZEILE */}
+          {/* ⭐ HEADER - Titel links, Timer + Close rechts */}
           <div style={{ 
             display: 'flex', 
             justifyContent: 'space-between', 
             alignItems: 'center', 
-            marginBottom: isMobile ? '0.75rem' : '1rem',
-            gap: '1rem',
+            marginBottom: isMobile ? '1rem' : '1.25rem',
           }}>
             <h2 style={{ 
               color: '#d4af37', 
-              fontSize: isMobile ? '1.125rem' : '1.25rem', 
+              fontSize: isMobile ? '1.25rem' : '1.5rem', 
               fontWeight: '700',
               margin: 0,
             }}>
               Checkout
             </h2>
 
-            {/* ⭐ TIMER KOMPAKT - RECHTS */}
-            <motion.div
-              animate={isUrgent ? { scale: [1, 1.05, 1] } : {}}
-              transition={isUrgent ? { duration: 1, repeat: Infinity } : {}}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-                padding: '0.5rem 0.75rem',
-                backgroundColor: isUrgent ? 'rgba(239, 68, 68, 0.1)' : 'rgba(212, 175, 55, 0.1)',
-                border: `1px solid ${isUrgent ? 'rgba(239, 68, 68, 0.3)' : 'rgba(212, 175, 55, 0.3)'}`,
-                borderRadius: '0.5rem',
-              }}
-            >
-              {isUrgent ? (
-                <AlertCircle style={{ color: timerColor, width: '16px', height: '16px' }} />
-              ) : (
-                <Clock style={{ color: timerColor, width: '16px', height: '16px' }} />
-              )}
-              <span style={{ 
-                color: timerColor, 
-                fontSize: isMobile ? '1rem' : '1.125rem',
-                fontWeight: '700',
-                fontFamily: 'monospace',
-              }}>
-                {timeString}
-              </span>
-            </motion.div>
+            {/* ⭐ TIMER + CLOSE BUTTON RECHTS */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+              <motion.div
+                animate={isUrgent ? { scale: [1, 1.05, 1] } : {}}
+                transition={isUrgent ? { duration: 1, repeat: Infinity } : {}}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  padding: '0.625rem 1rem',
+                  backgroundColor: isUrgent ? 'rgba(239, 68, 68, 0.1)' : 'rgba(212, 175, 55, 0.1)',
+                  border: `1px solid ${isUrgent ? 'rgba(239, 68, 68, 0.3)' : 'rgba(212, 175, 55, 0.3)'}`,
+                  borderRadius: '0.5rem',
+                }}
+              >
+                {isUrgent ? (
+                  <AlertCircle style={{ color: timerColor, width: '18px', height: '18px' }} />
+                ) : (
+                  <Clock style={{ color: timerColor, width: '18px', height: '18px' }} />
+                )}
+                <span style={{ 
+                  color: timerColor, 
+                  fontSize: isMobile ? '1.125rem' : '1.25rem',
+                  fontWeight: '700',
+                  fontFamily: 'monospace',
+                }}>
+                  {timeString}
+                </span>
+              </motion.div>
 
-            <button
-              onClick={onClose}
-              style={{
-                background: 'none',
-                border: 'none',
-                color: '#999',
-                cursor: 'pointer',
-                padding: '0.25rem',
-              }}
-            >
-              <X size={20} />
-            </button>
+              <button
+                onClick={onClose}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#999',
+                  cursor: 'pointer',
+                  padding: '0.5rem',
+                }}
+              >
+                <X size={24} />
+              </button>
+            </div>
           </div>
 
-          {/* PROGRESS BAR - DÜNN */}
+          {/* PROGRESS BAR */}
           <div style={{
             width: '100%',
-            height: '4px',
+            height: '6px',
             backgroundColor: 'rgba(255, 255, 255, 0.1)',
-            borderRadius: '2px',
+            borderRadius: '3px',
             overflow: 'hidden',
-            marginBottom: isMobile ? '0.75rem' : '1rem',
+            marginBottom: isMobile ? '1rem' : '1.5rem',
           }}>
             <motion.div
               initial={{ width: '100%' }}
@@ -279,50 +280,53 @@ export default function CheckoutModal({
                 background: isUrgent 
                   ? 'linear-gradient(90deg, #ef4444 0%, #dc2626 100%)'
                   : 'linear-gradient(90deg, #d4af37 0%, #f4e7c3 100%)',
-                borderRadius: '2px',
+                borderRadius: '3px',
               }}
             />
           </div>
 
           <form onSubmit={handleSubmit}>
-            {/* ⭐ SITZE + PREIS + VOUCHER IN 2 SPALTEN (Desktop) */}
+            {/* ⭐ SITZE + VOUCHER IN 2 SPALTEN */}
             <div style={{
               display: 'grid',
               gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
-              gap: isMobile ? '0.75rem' : '1rem',
-              marginBottom: isMobile ? '0.75rem' : '1rem',
+              gap: isMobile ? '1rem' : '1.25rem',
+              marginBottom: isMobile ? '1rem' : '1.5rem',
             }}>
-              {/* Ausgewählte Sitze - KOMPAKT */}
+              {/* Ausgewählte Sitze */}
               <div style={{
                 backgroundColor: 'rgba(212, 175, 55, 0.1)',
                 border: '1px solid rgba(212, 175, 55, 0.3)',
-                borderRadius: '0.5rem',
-                padding: isMobile ? '0.75rem' : '0.875rem',
+                borderRadius: '0.75rem',
+                padding: isMobile ? '1rem' : '1.25rem',
               }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-                  <CreditCard style={{ color: '#d4af37', width: '16px', height: '16px' }} />
-                  <h3 style={{ color: '#d4af37', fontSize: '0.875rem', fontWeight: '600', margin: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
+                  <CreditCard style={{ color: '#d4af37', width: '20px', height: '20px' }} />
+                  <h3 style={{ color: '#d4af37', fontSize: '1rem', fontWeight: '600', margin: 0 }}>
                     Ausgewählte Sitze
                   </h3>
                 </div>
-                <p style={{ color: '#fff', fontSize: '0.75rem', margin: '0 0 0.25rem 0' }}>
+                <p style={{ color: '#fff', fontSize: '0.875rem', margin: '0 0 0.5rem 0' }}>
                   Reihe {selectedSeats[0]?.row}, Platz {selectedSeats.map(s => s.number).join(', ')}
                 </p>
-                <p style={{ color: '#d4af37', fontSize: '1rem', fontWeight: '700', margin: 0 }}>
+                <p style={{ color: '#d4af37', fontSize: '1.25rem', fontWeight: '700', margin: '0.5rem 0 0.25rem 0' }}>
                   {totalPrice.toFixed(2)} €
+                </p>
+                <p style={{ color: '#999', fontSize: '0.75rem', margin: 0 }}>
+                  Josefi Konzert 2026
                 </p>
               </div>
 
-              {/* Freikartencode - KOMPAKT */}
+              {/* Freikartencode */}
               <div style={{
                 backgroundColor: 'rgba(16, 185, 129, 0.1)',
                 border: '1px solid rgba(16, 185, 129, 0.3)',
-                borderRadius: '0.5rem',
-                padding: isMobile ? '0.75rem' : '0.875rem',
+                borderRadius: '0.75rem',
+                padding: isMobile ? '1rem' : '1.25rem',
               }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-                  <Gift style={{ color: '#10b981', width: '16px', height: '16px' }} />
-                  <h3 style={{ color: '#10b981', fontSize: '0.875rem', fontWeight: '600', margin: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
+                  <Gift style={{ color: '#10b981', width: '20px', height: '20px' }} />
+                  <h3 style={{ color: '#10b981', fontSize: '1rem', fontWeight: '600', margin: 0 }}>
                     Freikarten-Code
                   </h3>
                 </div>
@@ -337,12 +341,12 @@ export default function CheckoutModal({
                     placeholder="CODE123"
                     style={{
                       flex: 1,
-                      padding: '0.5rem',
+                      padding: '0.625rem',
                       backgroundColor: 'rgba(255, 255, 255, 0.05)',
                       border: '1px solid rgba(255, 255, 255, 0.1)',
-                      borderRadius: '0.375rem',
+                      borderRadius: '0.5rem',
                       color: '#fff',
-                      fontSize: '0.75rem',
+                      fontSize: '0.875rem',
                       textTransform: 'uppercase',
                       outline: 'none',
                     }}
@@ -352,44 +356,44 @@ export default function CheckoutModal({
                     onClick={handleCheckVoucher}
                     disabled={voucherChecking || !voucherCode.trim()}
                     style={{
-                      padding: '0.5rem 0.875rem',
+                      padding: '0.625rem 1.25rem',
                       backgroundColor: '#10b981',
                       color: '#fff',
                       border: 'none',
-                      borderRadius: '0.375rem',
+                      borderRadius: '0.5rem',
                       cursor: voucherChecking || !voucherCode.trim() ? 'not-allowed' : 'pointer',
                       fontWeight: '600',
                       opacity: voucherChecking || !voucherCode.trim() ? 0.5 : 1,
-                      fontSize: '0.75rem',
+                      fontSize: '0.875rem',
                     }}
                   >
                     Prüfen
                   </button>
                 </div>
                 {voucherValid === true && (
-                  <p style={{ color: '#10b981', fontSize: '0.7rem', margin: '0.375rem 0 0 0' }}>
-                    ✓ Code gültig!
+                  <p style={{ color: '#10b981', fontSize: '0.875rem', margin: '0.625rem 0 0 0' }}>
+                    ✓ Code gültig! Freikarte aktiviert
                   </p>
                 )}
                 {voucherValid === false && (
-                  <p style={{ color: '#ef4444', fontSize: '0.7rem', margin: '0.375rem 0 0 0' }}>
-                    ✗ Ungültig
+                  <p style={{ color: '#ef4444', fontSize: '0.875rem', margin: '0.625rem 0 0 0' }}>
+                    ✗ Ungültiger Code
                   </p>
                 )}
               </div>
             </div>
 
-            {/* Kontaktdaten - KOMPAKT */}
+            {/* Kontaktdaten */}
             <div style={{
               backgroundColor: 'rgba(212, 175, 55, 0.05)',
               border: '1px solid rgba(212, 175, 55, 0.2)',
-              borderRadius: '0.5rem',
-              padding: isMobile ? '0.75rem' : '1rem',
-              marginBottom: isMobile ? '0.75rem' : '1rem',
+              borderRadius: '0.75rem',
+              padding: isMobile ? '1rem' : '1.5rem',
+              marginBottom: isMobile ? '1rem' : '1.5rem',
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
-                <User style={{ color: '#d4af37', width: '16px', height: '16px' }} />
-                <h3 style={{ color: '#d4af37', fontSize: '0.875rem', fontWeight: '600', margin: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
+                <User style={{ color: '#d4af37', width: '20px', height: '20px' }} />
+                <h3 style={{ color: '#d4af37', fontSize: '1rem', fontWeight: '600', margin: 0 }}>
                   Ihre Kontaktdaten
                 </h3>
               </div>
@@ -397,11 +401,11 @@ export default function CheckoutModal({
               <div style={{ 
                 display: 'grid', 
                 gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', 
-                gap: '0.75rem', 
-                marginBottom: '0.75rem' 
+                gap: '1rem', 
+                marginBottom: '1rem' 
               }}>
                 <div>
-                  <label style={{ display: 'block', color: 'rgba(255, 255, 255, 0.8)', fontSize: '0.75rem', marginBottom: '0.375rem' }}>
+                  <label style={{ display: 'block', color: 'rgba(255, 255, 255, 0.8)', fontSize: '0.875rem', marginBottom: '0.5rem' }}>
                     Vorname *
                   </label>
                   <input
@@ -411,12 +415,12 @@ export default function CheckoutModal({
                     required
                     style={{
                       width: '100%',
-                      padding: '0.5rem',
+                      padding: '0.625rem',
                       backgroundColor: 'rgba(255, 255, 255, 0.05)',
                       border: '1px solid rgba(255, 255, 255, 0.1)',
-                      borderRadius: '0.375rem',
+                      borderRadius: '0.5rem',
                       color: '#fff',
-                      fontSize: '0.8125rem',
+                      fontSize: '0.875rem',
                       outline: 'none',
                       boxSizing: 'border-box',
                     }}
@@ -424,7 +428,7 @@ export default function CheckoutModal({
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', color: 'rgba(255, 255, 255, 0.8)', fontSize: '0.75rem', marginBottom: '0.375rem' }}>
+                  <label style={{ display: 'block', color: 'rgba(255, 255, 255, 0.8)', fontSize: '0.875rem', marginBottom: '0.5rem' }}>
                     Nachname *
                   </label>
                   <input
@@ -434,12 +438,12 @@ export default function CheckoutModal({
                     required
                     style={{
                       width: '100%',
-                      padding: '0.5rem',
+                      padding: '0.625rem',
                       backgroundColor: 'rgba(255, 255, 255, 0.05)',
                       border: '1px solid rgba(255, 255, 255, 0.1)',
-                      borderRadius: '0.375rem',
+                      borderRadius: '0.5rem',
                       color: '#fff',
-                      fontSize: '0.8125rem',
+                      fontSize: '0.875rem',
                       outline: 'none',
                       boxSizing: 'border-box',
                     }}
@@ -448,18 +452,18 @@ export default function CheckoutModal({
               </div>
 
               <div>
-                <label style={{ display: 'block', color: 'rgba(255, 255, 255, 0.8)', fontSize: '0.75rem', marginBottom: '0.375rem' }}>
+                <label style={{ display: 'block', color: 'rgba(255, 255, 255, 0.8)', fontSize: '0.875rem', marginBottom: '0.5rem' }}>
                   E-Mail *
                 </label>
                 <div style={{ position: 'relative' }}>
                   <Mail style={{
                     position: 'absolute',
-                    left: '0.625rem',
+                    left: '0.75rem',
                     top: '50%',
                     transform: 'translateY(-50%)',
                     color: 'rgba(255, 255, 255, 0.5)',
-                    width: '16px',
-                    height: '16px',
+                    width: '18px',
+                    height: '18px',
                   }} />
                   <input
                     type="email"
@@ -468,12 +472,12 @@ export default function CheckoutModal({
                     required
                     style={{
                       width: '100%',
-                      padding: '0.5rem 0.5rem 0.5rem 2.25rem',
+                      padding: '0.625rem 0.625rem 0.625rem 2.5rem',
                       backgroundColor: 'rgba(255, 255, 255, 0.05)',
                       border: '1px solid rgba(255, 255, 255, 0.1)',
-                      borderRadius: '0.375rem',
+                      borderRadius: '0.5rem',
                       color: '#fff',
-                      fontSize: '0.8125rem',
+                      fontSize: '0.875rem',
                       outline: 'none',
                       boxSizing: 'border-box',
                     }}
@@ -481,30 +485,30 @@ export default function CheckoutModal({
                 </div>
                 <p style={{ 
                   color: '#999', 
-                  fontSize: '0.7rem', 
-                  marginTop: '0.375rem', 
+                  fontSize: '0.75rem', 
+                  marginTop: '0.5rem', 
                   display: 'flex', 
                   alignItems: 'center', 
-                  gap: '0.375rem',
-                  margin: '0.375rem 0 0 0',
+                  gap: '0.5rem',
+                  margin: '0.5rem 0 0 0',
                 }}>
-                  <Mail size={12} />
+                  <Mail size={14} />
                   Die Tickets werden an diese E-Mail-Adresse gesendet.
                 </p>
               </div>
             </div>
 
-            {/* AGB & Datenschutz - KOMPAKT */}
-            <div style={{ marginBottom: isMobile ? '0.75rem' : '1rem' }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem', cursor: 'pointer' }}>
+            {/* AGB & Datenschutz */}
+            <div style={{ marginBottom: isMobile ? '1rem' : '1.5rem' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem', cursor: 'pointer' }}>
                 <input
                   type="checkbox"
                   checked={agreedToTerms}
                   onChange={(e) => setAgreedToTerms(e.target.checked)}
                   required
-                  style={{ width: '16px', height: '16px', cursor: 'pointer' }}
+                  style={{ width: '18px', height: '18px', cursor: 'pointer' }}
                 />
-                <span style={{ color: '#fff', fontSize: '0.8125rem' }}>
+                <span style={{ color: '#fff', fontSize: '0.875rem' }}>
                   Ich akzeptiere die{' '}
                   <a href="/agb" target="_blank" style={{ color: '#d4af37', textDecoration: 'underline' }}>
                     AGB
@@ -519,9 +523,9 @@ export default function CheckoutModal({
                   checked={agreedToPrivacy}
                   onChange={(e) => setAgreedToPrivacy(e.target.checked)}
                   required
-                  style={{ width: '16px', height: '16px', cursor: 'pointer' }}
+                  style={{ width: '18px', height: '18px', cursor: 'pointer' }}
                 />
-                <span style={{ color: '#fff', fontSize: '0.8125rem' }}>
+                <span style={{ color: '#fff', fontSize: '0.875rem' }}>
                   Ich akzeptiere die{' '}
                   <a href="/datenschutz" target="_blank" style={{ color: '#d4af37', textDecoration: 'underline' }}>
                     Datenschutzerklärung
@@ -531,7 +535,7 @@ export default function CheckoutModal({
               </label>
             </div>
 
-            {/* Submit Button - KOMPAKT */}
+            {/* Submit Button */}
             <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
@@ -539,14 +543,14 @@ export default function CheckoutModal({
               disabled={!agreedToTerms || !agreedToPrivacy}
               style={{
                 width: '100%',
-                padding: isMobile ? '0.75rem' : '0.875rem',
+                padding: isMobile ? '0.875rem' : '1rem',
                 background: agreedToTerms && agreedToPrivacy
                   ? 'linear-gradient(135deg, #d4af37 0%, #f4e7c3 100%)'
                   : '#555',
                 border: 'none',
-                borderRadius: '0.5rem',
+                borderRadius: '0.75rem',
                 color: '#000',
-                fontSize: isMobile ? '0.875rem' : '0.9375rem',
+                fontSize: isMobile ? '0.9375rem' : '1rem',
                 fontWeight: '700',
                 cursor: agreedToTerms && agreedToPrivacy ? 'pointer' : 'not-allowed',
               }}
