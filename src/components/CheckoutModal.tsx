@@ -21,8 +21,7 @@ export default function CheckoutModal({
 }: CheckoutModalProps) {
   const { data: session } = useSession();
   
-  // ⭐ COUNTDOWN TIMER STATE
-  const [timeLeft, setTimeLeft] = useState(600); // 10 Minuten = 600 Sekunden
+  const [timeLeft, setTimeLeft] = useState(600);
   
   const [voucherCode, setVoucherCode] = useState('');
   const [voucherValid, setVoucherValid] = useState<boolean | null>(null);
@@ -45,10 +44,9 @@ export default function CheckoutModal({
     }))
   );
 
-  // ⭐ COUNTDOWN TIMER LOGIC
   useEffect(() => {
     if (!isOpen) {
-      setTimeLeft(600); // Reset bei schließen
+      setTimeLeft(600);
       return;
     }
 
@@ -67,7 +65,6 @@ export default function CheckoutModal({
     return () => clearInterval(interval);
   }, [isOpen, onClose]);
 
-  // ⭐ WARNUNG BEI 2 MINUTEN
   useEffect(() => {
     if (timeLeft === 120) {
       toast.warning('⚠️ Nur noch 2 Minuten! Bitte schnell abschließen.');
@@ -142,15 +139,11 @@ export default function CheckoutModal({
 
   const totalPrice = voucherValid ? 0 : selectedSeats.length * 20;
 
-  // ⭐ TIMER FORMATTING
   const minutes = Math.floor(timeLeft / 60);
   const seconds = timeLeft % 60;
   const timeString = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
   
-  // ⭐ PROGRESS BAR PERCENTAGE
   const progressPercentage = (timeLeft / 600) * 100;
-  
-  // ⭐ TIMER COLOR (rot bei < 2 Min)
   const isUrgent = timeLeft < 120;
   const timerColor = isUrgent ? '#ef4444' : '#d4af37';
 
@@ -183,10 +176,10 @@ export default function CheckoutModal({
           style={{
             backgroundColor: '#1a1a1a',
             borderRadius: isMobile ? '1.5rem 1.5rem 0 0' : '1rem',
-            padding: isMobile ? '1.5rem' : '2rem',
-            maxWidth: isMobile ? '100%' : '800px',
+            padding: isMobile ? '1.25rem' : '1.5rem',
+            maxWidth: isMobile ? '100%' : '700px',
             width: '100%',
-            maxHeight: isMobile ? '90vh' : '90vh',
+            maxHeight: isMobile ? '90vh' : '85vh',
             overflowY: 'auto',
             border: '1px solid rgba(212, 175, 55, 0.3)',
           }}
@@ -196,7 +189,7 @@ export default function CheckoutModal({
             <div style={{
               display: 'flex',
               justifyContent: 'center',
-              marginBottom: '1rem',
+              marginBottom: '0.75rem',
               marginTop: '-0.5rem',
             }}>
               <div style={{
@@ -208,20 +201,52 @@ export default function CheckoutModal({
             </div>
           )}
 
+          {/* HEADER + TIMER IN EINER ZEILE */}
           <div style={{ 
             display: 'flex', 
             justifyContent: 'space-between', 
             alignItems: 'center', 
-            marginBottom: isMobile ? '1rem' : '1.5rem' 
+            marginBottom: isMobile ? '0.75rem' : '1rem',
+            gap: '1rem',
           }}>
             <h2 style={{ 
               color: '#d4af37', 
-              fontSize: isMobile ? '1.25rem' : '1.5rem', 
+              fontSize: isMobile ? '1.125rem' : '1.25rem', 
               fontWeight: '700',
               margin: 0,
             }}>
               Checkout
             </h2>
+
+            {/* ⭐ TIMER KOMPAKT - RECHTS */}
+            <motion.div
+              animate={isUrgent ? { scale: [1, 1.05, 1] } : {}}
+              transition={isUrgent ? { duration: 1, repeat: Infinity } : {}}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                padding: '0.5rem 0.75rem',
+                backgroundColor: isUrgent ? 'rgba(239, 68, 68, 0.1)' : 'rgba(212, 175, 55, 0.1)',
+                border: `1px solid ${isUrgent ? 'rgba(239, 68, 68, 0.3)' : 'rgba(212, 175, 55, 0.3)'}`,
+                borderRadius: '0.5rem',
+              }}
+            >
+              {isUrgent ? (
+                <AlertCircle style={{ color: timerColor, width: '16px', height: '16px' }} />
+              ) : (
+                <Clock style={{ color: timerColor, width: '16px', height: '16px' }} />
+              )}
+              <span style={{ 
+                color: timerColor, 
+                fontSize: isMobile ? '1rem' : '1.125rem',
+                fontWeight: '700',
+                fontFamily: 'monospace',
+              }}>
+                {timeString}
+              </span>
+            </motion.div>
+
             <button
               onClick={onClose}
               style={{
@@ -229,236 +254,142 @@ export default function CheckoutModal({
                 border: 'none',
                 color: '#999',
                 cursor: 'pointer',
-                padding: '0.5rem',
+                padding: '0.25rem',
               }}
             >
-              <X size={24} />
+              <X size={20} />
             </button>
           </div>
 
-          {/* ⭐ COUNTDOWN TIMER */}
-          <motion.div
-            animate={isUrgent ? { scale: [1, 1.02, 1] } : {}}
-            transition={isUrgent ? { duration: 1, repeat: Infinity } : {}}
-            style={{
-              backgroundColor: isUrgent ? 'rgba(239, 68, 68, 0.1)' : 'rgba(212, 175, 55, 0.1)',
-              border: `1px solid ${isUrgent ? 'rgba(239, 68, 68, 0.3)' : 'rgba(212, 175, 55, 0.3)'}`,
-              borderRadius: '0.75rem',
-              padding: isMobile ? '1rem' : '1.25rem',
-              marginBottom: isMobile ? '1rem' : '1.5rem',
-            }}
-          >
-            <div style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'space-between',
-              marginBottom: '0.75rem',
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                {isUrgent ? (
-                  <AlertCircle style={{ color: timerColor, width: '20px', height: '20px' }} />
-                ) : (
-                  <Clock style={{ color: timerColor, width: '20px', height: '20px' }} />
-                )}
-                <span style={{ 
-                  color: timerColor, 
-                  fontSize: isMobile ? '0.85rem' : '0.9rem',
-                  fontWeight: '600',
-                }}>
-                  {isUrgent ? '⚠️ Bitte schnell abschließen!' : 'Noch verfügbar'}
-                </span>
-              </div>
-              <span style={{ 
-                color: timerColor, 
-                fontSize: isMobile ? '1.25rem' : '1.5rem',
-                fontWeight: '700',
-                fontFamily: 'monospace',
-              }}>
-                {timeString}
-              </span>
-            </div>
-
-            {/* PROGRESS BAR */}
-            <div style={{
-              width: '100%',
-              height: '8px',
-              backgroundColor: 'rgba(255, 255, 255, 0.1)',
-              borderRadius: '4px',
-              overflow: 'hidden',
-            }}>
-              <motion.div
-                initial={{ width: '100%' }}
-                animate={{ width: `${progressPercentage}%` }}
-                transition={{ duration: 1 }}
-                style={{
-                  height: '100%',
-                  background: isUrgent 
-                    ? 'linear-gradient(90deg, #ef4444 0%, #dc2626 100%)'
-                    : 'linear-gradient(90deg, #d4af37 0%, #f4e7c3 100%)',
-                  borderRadius: '4px',
-                }}
-              />
-            </div>
-          </motion.div>
+          {/* PROGRESS BAR - DÜNN */}
+          <div style={{
+            width: '100%',
+            height: '4px',
+            backgroundColor: 'rgba(255, 255, 255, 0.1)',
+            borderRadius: '2px',
+            overflow: 'hidden',
+            marginBottom: isMobile ? '0.75rem' : '1rem',
+          }}>
+            <motion.div
+              initial={{ width: '100%' }}
+              animate={{ width: `${progressPercentage}%` }}
+              transition={{ duration: 1 }}
+              style={{
+                height: '100%',
+                background: isUrgent 
+                  ? 'linear-gradient(90deg, #ef4444 0%, #dc2626 100%)'
+                  : 'linear-gradient(90deg, #d4af37 0%, #f4e7c3 100%)',
+                borderRadius: '2px',
+              }}
+            />
+          </div>
 
           <form onSubmit={handleSubmit}>
-            {/* Ausgewählte Sitze */}
+            {/* ⭐ SITZE + PREIS + VOUCHER IN 2 SPALTEN (Desktop) */}
             <div style={{
-              backgroundColor: 'rgba(212, 175, 55, 0.1)',
-              border: '1px solid rgba(212, 175, 55, 0.3)',
-              borderRadius: '0.5rem',
-              padding: isMobile ? '0.875rem' : '1rem',
-              marginBottom: isMobile ? '1rem' : '1.5rem',
+              display: 'grid',
+              gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
+              gap: isMobile ? '0.75rem' : '1rem',
+              marginBottom: isMobile ? '0.75rem' : '1rem',
             }}>
-              <div style={{ 
-                display: 'flex', 
-                alignItems: 'center', 
-                gap: '0.5rem', 
-                marginBottom: '0.5rem' 
+              {/* Ausgewählte Sitze - KOMPAKT */}
+              <div style={{
+                backgroundColor: 'rgba(212, 175, 55, 0.1)',
+                border: '1px solid rgba(212, 175, 55, 0.3)',
+                borderRadius: '0.5rem',
+                padding: isMobile ? '0.75rem' : '0.875rem',
               }}>
-                <CreditCard style={{ color: '#d4af37', width: '20px', height: '20px' }} />
-                <h3 style={{ 
-                  color: '#d4af37', 
-                  fontSize: isMobile ? '0.9rem' : '1rem', 
-                  fontWeight: '600',
-                  margin: 0,
-                }}>
-                  Ausgewählte Sitze
-                </h3>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                  <CreditCard style={{ color: '#d4af37', width: '16px', height: '16px' }} />
+                  <h3 style={{ color: '#d4af37', fontSize: '0.875rem', fontWeight: '600', margin: 0 }}>
+                    Ausgewählte Sitze
+                  </h3>
+                </div>
+                <p style={{ color: '#fff', fontSize: '0.75rem', margin: '0 0 0.25rem 0' }}>
+                  Reihe {selectedSeats[0]?.row}, Platz {selectedSeats.map(s => s.number).join(', ')}
+                </p>
+                <p style={{ color: '#d4af37', fontSize: '1rem', fontWeight: '700', margin: 0 }}>
+                  {totalPrice.toFixed(2)} €
+                </p>
               </div>
-              <p style={{ 
-                color: '#fff', 
-                fontSize: isMobile ? '0.8rem' : '0.875rem',
-                margin: '0.25rem 0',
+
+              {/* Freikartencode - KOMPAKT */}
+              <div style={{
+                backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                border: '1px solid rgba(16, 185, 129, 0.3)',
+                borderRadius: '0.5rem',
+                padding: isMobile ? '0.75rem' : '0.875rem',
               }}>
-                Reihe {selectedSeats[0]?.row}, Platz {selectedSeats.map(s => s.number).join(', ')}
-              </p>
-              <p style={{ 
-                color: '#d4af37', 
-                fontSize: isMobile ? '1rem' : '1.125rem', 
-                fontWeight: '700', 
-                marginTop: '0.5rem',
-                margin: '0.5rem 0 0 0',
-              }}>
-                {totalPrice.toFixed(2)} €
-              </p>
-              <p style={{ 
-                color: '#999', 
-                fontSize: isMobile ? '0.7rem' : '0.75rem', 
-                marginTop: '0.25rem',
-                margin: '0.25rem 0 0 0',
-              }}>
-                Josefi Konzert 2026
-              </p>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                  <Gift style={{ color: '#10b981', width: '16px', height: '16px' }} />
+                  <h3 style={{ color: '#10b981', fontSize: '0.875rem', fontWeight: '600', margin: 0 }}>
+                    Freikarten-Code
+                  </h3>
+                </div>
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  <input
+                    type="text"
+                    value={voucherCode}
+                    onChange={(e) => {
+                      setVoucherCode(e.target.value.toUpperCase());
+                      setVoucherValid(null);
+                    }}
+                    placeholder="CODE123"
+                    style={{
+                      flex: 1,
+                      padding: '0.5rem',
+                      backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                      border: '1px solid rgba(255, 255, 255, 0.1)',
+                      borderRadius: '0.375rem',
+                      color: '#fff',
+                      fontSize: '0.75rem',
+                      textTransform: 'uppercase',
+                      outline: 'none',
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={handleCheckVoucher}
+                    disabled={voucherChecking || !voucherCode.trim()}
+                    style={{
+                      padding: '0.5rem 0.875rem',
+                      backgroundColor: '#10b981',
+                      color: '#fff',
+                      border: 'none',
+                      borderRadius: '0.375rem',
+                      cursor: voucherChecking || !voucherCode.trim() ? 'not-allowed' : 'pointer',
+                      fontWeight: '600',
+                      opacity: voucherChecking || !voucherCode.trim() ? 0.5 : 1,
+                      fontSize: '0.75rem',
+                    }}
+                  >
+                    Prüfen
+                  </button>
+                </div>
+                {voucherValid === true && (
+                  <p style={{ color: '#10b981', fontSize: '0.7rem', margin: '0.375rem 0 0 0' }}>
+                    ✓ Code gültig!
+                  </p>
+                )}
+                {voucherValid === false && (
+                  <p style={{ color: '#ef4444', fontSize: '0.7rem', margin: '0.375rem 0 0 0' }}>
+                    ✗ Ungültig
+                  </p>
+                )}
+              </div>
             </div>
 
-            {/* Freikartencode */}
-            <div style={{
-              backgroundColor: 'rgba(16, 185, 129, 0.1)',
-              border: '1px solid rgba(16, 185, 129, 0.3)',
-              borderRadius: '0.5rem',
-              padding: isMobile ? '0.875rem' : '1rem',
-              marginBottom: isMobile ? '1rem' : '1.5rem',
-            }}>
-              <div style={{ 
-                display: 'flex', 
-                alignItems: 'center', 
-                gap: '0.5rem', 
-                marginBottom: '0.75rem' 
-              }}>
-                <Gift style={{ color: '#10b981', width: '20px', height: '20px' }} />
-                <h3 style={{ 
-                  color: '#10b981', 
-                  fontSize: isMobile ? '0.9rem' : '1rem', 
-                  fontWeight: '600',
-                  margin: 0,
-                }}>
-                  Freikarten-Code
-                </h3>
-              </div>
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
-                <input
-                  type="text"
-                  value={voucherCode}
-                  onChange={(e) => {
-                    setVoucherCode(e.target.value.toUpperCase());
-                    setVoucherValid(null);
-                  }}
-                  placeholder="CODE123"
-                  style={{
-                    flex: 1,
-                    padding: isMobile ? '0.675rem' : '0.75rem',
-                    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                    border: '1px solid rgba(255, 255, 255, 0.1)',
-                    borderRadius: '0.5rem',
-                    color: '#fff',
-                    fontSize: isMobile ? '0.8rem' : '0.875rem',
-                    textTransform: 'uppercase',
-                    outline: 'none',
-                  }}
-                />
-                <button
-                  type="button"
-                  onClick={handleCheckVoucher}
-                  disabled={voucherChecking || !voucherCode.trim()}
-                  style={{
-                    padding: isMobile ? '0.675rem 1rem' : '0.75rem 1.5rem',
-                    backgroundColor: '#10b981',
-                    color: '#fff',
-                    border: 'none',
-                    borderRadius: '0.5rem',
-                    cursor: voucherChecking || !voucherCode.trim() ? 'not-allowed' : 'pointer',
-                    fontWeight: '600',
-                    opacity: voucherChecking || !voucherCode.trim() ? 0.5 : 1,
-                    fontSize: isMobile ? '0.8rem' : '0.875rem',
-                  }}
-                >
-                  Prüfen
-                </button>
-              </div>
-              {voucherValid === true && (
-                <p style={{ 
-                  color: '#10b981', 
-                  fontSize: isMobile ? '0.8rem' : '0.875rem', 
-                  marginTop: '0.5rem',
-                  margin: '0.5rem 0 0 0',
-                }}>
-                  ✓ Code gültig! Freikarte aktiviert
-                </p>
-              )}
-              {voucherValid === false && (
-                <p style={{ 
-                  color: '#ef4444', 
-                  fontSize: isMobile ? '0.8rem' : '0.875rem', 
-                  marginTop: '0.5rem',
-                  margin: '0.5rem 0 0 0',
-                }}>
-                  ✗ Ungültiger Code
-                </p>
-              )}
-            </div>
-
-            {/* Kontaktdaten */}
+            {/* Kontaktdaten - KOMPAKT */}
             <div style={{
               backgroundColor: 'rgba(212, 175, 55, 0.05)',
               border: '1px solid rgba(212, 175, 55, 0.2)',
               borderRadius: '0.5rem',
-              padding: isMobile ? '1rem' : '1.5rem',
-              marginBottom: isMobile ? '1rem' : '1.5rem',
+              padding: isMobile ? '0.75rem' : '1rem',
+              marginBottom: isMobile ? '0.75rem' : '1rem',
             }}>
-              <div style={{ 
-                display: 'flex', 
-                alignItems: 'center', 
-                gap: '0.5rem', 
-                marginBottom: '1rem' 
-              }}>
-                <User style={{ color: '#d4af37', width: '20px', height: '20px' }} />
-                <h3 style={{ 
-                  color: '#d4af37', 
-                  fontSize: isMobile ? '0.9rem' : '1rem', 
-                  fontWeight: '600',
-                  margin: 0,
-                }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
+                <User style={{ color: '#d4af37', width: '16px', height: '16px' }} />
+                <h3 style={{ color: '#d4af37', fontSize: '0.875rem', fontWeight: '600', margin: 0 }}>
                   Ihre Kontaktdaten
                 </h3>
               </div>
@@ -466,16 +397,11 @@ export default function CheckoutModal({
               <div style={{ 
                 display: 'grid', 
                 gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', 
-                gap: '1rem', 
-                marginBottom: '1rem' 
+                gap: '0.75rem', 
+                marginBottom: '0.75rem' 
               }}>
                 <div>
-                  <label style={{ 
-                    display: 'block', 
-                    color: 'rgba(255, 255, 255, 0.8)', 
-                    fontSize: isMobile ? '0.8rem' : '0.875rem', 
-                    marginBottom: '0.5rem' 
-                  }}>
+                  <label style={{ display: 'block', color: 'rgba(255, 255, 255, 0.8)', fontSize: '0.75rem', marginBottom: '0.375rem' }}>
                     Vorname *
                   </label>
                   <input
@@ -485,12 +411,12 @@ export default function CheckoutModal({
                     required
                     style={{
                       width: '100%',
-                      padding: isMobile ? '0.675rem' : '0.75rem',
+                      padding: '0.5rem',
                       backgroundColor: 'rgba(255, 255, 255, 0.05)',
                       border: '1px solid rgba(255, 255, 255, 0.1)',
-                      borderRadius: '0.5rem',
+                      borderRadius: '0.375rem',
                       color: '#fff',
-                      fontSize: isMobile ? '0.8rem' : '0.875rem',
+                      fontSize: '0.8125rem',
                       outline: 'none',
                       boxSizing: 'border-box',
                     }}
@@ -498,12 +424,7 @@ export default function CheckoutModal({
                 </div>
 
                 <div>
-                  <label style={{ 
-                    display: 'block', 
-                    color: 'rgba(255, 255, 255, 0.8)', 
-                    fontSize: isMobile ? '0.8rem' : '0.875rem', 
-                    marginBottom: '0.5rem' 
-                  }}>
+                  <label style={{ display: 'block', color: 'rgba(255, 255, 255, 0.8)', fontSize: '0.75rem', marginBottom: '0.375rem' }}>
                     Nachname *
                   </label>
                   <input
@@ -513,12 +434,12 @@ export default function CheckoutModal({
                     required
                     style={{
                       width: '100%',
-                      padding: isMobile ? '0.675rem' : '0.75rem',
+                      padding: '0.5rem',
                       backgroundColor: 'rgba(255, 255, 255, 0.05)',
                       border: '1px solid rgba(255, 255, 255, 0.1)',
-                      borderRadius: '0.5rem',
+                      borderRadius: '0.375rem',
                       color: '#fff',
-                      fontSize: isMobile ? '0.8rem' : '0.875rem',
+                      fontSize: '0.8125rem',
                       outline: 'none',
                       boxSizing: 'border-box',
                     }}
@@ -527,23 +448,18 @@ export default function CheckoutModal({
               </div>
 
               <div>
-                <label style={{ 
-                  display: 'block', 
-                  color: 'rgba(255, 255, 255, 0.8)', 
-                  fontSize: isMobile ? '0.8rem' : '0.875rem', 
-                  marginBottom: '0.5rem' 
-                }}>
+                <label style={{ display: 'block', color: 'rgba(255, 255, 255, 0.8)', fontSize: '0.75rem', marginBottom: '0.375rem' }}>
                   E-Mail *
                 </label>
                 <div style={{ position: 'relative' }}>
                   <Mail style={{
                     position: 'absolute',
-                    left: '0.75rem',
+                    left: '0.625rem',
                     top: '50%',
                     transform: 'translateY(-50%)',
                     color: 'rgba(255, 255, 255, 0.5)',
-                    width: '18px',
-                    height: '18px',
+                    width: '16px',
+                    height: '16px',
                   }} />
                   <input
                     type="email"
@@ -552,12 +468,12 @@ export default function CheckoutModal({
                     required
                     style={{
                       width: '100%',
-                      padding: isMobile ? '0.675rem 0.675rem 0.675rem 2.5rem' : '0.75rem 0.75rem 0.75rem 2.75rem',
+                      padding: '0.5rem 0.5rem 0.5rem 2.25rem',
                       backgroundColor: 'rgba(255, 255, 255, 0.05)',
                       border: '1px solid rgba(255, 255, 255, 0.1)',
-                      borderRadius: '0.5rem',
+                      borderRadius: '0.375rem',
                       color: '#fff',
-                      fontSize: isMobile ? '0.8rem' : '0.875rem',
+                      fontSize: '0.8125rem',
                       outline: 'none',
                       boxSizing: 'border-box',
                     }}
@@ -565,39 +481,30 @@ export default function CheckoutModal({
                 </div>
                 <p style={{ 
                   color: '#999', 
-                  fontSize: isMobile ? '0.7rem' : '0.75rem', 
-                  marginTop: '0.5rem', 
+                  fontSize: '0.7rem', 
+                  marginTop: '0.375rem', 
                   display: 'flex', 
                   alignItems: 'center', 
-                  gap: '0.5rem',
-                  margin: '0.5rem 0 0 0',
+                  gap: '0.375rem',
+                  margin: '0.375rem 0 0 0',
                 }}>
-                  <Mail size={14} />
+                  <Mail size={12} />
                   Die Tickets werden an diese E-Mail-Adresse gesendet.
                 </p>
               </div>
             </div>
 
-            {/* AGB & Datenschutz */}
-            <div style={{ marginBottom: isMobile ? '1rem' : '1.5rem' }}>
-              <label style={{ 
-                display: 'flex', 
-                alignItems: 'center', 
-                gap: '0.5rem', 
-                marginBottom: '0.75rem', 
-                cursor: 'pointer' 
-              }}>
+            {/* AGB & Datenschutz - KOMPAKT */}
+            <div style={{ marginBottom: isMobile ? '0.75rem' : '1rem' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem', cursor: 'pointer' }}>
                 <input
                   type="checkbox"
                   checked={agreedToTerms}
                   onChange={(e) => setAgreedToTerms(e.target.checked)}
                   required
-                  style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                  style={{ width: '16px', height: '16px', cursor: 'pointer' }}
                 />
-                <span style={{ 
-                  color: '#fff', 
-                  fontSize: isMobile ? '0.8rem' : '0.875rem' 
-                }}>
+                <span style={{ color: '#fff', fontSize: '0.8125rem' }}>
                   Ich akzeptiere die{' '}
                   <a href="/agb" target="_blank" style={{ color: '#d4af37', textDecoration: 'underline' }}>
                     AGB
@@ -606,23 +513,15 @@ export default function CheckoutModal({
                 </span>
               </label>
 
-              <label style={{ 
-                display: 'flex', 
-                alignItems: 'center', 
-                gap: '0.5rem', 
-                cursor: 'pointer' 
-              }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
                 <input
                   type="checkbox"
                   checked={agreedToPrivacy}
                   onChange={(e) => setAgreedToPrivacy(e.target.checked)}
                   required
-                  style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                  style={{ width: '16px', height: '16px', cursor: 'pointer' }}
                 />
-                <span style={{ 
-                  color: '#fff', 
-                  fontSize: isMobile ? '0.8rem' : '0.875rem' 
-                }}>
+                <span style={{ color: '#fff', fontSize: '0.8125rem' }}>
                   Ich akzeptiere die{' '}
                   <a href="/datenschutz" target="_blank" style={{ color: '#d4af37', textDecoration: 'underline' }}>
                     Datenschutzerklärung
@@ -632,7 +531,7 @@ export default function CheckoutModal({
               </label>
             </div>
 
-            {/* Submit Button */}
+            {/* Submit Button - KOMPAKT */}
             <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
@@ -640,14 +539,14 @@ export default function CheckoutModal({
               disabled={!agreedToTerms || !agreedToPrivacy}
               style={{
                 width: '100%',
-                padding: isMobile ? '0.875rem' : '1rem',
+                padding: isMobile ? '0.75rem' : '0.875rem',
                 background: agreedToTerms && agreedToPrivacy
                   ? 'linear-gradient(135deg, #d4af37 0%, #f4e7c3 100%)'
                   : '#555',
                 border: 'none',
                 borderRadius: '0.5rem',
                 color: '#000',
-                fontSize: isMobile ? '0.9rem' : '1rem',
+                fontSize: isMobile ? '0.875rem' : '0.9375rem',
                 fontWeight: '700',
                 cursor: agreedToTerms && agreedToPrivacy ? 'pointer' : 'not-allowed',
               }}
