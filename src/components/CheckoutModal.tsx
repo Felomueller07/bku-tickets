@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, CreditCard, Mail, User, Gift, Clock, AlertCircle } from 'lucide-react';
+import { X, CreditCard, Mail, User, Gift, Clock, AlertCircle, Plus, Trash2 } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import { toast } from 'sonner';
 
@@ -10,7 +10,13 @@ interface CheckoutModalProps {
   isOpen: boolean;
   onClose: () => void;
   selectedSeats: Array<{ row: string; number: number }>;
-  onCheckout: (seats: any[], voucherCode?: string) => void;
+  onCheckout: (seats: any[], voucherCodes?: string[]) => void;
+}
+
+interface VoucherField {
+  code: string;
+  valid: boolean | null;
+  checking: boolean;
 }
 
 export default function CheckoutModal({
@@ -23,9 +29,11 @@ export default function CheckoutModal({
   
   const [timeLeft, setTimeLeft] = useState(600);
   
-  const [voucherCode, setVoucherCode] = useState('');
-  const [voucherValid, setVoucherValid] = useState<boolean | null>(null);
-  const [voucherChecking, setVoucherChecking] = useState(false);
+  // ⭐ MULTI-VOUCHER STATE
+  const [voucherFields, setVoucherFields] = useState<VoucherField[]>([
+    { code: '', valid: null, checking: false }
+  ]);
+  
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [agreedToPrivacy, setAgreedToPrivacy] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -47,6 +55,7 @@ export default function CheckoutModal({
   useEffect(() => {
     if (!isOpen) {
       setTimeLeft(600);
+      setVoucherFields([{ code: '', valid: null, checking: false }]);
       return;
     }
 
@@ -102,25 +111,63 @@ export default function CheckoutModal({
     );
   }, [selectedSeats]);
 
-  const handleCheckVoucher = async () => {
-    if (!voucherCode.trim()) return;
+  // ⭐ VOUCHER FUNCTIONS
+  const addVoucherField = () => {
+    if (voucherFields.length < selectedSeats.length) {
+      setVoucherFields([...voucherFields, { code: '', valid: null, checking: false }]);
+    }
+  };
 
-    setVoucherChecking(true);
+  const removeVoucherField = (index: number) => {
+    if (voucherFields.length > 1) {
+      setVoucherFields(voucherFields.filter((_, i) => i !== index));
+    }
+  };
+
+  const updateVoucherCode = (index: number, code: string) => {
+    const newFields = [...voucherFields];
+    newFields[index] = { code: code.toUpperCase(), valid: null, checking: false };
+    setVoucherFields(newFields);
+  };
+
+  const handleCheckVoucher = async (index: number) => {
+    const code = voucherFields[index].code.trim();
+    if (!code) return;
+
+    // Set checking
+    const newFields = [...voucherFields];
+    newFields[index] = { ...newFields[index], checking: true };
+    setVoucherFields(newFields);
+
     try {
       const response = await fetch('/api/voucher/check', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code: voucherCode }),
+        body: JSON.stringify({ code }),
       });
 
       const data = await response.json();
-      setVoucherValid(data.valid);
+      
+      newFields[index] = { 
+        code: newFields[index].code, 
+        valid: data.valid, 
+        checking: false 
+      };
+      setVoucherFields(newFields);
     } catch (error) {
-      setVoucherValid(false);
-    } finally {
-      setVoucherChecking(false);
+      newFields[index] = { 
+        code: newFields[index].code, 
+        valid: false, 
+        checking: false 
+      };
+      setVoucherFields(newFields);
     }
   };
+
+  // ⭐ PREIS BERECHNUNG
+  const validVouchersCount = voucherFields.filter(v => v.valid === true).length;
+  const paidTickets = Math.max(0, selectedSeats.length - validVouchersCount);
+  const totalPrice = paidTickets * 20;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -131,13 +178,15 @@ export default function CheckoutModal({
       firstName: seat.firstName || contactData.firstName,
       lastName: seat.lastName || contactData.lastName,
       email: contactData.email,
-      voucherCode: voucherValid ? voucherCode : undefined,
     }));
 
-    onCheckout(seatsWithData, voucherValid ? voucherCode : undefined);
-  };
+    // ⭐ NUR gültige Voucher-Codes weitergeben
+    const validVouchers = voucherFields
+      .filter(v => v.valid === true)
+      .map(v => v.code);
 
-  const totalPrice = voucherValid ? 0 : selectedSeats.length * 20;
+    onCheckout(seatsWithData, validVouchers.length > 0 ? validVouchers : undefined);
+  };
 
   const minutes = Math.floor(timeLeft / 60);
   const seconds = timeLeft % 60;
@@ -184,7 +233,6 @@ export default function CheckoutModal({
             border: '1px solid rgba(212, 175, 55, 0.3)',
           }}
         >
-          {/* DRAG HANDLE - nur Mobile */}
           {isMobile && (
             <div style={{
               display: 'flex',
@@ -201,7 +249,6 @@ export default function CheckoutModal({
             </div>
           )}
 
-          {/* ⭐ HEADER - Titel links, Timer + Close rechts */}
           <div style={{ 
             display: 'flex', 
             justifyContent: 'space-between', 
@@ -217,7 +264,6 @@ export default function CheckoutModal({
               Checkout
             </h2>
 
-            {/* ⭐ TIMER + CLOSE BUTTON RECHTS */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
               <motion.div
                 animate={isUrgent ? { scale: [1, 1.05, 1] } : {}}
@@ -262,7 +308,6 @@ export default function CheckoutModal({
             </div>
           </div>
 
-          {/* PROGRESS BAR */}
           <div style={{
             width: '100%',
             height: '6px',
@@ -286,7 +331,6 @@ export default function CheckoutModal({
           </div>
 
           <form onSubmit={handleSubmit}>
-            {/* ⭐ SITZE + VOUCHER IN 2 SPALTEN */}
             <div style={{
               display: 'grid',
               gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
@@ -309,6 +353,19 @@ export default function CheckoutModal({
                 <p style={{ color: '#fff', fontSize: '0.875rem', margin: '0 0 0.5rem 0' }}>
                   Reihe {selectedSeats[0]?.row}, Platz {selectedSeats.map(s => s.number).join(', ')}
                 </p>
+                
+                {/* ⭐ PREIS-AUFSCHLÜSSELUNG */}
+                {validVouchersCount > 0 ? (
+                  <>
+                    <p style={{ color: '#10b981', fontSize: '0.875rem', margin: '0.25rem 0' }}>
+                      {validVouchersCount} Ticket{validVouchersCount > 1 ? 's' : ''} mit Freikarte
+                    </p>
+                    <p style={{ color: '#fff', fontSize: '0.875rem', margin: '0.25rem 0' }}>
+                      {paidTickets} Ticket{paidTickets !== 1 ? 's' : ''} zu bezahlen
+                    </p>
+                  </>
+                ) : null}
+                
                 <p style={{ color: '#d4af37', fontSize: '1.25rem', fontWeight: '700', margin: '0.5rem 0 0.25rem 0' }}>
                   {totalPrice.toFixed(2)} €
                 </p>
@@ -317,69 +374,125 @@ export default function CheckoutModal({
                 </p>
               </div>
 
-              {/* Freikartencode */}
+              {/* ⭐ MULTI-VOUCHER SECTION */}
               <div style={{
                 backgroundColor: 'rgba(16, 185, 129, 0.1)',
                 border: '1px solid rgba(16, 185, 129, 0.3)',
                 borderRadius: '0.75rem',
                 padding: isMobile ? '1rem' : '1.25rem',
+                maxHeight: '300px',
+                overflowY: 'auto',
               }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
-                  <Gift style={{ color: '#10b981', width: '20px', height: '20px' }} />
-                  <h3 style={{ color: '#10b981', fontSize: '1rem', fontWeight: '600', margin: 0 }}>
-                    Freikarten-Code
-                  </h3>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <Gift style={{ color: '#10b981', width: '20px', height: '20px' }} />
+                    <h3 style={{ color: '#10b981', fontSize: '1rem', fontWeight: '600', margin: 0 }}>
+                      Freikarten-Codes
+                    </h3>
+                  </div>
+                  <span style={{ color: '#10b981', fontSize: '0.75rem', fontWeight: '600' }}>
+                    {validVouchersCount}/{selectedSeats.length}
+                  </span>
                 </div>
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
-                  <input
-                    type="text"
-                    value={voucherCode}
-                    onChange={(e) => {
-                      setVoucherCode(e.target.value.toUpperCase());
-                      setVoucherValid(null);
-                    }}
-                    placeholder="CODE123"
-                    style={{
-                      flex: 1,
-                      padding: '0.625rem',
-                      backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                      border: '1px solid rgba(255, 255, 255, 0.1)',
-                      borderRadius: '0.5rem',
-                      color: '#fff',
-                      fontSize: '0.875rem',
-                      textTransform: 'uppercase',
-                      outline: 'none',
-                    }}
-                  />
-                  <button
-                    type="button"
-                    onClick={handleCheckVoucher}
-                    disabled={voucherChecking || !voucherCode.trim()}
-                    style={{
-                      padding: '0.625rem 1.25rem',
-                      backgroundColor: '#10b981',
-                      color: '#fff',
-                      border: 'none',
-                      borderRadius: '0.5rem',
-                      cursor: voucherChecking || !voucherCode.trim() ? 'not-allowed' : 'pointer',
-                      fontWeight: '600',
-                      opacity: voucherChecking || !voucherCode.trim() ? 0.5 : 1,
-                      fontSize: '0.875rem',
-                    }}
-                  >
-                    Prüfen
-                  </button>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                  {voucherFields.map((field, index) => (
+                    <div key={index} style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-start' }}>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.25rem' }}>
+                          <input
+                            type="text"
+                            value={field.code}
+                            onChange={(e) => updateVoucherCode(index, e.target.value)}
+                            placeholder={`CODE${index + 1}`}
+                            style={{
+                              flex: 1,
+                              padding: '0.5rem',
+                              backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                              border: '1px solid rgba(255, 255, 255, 0.1)',
+                              borderRadius: '0.375rem',
+                              color: '#fff',
+                              fontSize: '0.8125rem',
+                              textTransform: 'uppercase',
+                              outline: 'none',
+                            }}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => handleCheckVoucher(index)}
+                            disabled={field.checking || !field.code.trim()}
+                            style={{
+                              padding: '0.5rem 0.875rem',
+                              backgroundColor: '#10b981',
+                              color: '#fff',
+                              border: 'none',
+                              borderRadius: '0.375rem',
+                              cursor: field.checking || !field.code.trim() ? 'not-allowed' : 'pointer',
+                              fontWeight: '600',
+                              opacity: field.checking || !field.code.trim() ? 0.5 : 1,
+                              fontSize: '0.8125rem',
+                            }}
+                          >
+                            {field.checking ? '...' : 'Prüfen'}
+                          </button>
+                          {voucherFields.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => removeVoucherField(index)}
+                              style={{
+                                padding: '0.5rem',
+                                backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                                border: '1px solid rgba(239, 68, 68, 0.3)',
+                                borderRadius: '0.375rem',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                              }}
+                            >
+                              <Trash2 style={{ width: '14px', height: '14px', color: '#ef4444' }} />
+                            </button>
+                          )}
+                        </div>
+                        {field.valid === true && (
+                          <p style={{ color: '#10b981', fontSize: '0.7rem', margin: 0 }}>
+                            ✓ Gültig
+                          </p>
+                        )}
+                        {field.valid === false && (
+                          <p style={{ color: '#ef4444', fontSize: '0.7rem', margin: 0 }}>
+                            ✗ Ungültig
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                  
+                  {/* ⭐ ADD BUTTON */}
+                  {voucherFields.length < selectedSeats.length && (
+                    <button
+                      type="button"
+                      onClick={addVoucherField}
+                      style={{
+                        padding: '0.5rem',
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        border: '1px dashed rgba(16, 185, 129, 0.3)',
+                        borderRadius: '0.375rem',
+                        color: '#10b981',
+                        fontSize: '0.8125rem',
+                        fontWeight: '600',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '0.5rem',
+                      }}
+                    >
+                      <Plus style={{ width: '16px', height: '16px' }} />
+                      Weiteren Code hinzufügen
+                    </button>
+                  )}
                 </div>
-                {voucherValid === true && (
-                  <p style={{ color: '#10b981', fontSize: '0.875rem', margin: '0.625rem 0 0 0' }}>
-                    ✓ Code gültig! Freikarte aktiviert
-                  </p>
-                )}
-                {voucherValid === false && (
-                  <p style={{ color: '#ef4444', fontSize: '0.875rem', margin: '0.625rem 0 0 0' }}>
-                    ✗ Ungültiger Code
-                  </p>
-                )}
               </div>
             </div>
 
@@ -555,7 +668,12 @@ export default function CheckoutModal({
                 cursor: agreedToTerms && agreedToPrivacy ? 'pointer' : 'not-allowed',
               }}
             >
-              {voucherValid ? 'Kostenlos reservieren' : `Zur Zahlung (${totalPrice.toFixed(2)} €)`}
+              {totalPrice === 0 
+                ? 'Kostenlos reservieren' 
+                : validVouchersCount > 0
+                ? `${paidTickets} Ticket${paidTickets !== 1 ? 's' : ''} bezahlen (${totalPrice.toFixed(2)} €)`
+                : `Zur Zahlung (${totalPrice.toFixed(2)} €)`
+              }
             </motion.button>
           </form>
         </motion.div>
