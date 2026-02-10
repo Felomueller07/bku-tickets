@@ -1,78 +1,89 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+}
+
 generator client {
   provider = "prisma-client-js"
 }
 
-datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+model User {
+  id            Int       @id @default(autoincrement())
+  name          String?
+  email         String    @unique
+  password      String
+  role          String    @default("user")
+  firstName     String?
+  lastName      String?
+  emailVerified DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @default(now()) @updatedAt
+  
+  seats         Seat[]    @relation("UserSeats")
 }
 
 model Seat {
   id              Int       @id @default(autoincrement())
   row             String
   number          Int
+  section         String?
+  price           Float     @default(20.0)
   status          String    @default("available")
-  reservationType String?
-  userId          Int?
-  user            User?     @relation(fields: [userId], references: [id])
-  firstName       String?
-  lastName        String?
-  email           String?
-  note            String?
   
-  // Lock-System Felder
+  // HARD LOCK (Checkout - 10 min)
   sessionId       String?
   lockExpiry      DateTime?
   lockedBy        String?
   
+  // SOFT LOCK (Viewing - 3 min)
+  softLockSessionId String?
+  softLockExpiry    DateTime?
+  
+  // Customer Data
+  firstName       String?
+  lastName        String?
+  email           String?
+  
+  // User Relation
+  userId          Int?
+  user            User?     @relation("UserSeats", fields: [userId], references: [id])
+  
+  // OLD FIELDS
+  reservationType String?
+  note            String?
+  
+  // Admin
+  voucherCode     String?
+  adminNotes      String?
+  markedBy        String?
+  
   createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  updatedAt       DateTime  @default(now()) @updatedAt
 
   @@unique([row, number])
 }
 
-model User {
-  id                 Int                 @id @default(autoincrement())
-  email              String              @unique
-  firstName          String?
-  lastName           String?
-  password           String
-  role               String              @default("user")
-  emailVerified      Boolean             @default(false)
-  seats              Seat[]
-  freeTickets        FreeTicket[]
-  voucherCodes       VoucherCode[]       @relation("VoucherUser")
-  verificationCodes  VerificationCode[]
-}
-
-
 model VoucherCode {
-  id        Int       @id @default(autoincrement())
-  code      String    @unique
-  used      Boolean   @default(false)
-  usedBy    Int?
-  user      User?     @relation("VoucherUser", fields: [usedBy], references: [id])
-  usedAt    DateTime?
-  expiresAt DateTime? // ⬅️ NEU HINZUFÜGEN!
-  createdAt DateTime  @default(now())
-}
-
-model VerificationCode {
-  id        Int      @id @default(autoincrement())
-  userId    Int      @unique
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  code      String
-  expiresAt DateTime
-  createdAt DateTime @default(now())
+  id          Int       @id @default(autoincrement())
+  code        String    @unique
+  used        Boolean   @default(false)
+  usedAt      DateTime?
+  usedBy      Int?      // ⬅️ String → Int (ist eine userId!)
+  createdBy   String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @default(now()) @updatedAt
 }
 
 model FreeTicket {
-  id        Int      @id @default(autoincrement())
-  code      String   @unique
-  used      Boolean  @default(false)
-  createdAt DateTime @default(now())
-  usedAt    DateTime?
-  usedBy    Int?
-  user      User?    @relation(fields: [usedBy], references: [id])
+  id          Int       @id @default(autoincrement())
+  code        String    @unique
+  email       String?
+  used        Boolean   @default(false)
+  usedAt      DateTime?
+  usedBy      Int?      // ⬅️ String → Int (ist eine userId!)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @default(now()) @updatedAt
 }
-

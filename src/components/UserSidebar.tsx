@@ -3,20 +3,77 @@
 import { useState } from 'react';
 import { X, ShoppingCart, Ticket } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 import CheckoutModal from './CheckoutModal';
 
 interface UserSidebarProps {
   selectedSeats: any[];
   onRemoveSeat: (row: string, number: number) => void;
+  sessionId: string; // ⭐ Session ID für Hard Lock
   isMobile?: boolean;
 }
 
-export default function UserSidebar({ selectedSeats, onRemoveSeat, isMobile = false }: UserSidebarProps) {
+export default function UserSidebar({ selectedSeats, onRemoveSeat, sessionId, isMobile = false }: UserSidebarProps) {
   const router = useRouter();
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+  const [isLocking, setIsLocking] = useState(false);
 
   const ticketPrice = 20.0;
   const totalPrice = selectedSeats.length * ticketPrice;
+
+  // ⭐ HARD LOCK beim "Zur Kassa" Button
+  const handleCheckoutButtonClick = async () => {
+    if (selectedSeats.length === 0) {
+      toast.error('Keine Sitze ausgewählt');
+      return;
+    }
+
+    setIsLocking(true);
+
+    try {
+      // ⭐ HARD LOCK API Call
+      const hardLockResponse = await fetch('/api/seats/hard-lock', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          seats: selectedSeats.map(s => ({ row: s.row, number: s.number })),
+          sessionId: sessionId,
+        }),
+      });
+
+      if (!hardLockResponse.ok) {
+        const data = await hardLockResponse.json();
+        toast.error(data.error || 'Sitze konnten nicht gesperrt werden');
+        setIsLocking(false);
+        return;
+      }
+
+      // ✅ Hard Lock erfolgreich → Modal öffnen
+      setIsCheckoutOpen(true);
+      setIsLocking(false);
+
+    } catch (error) {
+      console.error('❌ Hard Lock Fehler:', error);
+      toast.error('Fehler beim Sperren der Sitze');
+      setIsLocking(false);
+    }
+  };
+
+  // ⭐ UNLOCK beim Modal schließen
+  const handleModalClose = async () => {
+    setIsCheckoutOpen(false);
+
+    // Unlock alle Sitze
+    try {
+      await fetch('/api/seats/unlock', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId }),
+      });
+    } catch (error) {
+      console.error('❌ Unlock Fehler:', error);
+    }
+  };
 
   // ⭐ MULTI-VOUCHER SUPPORT - Array statt String
   const handleCheckout = async (seatsWithData: any[], voucherCodes?: string[]) => {
@@ -104,7 +161,7 @@ export default function UserSidebar({ selectedSeats, onRemoveSeat, isMobile = fa
       }
     } catch (error) {
       console.error('❌ Checkout Fehler:', error);
-      alert('Fehler beim Checkout. Bitte versuche es erneut.');
+      toast.error('Fehler beim Checkout. Bitte versuche es erneut.');
     }
   };
 
@@ -168,22 +225,27 @@ export default function UserSidebar({ selectedSeats, onRemoveSeat, isMobile = fa
                 </span>
               </div>
 
+              {/* ⭐ HARD LOCK BUTTON */}
               <button
-                onClick={() => setIsCheckoutOpen(true)}
+                onClick={handleCheckoutButtonClick}
+                disabled={isLocking}
                 style={{
                   width: '100%',
                   padding: isMobile ? '0.875rem' : '1rem',
-                  background: 'linear-gradient(135deg, #d4af37 0%, #f4e7c3 100%)',
+                  background: isLocking 
+                    ? 'rgba(212, 175, 55, 0.5)' 
+                    : 'linear-gradient(135deg, #d4af37 0%, #f4e7c3 100%)',
                   border: 'none',
                   borderRadius: '0.75rem',
                   color: '#000',
                   fontSize: isMobile ? '0.9rem' : '1rem',
                   fontWeight: '700',
-                  cursor: 'pointer',
+                  cursor: isLocking ? 'not-allowed' : 'pointer',
                   transition: 'all 0.3s',
+                  opacity: isLocking ? 0.7 : 1,
                 }}
               >
-                Zur Kassa ({totalPrice.toFixed(2)} €)
+                {isLocking ? 'Sperre Sitze...' : `Zur Kassa (${totalPrice.toFixed(2)} €)`}
               </button>
             </div>
 
@@ -249,10 +311,11 @@ export default function UserSidebar({ selectedSeats, onRemoveSeat, isMobile = fa
         )}
       </div>
 
+      {/* ⭐ CHECKOUT MODAL mit Unlock beim Schließen */}
       <CheckoutModal 
         selectedSeats={selectedSeats}
         isOpen={isCheckoutOpen}
-        onClose={() => setIsCheckoutOpen(false)}
+        onClose={handleModalClose}
         onCheckout={handleCheckout}
       />
     </>

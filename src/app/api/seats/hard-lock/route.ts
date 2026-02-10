@@ -13,9 +13,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Session ID fehlt' }, { status: 400 });
     }
 
-    const softLockExpiry = new Date(Date.now() + 3 * 60 * 1000); // 3 Minuten
+    const lockExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 Minuten
+    const ip = request.headers.get('x-forwarded-for') || 'unknown';
 
-    // Soft Lock für alle Sitze setzen
+    // Hard Lock für alle Sitze setzen (Upgrade von soft zu hard)
     for (const seat of seats) {
       await prisma.seat.updateMany({
         where: {
@@ -26,27 +27,31 @@ export async function POST(request: NextRequest) {
             { 
               AND: [
                 { status: 'viewing' },
-                { softLockExpiry: { lt: new Date() } } // Abgelaufene Soft Locks
+                { softLockSessionId: sessionId } // Nur eigene viewing locks upgraden
               ]
             }
           ]
         },
         data: {
-          status: 'viewing',
-          softLockSessionId: sessionId,
-          softLockExpiry: softLockExpiry,
+          status: 'locked',
+          sessionId: sessionId,
+          lockExpiry: lockExpiry,
+          lockedBy: ip,
+          // Soft Lock entfernen
+          softLockSessionId: null,
+          softLockExpiry: null,
         },
       });
     }
 
     return NextResponse.json({ 
       success: true,
-      message: 'Sitze als "viewing" markiert',
-      expiresAt: softLockExpiry
+      message: 'Sitze für Checkout gesperrt',
+      expiresAt: lockExpiry
     });
 
   } catch (error) {
-    console.error('❌ Soft Lock Fehler:', error);
+    console.error('❌ Hard Lock Fehler:', error);
     return NextResponse.json({ error: 'Interner Serverfehler' }, { status: 500 });
   }
 }
