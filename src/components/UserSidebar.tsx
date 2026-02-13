@@ -320,6 +320,7 @@ const handleCheckoutButtonClick = async () => {
         isOpen={isCheckoutOpen}
         onClose={handleModalClose}
         onCheckout={handleCheckout}
+        sessionId={sessionId}  // ⭐ HINZUFÜGEN!
       />
     </>
   );
