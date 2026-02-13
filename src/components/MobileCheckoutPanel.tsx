@@ -73,6 +73,7 @@ export default function MobileCheckoutPanel({
       }
 
       // Hard Lock erfolgreich → CheckoutModal öffnen
+      onClose();
       setIsCheckoutOpen(true);
       setIsLocking(false);
 
