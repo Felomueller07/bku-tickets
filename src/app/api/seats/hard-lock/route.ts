@@ -16,37 +16,53 @@ export async function POST(request: NextRequest) {
     const lockExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 Minuten
     const ip = request.headers.get('x-forwarded-for') || 'unknown';
 
-    // Hard Lock für alle Sitze setzen (Upgrade von soft zu hard)
+    // ⭐ ERST PRÜFEN ob ALLE Sitze verfügbar sind
     for (const seat of seats) {
-      await prisma.seat.updateMany({
-        where: {
-          row: seat.row,
-          number: seat.number,
-          OR: [
-            { status: 'available' },
-            { 
-              AND: [
-                { status: 'viewing' },
-                { softLockSessionId: sessionId } // Nur eigene viewing locks upgraden
-              ]
-            }
-          ]
-        },
-        data: {
+      const existingSeat = await prisma.seat.findUnique({
+        where: { row_number: { row: seat.row, number: seat.number } }
+      });
+
+      // Wenn Sitz schon gelockt ist UND NICHT von dieser Session
+      if (existingSeat && 
+          existingSeat.status === 'locked' && 
+          existingSeat.sessionId !== sessionId &&
+          existingSeat.lockExpiry && 
+          new Date(existingSeat.lockExpiry) > new Date()) {
+        
+        return NextResponse.json({ 
+          error: `Sitz ${seat.row}${seat.number} ist bereits reserviert`,
+          success: false,
+          seat: { row: seat.row, number: seat.number }
+        }, { status: 409 });
+      }
+    }
+
+    // ⭐ ALLE Sitze sind OK → JETZT locken
+    for (const seat of seats) {
+      await prisma.seat.upsert({
+        where: { row_number: { row: seat.row, number: seat.number } },
+        update: {
           status: 'locked',
           sessionId: sessionId,
           lockExpiry: lockExpiry,
           lockedBy: ip,
-          // Soft Lock entfernen
           softLockSessionId: null,
           softLockExpiry: null,
         },
+        create: {
+          row: seat.row,
+          number: seat.number,
+          status: 'locked',
+          sessionId: sessionId,
+          lockExpiry: lockExpiry,
+          lockedBy: ip,
+        }
       });
     }
 
     return NextResponse.json({ 
       success: true,
-      message: 'Sitze für Checkout gesperrt',
+      message: 'Sitze gesperrt',
       expiresAt: lockExpiry
     });
 
