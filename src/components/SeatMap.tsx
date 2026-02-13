@@ -27,7 +27,6 @@ function SeatChair({
   isSelected,
   isAdmin,
   isLockedByOther,
-  isViewing,
   onToggleSelect,
   occupiedSeats,
 }: {
@@ -38,7 +37,6 @@ function SeatChair({
   isSelected: boolean;
   isAdmin: boolean;
   isLockedByOther: boolean;
-  isViewing: boolean;
   onToggleSelect: (row: string, number: number) => void;
   occupiedSeats: Array<{
     row: string;
@@ -53,12 +51,7 @@ function SeatChair({
   };
 
   const getColor = () => {
-    // ⭐ VIEWING (Soft Lock) = ORANGE
-    if (isViewing && !isAdmin) {
-      return '#fb923c';
-    }
-
-    // ⭐ LOCKED BY OTHER (Hard Lock) = DUNKELGRAU
+    // LOCKED BY OTHER (Hard Lock) = DUNKELGRAU
     if (isLockedByOther && !isAdmin) {
       return '#6b7280';
     }
@@ -105,7 +98,7 @@ function SeatChair({
     }
   };
 
-  const isDisabled = (isOccupied || isLockedByOther || isViewing) && !isAdmin;
+  const isDisabled = (isOccupied || isLockedByOther) && !isAdmin;
 
   return (
     <motion.svg
@@ -119,7 +112,7 @@ function SeatChair({
         marginRight: rotation === 0 ? '-6px' : '0',
         marginTop: rotation !== 0 ? '-6px' : '0',
         marginBottom: rotation !== 0 ? '-6px' : '0',
-        opacity: (isLockedByOther || isViewing) ? 0.7 : 1,
+        opacity: isLockedByOther ? 0.7 : 1,
       }}
       animate={{ rotate: rotation }}
       whileHover={{ scale: isDisabled ? 1 : 1.15, zIndex: 10, rotate: rotation }}
@@ -155,20 +148,7 @@ function SeatChair({
         {number}
       </text>
 
-      {/* ⭐ ICONS: Viewing = 👀, Locked = 🔒 */}
-      {isViewing && !isAdmin && (
-        <text
-          x="25"
-          y="36"
-          textAnchor="middle"
-          fontSize="10"
-          style={{ pointerEvents: 'none', userSelect: 'none' }}
-        >
-          👀
-        </text>
-      )}
-      
-      {(isOccupied || isLockedByOther) && !isViewing && (
+      {(isOccupied || isLockedByOther) && (
         <text
           x="25"
           y="36"
@@ -193,13 +173,12 @@ function EmptySeat() {
 }
 
 // ========================================
-// HAUPTKOMPONENTE: SITZPLAN MIT ZWEI-STUFEN-LOCK
+// HAUPTKOMPONENTE: SITZPLAN MIT HARD-LOCK ONLY
 // ========================================
 export default function SeatMap() {
   const { data: session } = useSession();
   const isAdmin = (session?.user as any)?.role === 'admin';
 
-  // ⭐ SESSION ID - Einmalig beim Mount generieren
   const [sessionId] = useState(() => generateSessionId());
 
   const [selectedSeats, setSelectedSeats] = useState<Array<{ row: string; number: number; id?: number }>>([]);
@@ -211,8 +190,6 @@ export default function SeatMap() {
     status: string;
     sessionId?: string | null;
     lockExpiry?: Date | null;
-    softLockSessionId?: string | null;
-    softLockExpiry?: Date | null;
     firstName?: string;
     lastName?: string;
     email?: string;
@@ -235,7 +212,6 @@ export default function SeatMap() {
   const [isMobile, setIsMobile] = useState(false);
   const [checkoutPanelOpen, setCheckoutPanelOpen] = useState(false);
 
-  // ⭐ AUTO-REFRESH alle 3 Sekunden (für Live-Updates)
   useEffect(() => {
     loadSeats();
 
@@ -246,7 +222,6 @@ export default function SeatMap() {
     return () => clearInterval(interval);
   }, []);
 
-  // ⭐ AUTO-CLEANUP alle 2 Minuten
   useEffect(() => {
     const cleanupInterval = setInterval(async () => {
       try {
@@ -284,8 +259,6 @@ export default function SeatMap() {
           status: seat.status,
           sessionId: seat.sessionId,
           lockExpiry: seat.lockExpiry ? new Date(seat.lockExpiry) : null,
-          softLockSessionId: seat.softLockSessionId,
-          softLockExpiry: seat.softLockExpiry ? new Date(seat.softLockExpiry) : null,
           firstName: seat.firstName || '',
           lastName: seat.lastName || '',
           email: seat.email || '',
@@ -307,29 +280,19 @@ export default function SeatMap() {
     }
   };
 
-  // ⭐ ZWEI-STUFEN LOCK SYSTEM: Soft Lock beim Auswählen/Deselektieren
+  // ⭐ VEREINFACHT: Nur noch auswählen/abwählen - kein API Call
   const handleToggleSelect = async (row: string, number: number) => {
     const isCurrentlySelected = selectedSeats.some(s => s.row === row && s.number === number);
     const seat = occupiedSeats.find(s => s.row === row && s.number === number);
     
-    // ⭐ Prüfen ob Hard Lock von jemand anderem
     const isHardLockedByOther = seat?.status === 'locked' && 
                                 seat.sessionId !== sessionId && 
                                 seat.lockExpiry && 
                                 new Date(seat.lockExpiry) > new Date();
 
-    // ⭐ Prüfen ob Soft Lock von jemand anderem
-    const isSoftLockedByOther = seat?.status === 'viewing' && 
-                                seat.softLockSessionId !== sessionId && 
-                                seat.softLockExpiry && 
-                                new Date(seat.softLockExpiry) > new Date();
-
-    // Nicht-Admin kann keine gesperrten Sitze auswählen
-    if (!isAdmin && (seat?.status === 'reserved' || isHardLockedByOther || isSoftLockedByOther)) {
+    if (!isAdmin && (seat?.status === 'reserved' || seat?.status === 'marked' || isHardLockedByOther)) {
       if (isHardLockedByOther) {
-        toast.error(`Sitz ${row}${number} ist im Checkout gesperrt`, { duration: 2000 });
-      } else if (isSoftLockedByOther) {
-        toast.error(`Sitz ${row}${number} wird gerade angesehen`, { duration: 2000 });
+        toast.error(`Sitz ${row}${number} ist bereits im Checkout`, { duration: 2000 });
       } else {
         toast.error(`Sitz ${row}${number} ist bereits reserviert`, { duration: 2000 });
       }
@@ -337,57 +300,14 @@ export default function SeatMap() {
     }
 
     if (isCurrentlySelected) {
-      // ⭐ DESELEKTIEREN = SOFT UNLOCK
       setSelectedSeats(selectedSeats.filter(s => !(s.row === row && s.number === number)));
-      
-      try {
-        await fetch('/api/seats/soft-unlock', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            seats: [{ row, number }],
-            sessionId: sessionId,
-          }),
-        });
-        toast.info(`Sitz ${row}${number} abgewählt`, { duration: 1500 });
-      } catch (error) {
-        console.error('❌ Soft Unlock Fehler:', error);
-      }
-      
-      setTimeout(() => loadSeats(), 300);
-      
+      toast.info(`Sitz ${row}${number} abgewählt`, { duration: 1500 });
     } else {
-      // ⭐ AUSWÄHLEN = SOFT LOCK
       setSelectedSeats([...selectedSeats, { row, number, id: seat?.id }]);
-      
-      try {
-        const response = await fetch('/api/seats/soft-lock', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            seats: [{ row, number }],
-            sessionId: sessionId,
-          }),
-        });
-
-        if (!response.ok) {
-          const data = await response.json();
-          toast.error(data.error || 'Sitz konnte nicht ausgewählt werden');
-          setSelectedSeats(selectedSeats.filter(s => !(s.row === row && s.number === number)));
-          loadSeats();
-          return;
-        }
-
-        toast.success(`Sitz ${row}${number} ausgewählt`, { duration: 1500 });
-      } catch (error) {
-        console.error('❌ Soft Lock Fehler:', error);
-        toast.error('Fehler beim Auswählen');
-        setSelectedSeats(selectedSeats.filter(s => !(s.row === row && s.number === number)));
-        return;
-      }
-      
-      setTimeout(() => loadSeats(), 300);
+      toast.success(`Sitz ${row}${number} ausgewählt`, { duration: 1500 });
     }
+    
+    setTimeout(() => loadSeats(), 300);
   };
 
   const isSeatOccupied = (row: string, number: number) => {
@@ -395,7 +315,6 @@ export default function SeatMap() {
     return seat?.status === 'reserved' || seat?.status === 'marked';
   };
 
-  // ⭐ Hard Lock von jemand anderem
   const isSeatLockedByOther = (row: string, number: number) => {
     const seat = occupiedSeats.find(s => s.row === row && s.number === number);
     
@@ -404,17 +323,6 @@ export default function SeatMap() {
     if (!seat.lockExpiry) return false;
     
     return new Date(seat.lockExpiry) > new Date();
-  };
-
-  // ⭐ Soft Lock von jemand anderem (viewing)
-  const isSeatViewing = (row: string, number: number) => {
-    const seat = occupiedSeats.find(s => s.row === row && s.number === number);
-    
-    if (!seat || seat.status !== 'viewing') return false;
-    if (seat.softLockSessionId === sessionId) return false;
-    if (!seat.softLockExpiry) return false;
-    
-    return new Date(seat.softLockExpiry) > new Date();
   };
 
   const isSeatSelected = (row: string, number: number) => {
@@ -604,16 +512,6 @@ export default function SeatMap() {
   };
 
   const handleRemoveSeat = (row: string, number: number) => {
-    // Soft Unlock beim Entfernen
-    fetch('/api/seats/soft-unlock', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        seats: [{ row, number }],
-        sessionId: sessionId,
-      }),
-    }).catch(err => console.error('Soft unlock error:', err));
-
     setSelectedSeats(prev => prev.filter(s => !(s.row === row && s.number === number)));
     setTimeout(() => loadSeats(), 300);
   };
@@ -872,7 +770,6 @@ export default function SeatMap() {
                                     isSelected={isSeatSelected(col, seatNum)}
                                     isAdmin={isAdmin}
                                     isLockedByOther={isSeatLockedByOther(col, seatNum)}
-                                    isViewing={isSeatViewing(col, seatNum)}
                                     onToggleSelect={handleToggleSelect}
                                     occupiedSeats={occupiedSeats}
                                   />
@@ -908,7 +805,6 @@ export default function SeatMap() {
                                     isSelected={isSeatSelected(col, seatNum)}
                                     isAdmin={isAdmin}
                                     isLockedByOther={isSeatLockedByOther(col, seatNum)}
-                                    isViewing={isSeatViewing(col, seatNum)}
                                     onToggleSelect={handleToggleSelect}
                                     occupiedSeats={occupiedSeats}
                                   />
@@ -937,7 +833,6 @@ export default function SeatMap() {
                             isSelected={isSeatSelected('BM', num)}
                             isAdmin={isAdmin}
                             isLockedByOther={isSeatLockedByOther('BM', num)}
-                            isViewing={isSeatViewing('BM', num)}
                             onToggleSelect={handleToggleSelect}
                             occupiedSeats={occupiedSeats}
                           />
@@ -954,7 +849,6 @@ export default function SeatMap() {
                             isSelected={isSeatSelected('BM', num)}
                             isAdmin={isAdmin}
                             isLockedByOther={isSeatLockedByOther('BM', num)}
-                            isViewing={isSeatViewing('BM', num)}
                             onToggleSelect={handleToggleSelect}
                             occupiedSeats={occupiedSeats}
                           />
@@ -971,7 +865,6 @@ export default function SeatMap() {
                             isSelected={isSeatSelected('BM', num)}
                             isAdmin={isAdmin}
                             isLockedByOther={isSeatLockedByOther('BM', num)}
-                            isViewing={isSeatViewing('BM', num)}
                             onToggleSelect={handleToggleSelect}
                             occupiedSeats={occupiedSeats}
                           />
@@ -993,7 +886,6 @@ export default function SeatMap() {
                             isSelected={isSeatSelected('BM', num)}
                             isAdmin={isAdmin}
                             isLockedByOther={isSeatLockedByOther('BM', num)}
-                            isViewing={isSeatViewing('BM', num)}
                             onToggleSelect={handleToggleSelect}
                             occupiedSeats={occupiedSeats}
                           />
@@ -1024,7 +916,6 @@ export default function SeatMap() {
                                 isSelected={isSeatSelected(letter, number)}
                                 isAdmin={isAdmin}
                                 isLockedByOther={isSeatLockedByOther(letter, number)}
-                                isViewing={isSeatViewing(letter, number)}
                                 onToggleSelect={handleToggleSelect}
                                 occupiedSeats={occupiedSeats}
                               />
@@ -1043,7 +934,6 @@ export default function SeatMap() {
                                 isSelected={isSeatSelected(letter, number)}
                                 isAdmin={isAdmin}
                                 isLockedByOther={isSeatLockedByOther(letter, number)}
-                                isViewing={isSeatViewing(letter, number)}
                                 onToggleSelect={handleToggleSelect}
                                 occupiedSeats={occupiedSeats}
                               />
@@ -1074,7 +964,6 @@ export default function SeatMap() {
                                     isSelected={isSeatSelected(letter, number)}
                                     isAdmin={isAdmin}
                                     isLockedByOther={isSeatLockedByOther(letter, number)}
-                                    isViewing={isSeatViewing(letter, number)}
                                     onToggleSelect={handleToggleSelect}
                                     occupiedSeats={occupiedSeats}
                                   />
@@ -1098,7 +987,6 @@ export default function SeatMap() {
                                     isSelected={isSeatSelected(letter, number)}
                                     isAdmin={isAdmin}
                                     isLockedByOther={isSeatLockedByOther(letter, number)}
-                                    isViewing={isSeatViewing(letter, number)}
                                     onToggleSelect={handleToggleSelect}
                                     occupiedSeats={occupiedSeats}
                                   />
@@ -1142,7 +1030,6 @@ export default function SeatMap() {
                                     isSelected={isSeatSelected(letter, number)}
                                     isAdmin={isAdmin}
                                     isLockedByOther={isSeatLockedByOther(letter, number)}
-                                    isViewing={isSeatViewing(letter, number)}
                                     onToggleSelect={handleToggleSelect}
                                     occupiedSeats={occupiedSeats}
                                   />
@@ -1165,7 +1052,6 @@ export default function SeatMap() {
                                     isSelected={isSeatSelected(letter, number)}
                                     isAdmin={isAdmin}
                                     isLockedByOther={isSeatLockedByOther(letter, number)}
-                                    isViewing={isSeatViewing(letter, number)}
                                     onToggleSelect={handleToggleSelect}
                                     occupiedSeats={occupiedSeats}
                                   />
@@ -1189,7 +1075,6 @@ export default function SeatMap() {
                                   isSelected={isSeatSelected(letter, number)}
                                   isAdmin={isAdmin}
                                   isLockedByOther={isSeatLockedByOther(letter, number)}
-                                  isViewing={isSeatViewing(letter, number)}
                                   onToggleSelect={handleToggleSelect}
                                   occupiedSeats={occupiedSeats}
                                 />
@@ -1225,11 +1110,11 @@ export default function SeatMap() {
                 onAddDataClick={handleAddDataClick}
               />
             ) : (
-<UserSidebar
-  selectedSeats={selectedSeats}
-  onRemoveSeat={handleRemoveSeat}
-  sessionId={sessionId}
-/>
+              <UserSidebar
+                selectedSeats={selectedSeats}
+                onRemoveSeat={handleRemoveSeat}
+                sessionId={sessionId}
+              />
             )}
           </>
         )}
