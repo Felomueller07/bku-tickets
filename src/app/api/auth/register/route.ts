@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
         lastName: lastName || '', // Optional, default leer
         email,
         password: hashedPassword,
-        emailVerified: false,
+        emailVerified: null,
       },
     });
 
