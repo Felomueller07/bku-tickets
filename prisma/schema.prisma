@@ -1,0 +1,89 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id            Int       @id @default(autoincrement())
+  name          String?
+  email         String    @unique
+  password      String
+  role          String    @default("user")
+  firstName     String?
+  lastName      String?
+  emailVerified DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @default(now()) @updatedAt
+  
+  seats         Seat[]    @relation("UserSeats")
+}
+
+model Seat {
+  id              Int       @id @default(autoincrement())
+  row             String
+  number          Int
+  section         String?
+  price           Float     @default(20.0)
+  status          String    @default("available")
+  
+  // HARD LOCK (Checkout - 10 min)
+  sessionId       String?
+  lockExpiry      DateTime?
+  lockedBy        String?
+  
+  // SOFT LOCK (Viewing - 3 min)
+  softLockSessionId String?
+  softLockExpiry    DateTime?
+  
+  // Customer Data
+  firstName       String?
+  lastName        String?
+  email           String?
+  
+  // User Relation
+  userId          Int?
+  user            User?     @relation("UserSeats", fields: [userId], references: [id])
+  
+  // OLD FIELDS
+  reservationType String?
+  note            String?
+  
+  // Admin
+  voucherCode     String?
+  adminNotes      String?
+  markedBy        String?
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @default(now()) @updatedAt
+
+  @@unique([row, number])
+}
+
+model VoucherCode {
+  id          Int       @id @default(autoincrement())
+  code        String    @unique
+  used        Boolean   @default(false)
+  usedAt      DateTime?
+  usedBy      Int?      // ⬅️ String → Int (ist eine userId!)
+  createdBy   String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @default(now()) @updatedAt
+}
+
+model FreeTicket {
+  id          Int       @id @default(autoincrement())
+  code        String    @unique
+  email       String?
+  used        Boolean   @default(false)
+  usedAt      DateTime?
+  usedBy      Int?      // ⬅️ String → Int (ist eine userId!)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @default(now()) @updatedAt
+}
