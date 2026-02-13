@@ -10,6 +10,7 @@ import UserSidebar from './UserSidebar';
 import MobileCheckoutButton from './MobileCheckoutButton';
 import MobileCheckoutPanel from './MobileCheckoutPanel';
 import ReleaseConfirmModal from './ReleaseConfirmModal';
+import CheckoutModal from './CheckoutModal';
 
 // ⭐ LOCK-SYSTEM: Session ID generieren
 const generateSessionId = () => {
@@ -211,6 +212,9 @@ export default function SeatMap() {
   const [releaseModalOpen, setReleaseModalOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [checkoutPanelOpen, setCheckoutPanelOpen] = useState(false);
+  
+  // ⭐ CHECKOUT MODAL STATE - HIER IM SEATMAP!
+  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
 
   useEffect(() => {
     loadSeats();
@@ -280,7 +284,6 @@ export default function SeatMap() {
     }
   };
 
-  // ⭐ VEREINFACHT: Nur noch auswählen/abwählen - kein API Call
   const handleToggleSelect = async (row: string, number: number) => {
     const isCurrentlySelected = selectedSeats.some(s => s.row === row && s.number === number);
     const seat = occupiedSeats.find(s => s.row === row && s.number === number);
@@ -516,6 +519,84 @@ export default function SeatMap() {
     setTimeout(() => loadSeats(), 300);
   };
 
+  // ⭐ CHECKOUT MODAL HANDLER - HIER IM SEATMAP!
+  const handleModalClose = async () => {
+    setIsCheckoutOpen(false);
+    
+    try {
+      await fetch('/api/seats/unlock', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId })
+      });
+    } catch (error) {
+      console.error('❌ Unlock Fehler:', error);
+    }
+  };
+
+  const handleCheckout = async (seatsWithData: any[], voucherCodes?: string[]) => {
+    try {
+      if (voucherCodes && voucherCodes.length > 0) {
+        const seatsWithVouchers = seatsWithData.map((seat, index) => ({
+          ...seat,
+          voucherCode: voucherCodes[index] || undefined,
+        }));
+
+        const reserveResponse = await fetch('/api/seats', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ seats: seatsWithVouchers }),
+        });
+
+        if (!reserveResponse.ok) throw new Error('Reservierung fehlgeschlagen');
+
+        for (const code of voucherCodes) {
+          await fetch('/api/voucher/use', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ code }),
+          });
+        }
+
+        if (voucherCodes.length >= seatsWithData.length) {
+          window.location.href = '/dashboard';
+          return;
+        }
+
+        const seatsToPayFor = seatsWithData.slice(voucherCodes.length);
+        const checkoutResponse = await fetch('/api/create-checkout-session', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ seats: seatsToPayFor }),
+        });
+
+        const { url } = await checkoutResponse.json();
+        if (url) window.location.href = url;
+        return;
+      }
+
+      const reserveResponse = await fetch('/api/seats', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ seats: seatsWithData }),
+      });
+
+      if (!reserveResponse.ok) throw new Error('Reservierung fehlgeschlagen');
+
+      const checkoutResponse = await fetch('/api/create-checkout-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ seats: seatsWithData }),
+      });
+
+      const { url } = await checkoutResponse.json();
+      if (url) window.location.href = url;
+    } catch (error) {
+      console.error('❌ Checkout Fehler:', error);
+      toast.error('Fehler beim Checkout');
+    }
+  };
+
   const mainRowLetters = ['E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y'];
 
   const mainRows = mainRowLetters.map(letter => ({
@@ -589,6 +670,15 @@ export default function SeatMap() {
         onClose={() => setReleaseModalOpen(false)}
         onConfirm={handleAdminReleaseConfirm}
         seatCount={selectedSeats.filter(s => isSeatOccupied(s.row, s.number)).length}
+      />
+
+      {/* ⭐ CHECKOUT MODAL - HIER IM SEATMAP GERENDERT! */}
+      <CheckoutModal
+        selectedSeats={selectedSeats}
+        isOpen={isCheckoutOpen}
+        onClose={handleModalClose}
+        onCheckout={handleCheckout}
+        sessionId={sessionId}
       />
 
       {isMobile && (
@@ -1135,10 +1225,11 @@ export default function SeatMap() {
                 onClose={() => setCheckoutPanelOpen(false)}
                 selectedSeats={selectedSeats}
                 onClearSeats={() => setSelectedSeats([])}
-                 sessionId={sessionId}  // ⭐ HINZUFÜGEN!
+                sessionId={sessionId}
                 isAdmin={isAdmin}
                 onReserve={handleReserveClick}
                 onMark={handleMarkClick}
+                //onOpenCheckout={() => setIsCheckoutOpen(true)} // ⭐ CALLBACK ZUM ÖFFNEN!
               />
             )}
           </AnimatePresence>
