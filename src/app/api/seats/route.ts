@@ -9,7 +9,7 @@ export async function GET() {
     const seats = await prisma.seat.findMany({
       where: {
         status: {
-          in: ['reserved', 'paid']
+          in: ['reserved', 'paid', 'viewing', 'locked', 'marked']  // ⭐ ALLE STATUS!
         }
       },
       include: {
@@ -25,8 +25,8 @@ export async function GET() {
     });
 
     console.log(`✅ Gefunden: ${seats.length} Sitze`);
-    
     return NextResponse.json(seats);
+    
   } catch (error: any) {
     console.error('❌ GET /api/seats ERROR:', error);
     return NextResponse.json({
