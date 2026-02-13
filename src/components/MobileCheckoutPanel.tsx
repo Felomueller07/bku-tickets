@@ -72,8 +72,8 @@ export default function MobileCheckoutPanel({
         return;
       }
 
-      // Hard Lock erfolgreich → CheckoutModal öffnen
-      onClose();
+      // Hard Lock erfolgreich → Panel schließen + CheckoutModal öffnen
+      onClose(); // ⭐ Panel schließen
       setIsCheckoutOpen(true);
       setIsLocking(false);
 
@@ -187,10 +187,20 @@ export default function MobileCheckoutPanel({
     }
   };
 
-  if (!isOpen) return null;
-
   return (
     <>
+      {/* ⭐ CHECKOUT MODAL - IMMER RENDERN, AUCH WENN PANEL CLOSED! */}
+      <CheckoutModal
+        selectedSeats={selectedSeats}
+        isOpen={isCheckoutOpen}
+        onClose={handleModalClose}
+        onCheckout={handleCheckout}
+        sessionId={sessionId}
+      />
+
+      {/* PANEL - NUR WENN isOpen */}
+      {isOpen && (
+        <>
       {/* BACKDROP */}
       <AnimatePresence>
         <motion.div
@@ -460,15 +470,8 @@ export default function MobileCheckoutPanel({
           )}
         </motion.div>
       </AnimatePresence>
-
-      {/* ⭐ CHECKOUT MODAL - FUNKTIONIERT FÜR MOBILE UND DESKTOP! */}
-      <CheckoutModal
-        selectedSeats={selectedSeats}
-        isOpen={isCheckoutOpen}
-        onClose={handleModalClose}
-        onCheckout={handleCheckout}
-        sessionId={sessionId}
-      />
+        </>
+      )}
     </>
   );
 }
