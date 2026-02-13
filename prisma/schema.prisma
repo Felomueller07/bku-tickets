@@ -87,3 +87,11 @@ model FreeTicket {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @default(now()) @updatedAt
 }
+
+model CheckoutLog {
+  id        Int      @id @default(autoincrement())
+  ip        String
+  timestamp DateTime @default(now())
+  
+  @@index([ip, timestamp])
+}

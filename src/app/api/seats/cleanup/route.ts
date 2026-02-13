@@ -5,8 +5,8 @@ export async function POST() {
   try {
     const now = new Date();
 
-    // Abgelaufene HARD Locks entfernen
-    await prisma.seat.updateMany({
+    // Nur noch HARD Locks entfernen
+    const hardLocksCleaned = await prisma.seat.updateMany({
       where: {
         status: 'locked',
         lockExpiry: { lt: now }
@@ -19,22 +19,11 @@ export async function POST() {
       },
     });
 
-    // Abgelaufene SOFT Locks entfernen
-    await prisma.seat.updateMany({
-      where: {
-        status: 'viewing',
-        softLockExpiry: { lt: now }
-      },
-      data: {
-        status: 'available',
-        softLockSessionId: null,
-        softLockExpiry: null,
-      },
-    });
+    console.log(`🧹 Cleanup: ${hardLocksCleaned.count} hard locks entfernt`);
 
     return NextResponse.json({ 
       success: true,
-      message: 'Abgelaufene Locks entfernt'
+      locksRemoved: hardLocksCleaned.count
     });
 
   } catch (error) {

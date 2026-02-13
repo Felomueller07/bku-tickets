@@ -1144,5 +1144,5 @@ export default function SeatMap() {
         </>
       )}
     </>
-  );
+  );s
 }

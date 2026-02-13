@@ -22,43 +22,46 @@ export default function UserSidebar({ selectedSeats, onRemoveSeat, sessionId, is
   const totalPrice = selectedSeats.length * ticketPrice;
 
   // ⭐ HARD LOCK beim "Zur Kassa" Button
-  const handleCheckoutButtonClick = async () => {
-    if (selectedSeats.length === 0) {
-      toast.error('Keine Sitze ausgewählt');
+const handleCheckoutButtonClick = async () => {
+  if (selectedSeats.length === 0) {
+    toast.error('Keine Sitze ausgewählt');
+    return;
+  }
+
+  // ⭐ MAX 20 SITZE CHECK
+  if (selectedSeats.length > 20) {
+    toast.error('Maximal 20 Sitze pro Bestellung erlaubt');
+    return;
+  }
+
+  setIsLocking(true);
+
+  try {
+    const hardLockResponse = await fetch('/api/seats/hard-lock', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        seats: selectedSeats.map(s => ({ row: s.row, number: s.number })),
+        sessionId: sessionId,
+      }),
+    });
+
+    if (!hardLockResponse.ok) {
+      const data = await hardLockResponse.json();
+      toast.error(data.error || 'Sitze konnten nicht gesperrt werden');
+      setIsLocking(false);
       return;
     }
 
-    setIsLocking(true);
+    setIsCheckoutOpen(true);
+    setIsLocking(false);
 
-    try {
-      // ⭐ HARD LOCK API Call
-      const hardLockResponse = await fetch('/api/seats/hard-lock', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          seats: selectedSeats.map(s => ({ row: s.row, number: s.number })),
-          sessionId: sessionId,
-        }),
-      });
-
-      if (!hardLockResponse.ok) {
-        const data = await hardLockResponse.json();
-        toast.error(data.error || 'Sitze konnten nicht gesperrt werden');
-        setIsLocking(false);
-        return;
-      }
-
-      // ✅ Hard Lock erfolgreich → Modal öffnen
-      setIsCheckoutOpen(true);
-      setIsLocking(false);
-
-    } catch (error) {
-      console.error('❌ Hard Lock Fehler:', error);
-      toast.error('Fehler beim Sperren der Sitze');
-      setIsLocking(false);
-    }
-  };
-
+  } catch (error) {
+    console.error('❌ Hard Lock Fehler:', error);
+    toast.error('Fehler beim Sperren der Sitze');
+    setIsLocking(false);
+  }
+};
   // ⭐ UNLOCK beim Modal schließen
   const handleModalClose = async () => {
     setIsCheckoutOpen(false);

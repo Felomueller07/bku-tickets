@@ -9,12 +9,37 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Keine Sitze angegeben' }, { status: 400 });
     }
 
+    // ⭐ MAX 20 SITZE CHECK
+    if (seats.length > 20) {
+      return NextResponse.json({ error: 'Maximal 20 Sitze pro Bestellung erlaubt' }, { status: 400 });
+    }
+
     if (!sessionId) {
       return NextResponse.json({ error: 'Session ID fehlt' }, { status: 400 });
     }
 
+    const ip = request.headers.get('x-forwarded-for') || 
+               request.headers.get('x-real-ip') || 
+               'unknown';
+
+    // ⭐ RATE LIMITING: Max 20 Checkouts pro Tag
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const checkoutCount = await prisma.checkoutLog.count({
+      where: {
+        ip: ip,
+        timestamp: { gte: today }
+      }
+    });
+
+    if (checkoutCount >= 20) {
+      return NextResponse.json({ 
+        error: 'Maximale Anzahl an Checkout-Versuchen für heute erreicht (20)' 
+      }, { status: 429 });
+    }
+
     const lockExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 Minuten
-    const ip = request.headers.get('x-forwarded-for') || 'unknown';
 
     // ⭐ ERST PRÜFEN ob ALLE Sitze verfügbar sind
     for (const seat of seats) {
@@ -22,7 +47,6 @@ export async function POST(request: NextRequest) {
         where: { row_number: { row: seat.row, number: seat.number } }
       });
 
-      // Wenn Sitz schon gelockt ist UND NICHT von dieser Session
       if (existingSeat && 
           existingSeat.status === 'locked' && 
           existingSeat.sessionId !== sessionId &&
@@ -46,8 +70,6 @@ export async function POST(request: NextRequest) {
           sessionId: sessionId,
           lockExpiry: lockExpiry,
           lockedBy: ip,
-          softLockSessionId: null,
-          softLockExpiry: null,
         },
         create: {
           row: seat.row,
@@ -59,6 +81,14 @@ export async function POST(request: NextRequest) {
         }
       });
     }
+
+    // ⭐ LOG SPEICHERN
+    await prisma.checkoutLog.create({
+      data: {
+        ip: ip,
+        timestamp: new Date()
+      }
+    });
 
     return NextResponse.json({ 
       success: true,
