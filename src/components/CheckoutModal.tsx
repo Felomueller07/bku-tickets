@@ -11,6 +11,7 @@ interface CheckoutModalProps {
   onClose: () => void;
   selectedSeats: Array<{ row: string; number: number }>;
   onCheckout: (seats: any[], voucherCodes?: string[]) => void;
+  sessionId: string; // ⭐ WICHTIG FÜR UNLOCK!
 }
 
 interface VoucherField {
@@ -24,6 +25,7 @@ export default function CheckoutModal({
   onClose,
   selectedSeats,
   onCheckout,
+  sessionId,
 }: CheckoutModalProps) {
   const { data: session } = useSession();
   
@@ -52,6 +54,7 @@ export default function CheckoutModal({
     }))
   );
 
+  // ⭐ TIMER
   useEffect(() => {
     if (!isOpen) {
       setTimeLeft(600);
@@ -64,7 +67,7 @@ export default function CheckoutModal({
         if (prev <= 1) {
           clearInterval(interval);
           toast.error('⚠️ Zeit abgelaufen! Sitze wurden freigegeben.');
-          onClose();
+          handleClose();
           return 0;
         }
         return prev - 1;
@@ -72,7 +75,7 @@ export default function CheckoutModal({
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [isOpen, onClose]);
+  }, [isOpen]);
 
   useEffect(() => {
     if (timeLeft === 120) {
@@ -111,10 +114,28 @@ export default function CheckoutModal({
     );
   }, [selectedSeats]);
 
+  // ⭐ UNLOCK beim Schließen
+  const handleClose = async () => {
+    try {
+      await fetch('/api/seats/unlock', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId })
+      });
+      console.log('✅ Sitze entsperrt');
+    } catch (error) {
+      console.error('❌ Unlock error:', error);
+    }
+    
+    onClose();
+  };
+
   // ⭐ VOUCHER FUNCTIONS
   const addVoucherField = () => {
     if (voucherFields.length < selectedSeats.length) {
       setVoucherFields([...voucherFields, { code: '', valid: null, checking: false }]);
+    } else {
+      toast.error('Maximal ein Gutschein pro Ticket');
     }
   };
 
@@ -132,9 +153,21 @@ export default function CheckoutModal({
 
   const handleCheckVoucher = async (index: number) => {
     const code = voucherFields[index].code.trim();
-    if (!code) return;
+    if (!code) {
+      toast.error('Bitte Gutscheincode eingeben');
+      return;
+    }
 
-    // Set checking
+    // Duplikat-Check
+    const isDuplicate = voucherFields.some((v, i) => 
+      i !== index && v.code.toUpperCase() === code.toUpperCase() && v.valid === true
+    );
+
+    if (isDuplicate) {
+      toast.error('Dieser Gutschein wurde bereits verwendet');
+      return;
+    }
+
     const newFields = [...voucherFields];
     newFields[index] = { ...newFields[index], checking: true };
     setVoucherFields(newFields);
@@ -154,6 +187,12 @@ export default function CheckoutModal({
         checking: false 
       };
       setVoucherFields(newFields);
+
+      if (data.valid) {
+        toast.success('✓ Gutschein gültig');
+      } else {
+        toast.error(data.message || '✗ Ungültiger Gutschein');
+      }
     } catch (error) {
       newFields[index] = { 
         code: newFields[index].code, 
@@ -161,6 +200,7 @@ export default function CheckoutModal({
         checking: false 
       };
       setVoucherFields(newFields);
+      toast.error('Fehler beim Prüfen');
     }
   };
 
@@ -172,6 +212,17 @@ export default function CheckoutModal({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (!contactData.firstName.trim() || !contactData.lastName.trim() || !contactData.email.trim()) {
+      toast.error('Bitte alle Felder ausfüllen');
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(contactData.email)) {
+      toast.error('Bitte gültige E-Mail eingeben');
+      return;
+    }
+
     const seatsWithData = seatData.map((seat) => ({
       row: seat.row,
       number: seat.number,
@@ -180,10 +231,10 @@ export default function CheckoutModal({
       email: contactData.email,
     }));
 
-    // ⭐ NUR gültige Voucher-Codes weitergeben
+    // ⭐ NUR gültige Voucher-Codes
     const validVouchers = voucherFields
-      .filter(v => v.valid === true)
-      .map(v => v.code);
+      .filter(v => v.valid === true && v.code.trim())
+      .map(v => v.code.trim());
 
     onCheckout(seatsWithData, validVouchers.length > 0 ? validVouchers : undefined);
   };
@@ -214,7 +265,7 @@ export default function CheckoutModal({
           zIndex: 50,
           padding: isMobile ? '0' : '1rem',
         }}
-        onClick={onClose}
+        onClick={handleClose}
       >
         <motion.div
           initial={{ opacity: 0, scale: isMobile ? 1 : 0.95, y: isMobile ? '100%' : 0 }}
@@ -294,7 +345,7 @@ export default function CheckoutModal({
               </motion.div>
 
               <button
-                onClick={onClose}
+                onClick={handleClose}
                 style={{
                   background: 'none',
                   border: 'none',
@@ -354,7 +405,6 @@ export default function CheckoutModal({
                   Reihe {selectedSeats[0]?.row}, Platz {selectedSeats.map(s => s.number).join(', ')}
                 </p>
                 
-                {/* ⭐ PREIS-AUFSCHLÜSSELUNG */}
                 {validVouchersCount > 0 ? (
                   <>
                     <p style={{ color: '#10b981', fontSize: '0.875rem', margin: '0.25rem 0' }}>
@@ -468,7 +518,6 @@ export default function CheckoutModal({
                     </div>
                   ))}
                   
-                  {/* ⭐ ADD BUTTON */}
                   {voucherFields.length < selectedSeats.length && (
                     <button
                       type="button"

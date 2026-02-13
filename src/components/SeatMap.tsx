@@ -1135,6 +1135,7 @@ export default function SeatMap() {
                 onClose={() => setCheckoutPanelOpen(false)}
                 selectedSeats={selectedSeats}
                 onClearSeats={() => setSelectedSeats([])}
+                 sessionId={sessionId}  // ⭐ HINZUFÜGEN!
                 isAdmin={isAdmin}
                 onReserve={handleReserveClick}
                 onMark={handleMarkClick}
@@ -1144,5 +1145,5 @@ export default function SeatMap() {
         </>
       )}
     </>
-  );s
+  );
 }
