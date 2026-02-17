@@ -313,10 +313,10 @@ export default function SeatMap() {
     setTimeout(() => loadSeats(), 300);
   };
 
-  const isSeatOccupied = (row: string, number: number) => {
-    const seat = occupiedSeats.find(s => s.row === row && s.number === number);
-    return seat?.status === 'reserved' || seat?.status === 'marked';
-  };
+const isSeatOccupied = (row: string, number: number) => {
+  const seat = occupiedSeats.find(s => s.row === row && s.number === number);
+  return seat?.status === 'reserved' || seat?.status === 'marked' || seat?.status === 'paid';
+};
 
   const isSeatLockedByOther = (row: string, number: number) => {
     const seat = occupiedSeats.find(s => s.row === row && s.number === number);
