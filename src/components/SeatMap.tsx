@@ -1229,7 +1229,10 @@ export default function SeatMap() {
                 isAdmin={isAdmin}
                 onReserve={handleReserveClick}
                 onMark={handleMarkClick}
-                //onOpenCheckout={() => setIsCheckoutOpen(true)} // ⭐ CALLBACK ZUM ÖFFNEN!
+                 onOpenCheckout={() => {
+    setCheckoutPanelOpen(false);
+    setIsCheckoutOpen(true);
+      }}
               />
             )}
           </AnimatePresence>
