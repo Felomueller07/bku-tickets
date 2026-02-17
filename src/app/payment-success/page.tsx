@@ -1,99 +1,101 @@
 'use client';
 
 import { useEffect, useState, Suspense } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { CheckCircle, Home, Ticket } from 'lucide-react';
+import { CheckCircle, Download, Mail, Phone, Ticket, MapPin, Calendar } from 'lucide-react';
+
+interface SeatInfo {
+  row: string;
+  number: number;
+  firstName: string;
+  lastName: string;
+  email: string;
+}
 
 function PaymentSuccessContent() {
-  const router = useRouter();
   const searchParams = useSearchParams();
-  const sessionId = searchParams.get('session_id');
-
+  const sessionId = searchParams?.get('session_id');
+  const [seats, setSeats] = useState<SeatInfo[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [error, setError] = useState(false);
 
   useEffect(() => {
-    if (sessionId) {
-      fetch('/api/payment-success', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sessionId }),
-      })
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.success) {
-            setLoading(false);
-          } else {
-            setError('Fehler bei der Bestätigung');
-            setLoading(false);
-          }
-        })
-        .catch((err) => {
-          setError('Fehler bei der Bestätigung');
-          setLoading(false);
+    const updateSeats = async () => {
+      if (!sessionId) { setLoading(false); return; }
+      try {
+        const response = await fetch('/api/payment-success', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ sessionId }),
         });
-    }
+        const data = await response.json();
+        if (response.ok && data.success) {
+          setSeats(data.seats || []);
+        } else {
+          setError(true);
+        }
+      } catch {
+        setError(true);
+      } finally {
+        setLoading(false);
+      }
+    };
+    updateSeats();
   }, [sessionId]);
+
+  const downloadTicket = (seat: SeatInfo) => {
+    const content = `
+JOSEFI KONZERT 2026
+Bürgerkapelle Untermais
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🎫 TICKET
+
+Veranstaltung:  Josefi Konzert 2026
+Datum:          15. März 2026
+Ort:            Kursaal Meran
+
+Reihe:          ${seat.row}
+Platz:          ${seat.number}
+
+Besucher:       ${seat.firstName} ${seat.lastName}
+E-Mail:         ${seat.email}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Bitte dieses Ticket am Eingang vorzeigen.
+
+Bei Problemen:
+📞 +39 0473 123 456
+✉️ info@bku.it
+    `.trim();
+
+    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Ticket_${seat.row}${seat.number}_JosefiKonzert2026.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   if (loading) {
     return (
       <div style={{
         minHeight: '100vh',
-        background: 'linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
+        background: 'linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
       }}>
-        <div style={{ textAlign: 'center', color: '#fff' }}>
-          <div style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>
-            Zahlung wird bestätigt...
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div style={{
-        minHeight: '100vh',
-        background: 'linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '2rem',
-      }}>
-        <div style={{
-          backgroundColor: 'rgba(0, 0, 0, 0.8)',
-          borderRadius: '1.5rem',
-          padding: '3rem',
-          maxWidth: '500px',
-          width: '100%',
-          border: '1px solid rgba(239, 68, 68, 0.3)',
-          textAlign: 'center',
-        }}>
-          <div style={{ color: '#ef4444', fontSize: '4rem', marginBottom: '1rem' }}>✗</div>
-          <h1 style={{ color: '#ef4444', fontSize: '1.5rem', marginBottom: '1rem' }}>
-            Fehler
-          </h1>
-          <p style={{ color: '#fff', marginBottom: '2rem' }}>{error}</p>
-          <button
-            onClick={() => router.push('/dashboard')}
-            style={{
-              padding: '1rem 2rem',
-              background: 'linear-gradient(135deg, #d4af37 0%, #f4e7c3 100%)',
-              border: 'none',
-              borderRadius: '0.5rem',
-              color: '#000',
-              fontSize: '1rem',
-              fontWeight: '700',
-              cursor: 'pointer',
-            }}
-          >
-            Zurück zum Dashboard
-          </button>
-        </div>
+        <motion.div
+          animate={{ rotate: 360 }}
+          transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}
+          style={{
+            width: '48px', height: '48px',
+            border: '3px solid rgba(212,175,55,0.2)',
+            borderTop: '3px solid #d4af37',
+            borderRadius: '50%',
+          }}
+        />
       </div>
     );
   }
@@ -101,137 +103,287 @@ function PaymentSuccessContent() {
   return (
     <div style={{
       minHeight: '100vh',
-      background: 'linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: '2rem',
+      background: 'linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%)',
+      padding: '24px 16px',
+      paddingBottom: '48px',
     }}>
-      <motion.div
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.5 }}
-        style={{
-          backgroundColor: 'rgba(0, 0, 0, 0.8)',
-          backdropFilter: 'blur(10px)',
-          borderRadius: '1.5rem',
-          padding: '3rem',
-          maxWidth: '600px',
-          width: '100%',
-          border: '1px solid rgba(212, 175, 55, 0.3)',
-          textAlign: 'center',
-        }}
-      >
+      <div style={{ maxWidth: '480px', margin: '0 auto' }}>
+
+        {/* SUCCESS HEADER */}
         <motion.div
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
-          transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
-          style={{
-            width: '100px',
-            height: '100px',
-            background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-            borderRadius: '50%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            margin: '0 auto 2rem',
-          }}
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          style={{ textAlign: 'center', marginBottom: '32px', paddingTop: '24px' }}
         >
-          <CheckCircle style={{ width: '60px', height: '60px', color: '#fff' }} />
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ delay: 0.1, type: 'spring', stiffness: 200 }}
+            style={{
+              width: '80px', height: '80px',
+              margin: '0 auto 20px',
+              borderRadius: '50%',
+              background: 'linear-gradient(135deg, #4ade80, #22c55e)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              boxShadow: '0 8px 32px rgba(74,222,128,0.35)',
+            }}
+          >
+            <CheckCircle style={{ width: '44px', height: '44px', color: '#fff' }} />
+          </motion.div>
+
+          <h1 style={{
+            color: '#fff', fontSize: '28px', fontWeight: '800',
+            margin: '0 0 8px', letterSpacing: '-0.5px',
+          }}>
+            Vielen Dank! 🎉
+          </h1>
+          <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '15px', margin: 0, lineHeight: 1.5 }}>
+            Deine Tickets wurden erfolgreich gebucht.
+          </p>
         </motion.div>
 
-        <h1 style={{
-          color: '#d4af37',
-          fontSize: '2rem',
-          fontWeight: '700',
-          marginBottom: '1rem',
-        }}>
-          Zahlung erfolgreich!
-        </h1>
-
-        <p style={{
-          color: '#fff',
-          fontSize: '1.125rem',
-          marginBottom: '1rem',
-        }}>
-          Vielen Dank für Ihre Bestellung!
-        </p>
-
-        <p style={{
-          color: 'rgba(255, 255, 255, 0.7)',
-          fontSize: '0.875rem',
-          marginBottom: '2rem',
-        }}>
-          Sie erhalten in Kürze eine Bestätigungs-Email mit Ihren Tickets.
-        </p>
-
-        <div style={{
-          backgroundColor: 'rgba(212, 175, 55, 0.1)',
-          border: '1px solid rgba(212, 175, 55, 0.3)',
-          borderRadius: '0.75rem',
-          padding: '1.5rem',
-          marginBottom: '2rem',
-        }}>
-          <Ticket style={{ width: '40px', height: '40px', color: '#d4af37', margin: '0 auto 1rem' }} />
-          <p style={{ color: '#d4af37', fontSize: '0.875rem', fontWeight: '600' }}>
-            Ihre Tickets wurden reserviert!
+        {/* EMAIL HINWEIS */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          style={{
+            backgroundColor: 'rgba(212,175,55,0.1)',
+            border: '1px solid rgba(212,175,55,0.25)',
+            borderRadius: '14px',
+            padding: '14px 16px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            marginBottom: '20px',
+          }}
+        >
+          <Mail style={{ width: '20px', height: '20px', color: '#d4af37', flexShrink: 0 }} />
+          <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: '13px', margin: 0, lineHeight: 1.5 }}>
+            Deine Tickets wurden an <strong style={{ color: '#d4af37' }}>{seats[0]?.email || 'deine E-Mail'}</strong> gesendet.
           </p>
-          <p style={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: '0.75rem', marginTop: '0.5rem' }}>
-            Josefi Konzert 2026<br />
-            22. März 2026 · 19:00 Uhr<br />
-            Kursaal Meran
-          </p>
-        </div>
+        </motion.div>
 
-        <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
-          <button
-            onClick={() => router.push('/meine-tickets')}
-            style={{
-              padding: '1rem 1.5rem',
-              background: 'linear-gradient(135deg, #d4af37 0%, #f4e7c3 100%)',
-              border: 'none',
-              borderRadius: '0.5rem',
-              color: '#000',
-              fontSize: '1rem',
-              fontWeight: '700',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem',
-            }}
+        {/* EVENT INFO */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          style={{
+            backgroundColor: 'rgba(255,255,255,0.04)',
+            border: '1px solid rgba(255,255,255,0.08)',
+            borderRadius: '14px',
+            padding: '14px 16px',
+            marginBottom: '20px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '10px',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <Calendar style={{ width: '16px', height: '16px', color: '#d4af37', flexShrink: 0 }} />
+            <span style={{ color: 'rgba(255,255,255,0.7)', fontSize: '13px' }}>
+              <strong style={{ color: 'white' }}>Samstag, 15. März 2026</strong>
+            </span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <MapPin style={{ width: '16px', height: '16px', color: '#d4af37', flexShrink: 0 }} />
+            <span style={{ color: 'rgba(255,255,255,0.7)', fontSize: '13px' }}>
+              <strong style={{ color: 'white' }}>Kursaal Meran</strong>
+            </span>
+          </div>
+        </motion.div>
+
+        {/* TICKETS */}
+        {seats.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+            style={{ marginBottom: '20px' }}
           >
-            <Ticket size={20} />
-            Meine Tickets
-          </button>
-
-          <button
-            onClick={() => router.push('/dashboard')}
-            style={{
-              padding: '1rem 1.5rem',
-              backgroundColor: 'rgba(255, 255, 255, 0.1)',
-              border: '1px solid rgba(255, 255, 255, 0.2)',
-              borderRadius: '0.5rem',
-              color: '#fff',
-              fontSize: '1rem',
+            <div style={{
+              color: 'rgba(255,255,255,0.5)',
+              fontSize: '11px',
               fontWeight: '600',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem',
+              textTransform: 'uppercase',
+              letterSpacing: '1px',
+              marginBottom: '10px',
+              paddingLeft: '4px',
+            }}>
+              Deine Tickets ({seats.length})
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {seats.map((seat, i) => (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.4 + i * 0.1 }}
+                  style={{
+                    backgroundColor: 'rgba(255,255,255,0.05)',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    borderRadius: '14px',
+                    padding: '14px 16px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: '12px',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div style={{
+                      width: '44px', height: '44px',
+                      borderRadius: '10px',
+                      background: 'linear-gradient(135deg, rgba(212,175,55,0.2), rgba(212,175,55,0.1))',
+                      border: '1px solid rgba(212,175,55,0.3)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      flexShrink: 0,
+                    }}>
+                      <Ticket style={{ width: '20px', height: '20px', color: '#d4af37' }} />
+                    </div>
+                    <div>
+                      <div style={{ color: '#d4af37', fontSize: '18px', fontWeight: '800', lineHeight: 1 }}>
+                        {seat.row}{seat.number}
+                      </div>
+                      <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '12px', marginTop: '3px' }}>
+                        {seat.firstName} {seat.lastName}
+                      </div>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => downloadTicket(seat)}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      padding: '8px 12px',
+                      backgroundColor: 'rgba(212,175,55,0.15)',
+                      border: '1px solid rgba(212,175,55,0.3)',
+                      borderRadius: '10px',
+                      color: '#d4af37',
+                      fontSize: '12px',
+                      fontWeight: '600',
+                      cursor: 'pointer',
+                      flexShrink: 0,
+                    }}
+                  >
+                    <Download style={{ width: '14px', height: '14px' }} />
+                    Download
+                  </button>
+                </motion.div>
+              ))}
+            </div>
+          </motion.div>
+        )}
+
+        {/* ERROR STATE */}
+        {error && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            style={{
+              backgroundColor: 'rgba(239,68,68,0.1)',
+              border: '1px solid rgba(239,68,68,0.3)',
+              borderRadius: '14px',
+              padding: '16px',
+              marginBottom: '20px',
+              color: '#ef4444',
+              fontSize: '14px',
+              textAlign: 'center',
             }}
           >
-            <Home size={20} />
-            Dashboard
-          </button>
+            ⚠️ Tickets konnten nicht geladen werden. Deine Buchung ist aber gespeichert — bitte E-Mail prüfen oder Kontakt aufnehmen.
+          </motion.div>
+        )}
+
+        {/* KONTAKT */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.6 }}
+          style={{
+            backgroundColor: 'rgba(255,255,255,0.03)',
+            border: '1px solid rgba(255,255,255,0.07)',
+            borderRadius: '14px',
+            padding: '16px',
+          }}
+        >
+          <p style={{
+            color: 'rgba(255,255,255,0.4)',
+            fontSize: '11px',
+            fontWeight: '600',
+            textTransform: 'uppercase',
+            letterSpacing: '1px',
+            margin: '0 0 12px',
+          }}>
+            Probleme mit der Buchung?
+          </p>
+
+          <a
+            href="tel:+390473123456"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              padding: '12px 14px',
+              backgroundColor: 'rgba(255,255,255,0.05)',
+              borderRadius: '10px',
+              textDecoration: 'none',
+              marginBottom: '8px',
+            }}
+          >
+            <Phone style={{ width: '16px', height: '16px', color: '#d4af37', flexShrink: 0 }} />
+            <div>
+              <div style={{ color: 'white', fontSize: '14px', fontWeight: '600' }}>+39 0473 123 456</div>
+              <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: '11px' }}>Anrufen</div>
+            </div>
+          </a>
+
+          <a
+            href="mailto:info@bku.it"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              padding: '12px 14px',
+              backgroundColor: 'rgba(255,255,255,0.05)',
+              borderRadius: '10px',
+              textDecoration: 'none',
+            }}
+          >
+            <Mail style={{ width: '16px', height: '16px', color: '#d4af37', flexShrink: 0 }} />
+            <div>
+              <div style={{ color: 'white', fontSize: '14px', fontWeight: '600' }}>info@bku.it</div>
+              <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: '11px' }}>E-Mail schreiben</div>
+            </div>
+          </a>
+        </motion.div>
+
+        {/* FOOTER */}
+        <div style={{ textAlign: 'center', marginTop: '32px' }}>
+          <p style={{ color: 'rgba(255,255,255,0.2)', fontSize: '12px' }}>
+            Bürgerkapelle Untermais · Josefi Konzert 2026
+          </p>
         </div>
-      </motion.div>
+      </div>
     </div>
   );
 }
 
 export default function PaymentSuccessPage() {
   return (
-    <Suspense fallback={<div>Lädt...</div>}>
+    <Suspense fallback={
+      <div style={{
+        minHeight: '100vh',
+        background: 'linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+      }}>
+        <div style={{ color: 'white', fontSize: '1.5rem' }}>Lädt...</div>
+      </div>
+    }>
       <PaymentSuccessContent />
     </Suspense>
   );
