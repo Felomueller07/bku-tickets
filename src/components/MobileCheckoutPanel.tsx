@@ -15,6 +15,7 @@ interface MobileCheckoutPanelProps {
   isAdmin?: boolean;
   onReserve?: () => void;
   onMark?: () => void;
+  onOpenCheckout: () => void;
 }
 
 export default function MobileCheckoutPanel({
@@ -26,6 +27,7 @@ export default function MobileCheckoutPanel({
   isAdmin = false,
   onReserve,
   onMark,
+  onOpenCheckout,  // ⭐ HINZUFÜGEN!
 }: MobileCheckoutPanelProps) {
   
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
@@ -72,10 +74,9 @@ export default function MobileCheckoutPanel({
         return;
       }
 
-      // Hard Lock erfolgreich → Panel schließen + CheckoutModal öffnen
-      onClose(); // ⭐ Panel schließen
-      setIsCheckoutOpen(true);
-      setIsLocking(false);
+setIsLocking(false);
+onClose(); // Panel schließen
+onOpenCheckout(); // ⭐ CHECKOUT MODAL ÖFFNEN!
 
     } catch (error) {
       console.error('❌ Hard Lock Fehler:', error);
