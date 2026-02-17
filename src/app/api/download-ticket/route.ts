@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
       totalAmount: 2000, // 20 Euro in Cent
     });
 
-    return new NextResponse(pdfBuffer, {
+    return new NextResponse(new Uint8Array(pdfBuffer), {
       headers: {
         'Content-Type': 'application/pdf',
         'Content-Disposition': `attachment; filename="Ticket_${seat.row}${seat.number}_JosefiKonzert2026.pdf"`,
