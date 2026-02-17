@@ -3,7 +3,7 @@
 import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { CheckCircle, Download, Mail, Phone, Ticket, MapPin, Calendar } from 'lucide-react';
+import { CheckCircle, Download, Mail, Phone, Ticket, MapPin, Calendar, Send, ArrowLeft } from 'lucide-react';
 
 interface SeatInfo {
   row: string;
@@ -19,6 +19,7 @@ function PaymentSuccessContent() {
   const [seats, setSeats] = useState<SeatInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [resending, setResending] = useState(false);
 
   useEffect(() => {
     const updateSeats = async () => {
@@ -52,9 +53,7 @@ function PaymentSuccessContent() {
         body: JSON.stringify({ seat }),
       });
 
-      if (!response.ok) {
-        throw new Error('Download failed');
-      }
+      if (!response.ok) throw new Error('Download failed');
 
       const blob = await response.blob();
       const url = URL.createObjectURL(blob);
@@ -66,6 +65,30 @@ function PaymentSuccessContent() {
     } catch (error) {
       console.error('Download error:', error);
       alert('Fehler beim Download. Bitte E-Mail prüfen.');
+    }
+  };
+
+  const handleResendEmail = async () => {
+    if (seats.length === 0) return;
+    setResending(true);
+    try {
+      const response = await fetch('/api/resend-tickets', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          seats: seats,
+          email: seats[0].email,
+        }),
+      });
+      if (response.ok) {
+        alert('✅ Tickets wurden erneut an ' + seats[0].email + ' gesendet!');
+      } else {
+        alert('❌ Fehler beim Senden. Bitte später erneut versuchen.');
+      }
+    } catch {
+      alert('❌ Fehler beim Senden. Bitte später erneut versuchen.');
+    } finally {
+      setResending(false);
     }
   };
 
@@ -288,6 +311,63 @@ function PaymentSuccessContent() {
             ⚠️ Tickets konnten nicht geladen werden. Deine Buchung ist aber gespeichert — bitte E-Mail prüfen oder Kontakt aufnehmen.
           </motion.div>
         )}
+
+        {/* ⭐ ACTION BUTTONS - RESEND + BACK */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5 }}
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '10px',
+            marginBottom: '20px',
+          }}
+        >
+          <button
+            onClick={handleResendEmail}
+            disabled={resending || seats.length === 0}
+            style={{
+              padding: '14px 16px',
+              backgroundColor: resending || seats.length === 0 ? 'rgba(212,175,55,0.1)' : 'rgba(212,175,55,0.15)',
+              border: '1px solid rgba(212,175,55,0.3)',
+              borderRadius: '12px',
+              color: '#d4af37',
+              fontSize: '14px',
+              fontWeight: '700',
+              cursor: resending || seats.length === 0 ? 'not-allowed' : 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px',
+              opacity: resending || seats.length === 0 ? 0.5 : 1,
+            }}
+          >
+            <Send style={{ width: '16px', height: '16px' }} />
+            {resending ? 'Wird gesendet...' : 'Tickets erneut per E-Mail senden'}
+          </button>
+
+          <a
+            href="/"
+            style={{
+              padding: '14px 16px',
+              backgroundColor: 'rgba(255,255,255,0.05)',
+              border: '1px solid rgba(255,255,255,0.1)',
+              borderRadius: '12px',
+              color: 'white',
+              fontSize: '14px',
+              fontWeight: '600',
+              textDecoration: 'none',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px',
+            }}
+          >
+            <ArrowLeft style={{ width: '16px', height: '16px' }} />
+            Zurück zum Sitzplan
+          </a>
+        </motion.div>
 
         {/* KONTAKT */}
         <motion.div
