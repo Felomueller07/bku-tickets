@@ -365,7 +365,7 @@ function PaymentSuccessContent() {
             }}
           >
             <ArrowLeft style={{ width: '16px', height: '16px' }} />
-            Zurück zum Sitzplan
+            Zurück zur Startseite
           </a>
         </motion.div>
 

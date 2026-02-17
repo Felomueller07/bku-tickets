@@ -19,85 +19,100 @@ export async function GET(request: NextRequest) {
     
     console.log('Payment Status:', session.payment_status);
     
-if (session.payment_status === 'paid') {
-  const seats = JSON.parse(session.metadata?.seats || '[]');
-  const userId = parseInt(session.metadata?.userId || '0');
-  const voucherCode = session.metadata?.voucherCode || null;  // ⬅️ NEU!
-  
-  console.log('Sitze:', seats);
-  console.log('User ID:', userId);
-  console.log('Voucher Code:', voucherCode);  // ⬅️ NEU!
-  
-  for (const seat of seats) {
-    console.log(`Erstelle/Update Sitz ${seat.row}${seat.number}...`);
-    console.log(`📝 Kontaktdaten: ${seat.firstName} ${seat.lastName} (${seat.email})`);
-    
-    // BESTIMME TYP BASIEREND AUF VOUCHER
-    const reservationType = voucherCode ? 'voucher' : 'user';  // ⬅️ NEU!
-    
-    await prisma.seat.upsert({
-      where: {
-        row_number: { row: seat.row, number: seat.number }
-      },
-      update: {
-        status: 'paid',
-        userId: userId,
-        firstName: seat.firstName || '',
-        lastName: seat.lastName || '',
-        email: seat.email || '',
-        reservationType: reservationType,  // ⬅️ ÄNDERN!
-      },
-      create: {
-        row: seat.row,
-        number: seat.number,
-        status: 'paid',
-        userId: userId,
-        firstName: seat.firstName || '',
-        lastName: seat.lastName || '',
-        email: seat.email || '',
-        reservationType: reservationType,  // ⬅️ ÄNDERN!
-      },
-    });
+    if (session.payment_status === 'paid') {
+      const seats = JSON.parse(session.metadata?.seats || '[]');
+      const userId = parseInt(session.metadata?.userId || '0');
+      const voucherCode = session.metadata?.voucherCode || null;
+      
+      console.log('Sitze:', seats);
+      console.log('User ID:', userId);
+      console.log('Voucher Code:', voucherCode);
+      
+      // ⭐ CHECK OB EMAIL SCHON GESENDET - wenn alle Sitze schon "paid" sind, wurde Email schon gesendet
+      const allSeatsAlreadyPaid = await Promise.all(
+        seats.map(async (seat: any) => {
+          const existingSeat = await prisma.seat.findUnique({
+            where: { row_number: { row: seat.row, number: seat.number } }
+          });
+          return existingSeat?.status === 'paid';
+        })
+      );
+
+      const shouldSendEmail = !allSeatsAlreadyPaid.every(Boolean);
+      
+      for (const seat of seats) {
+        console.log(`Erstelle/Update Sitz ${seat.row}${seat.number}...`);
+        console.log(`📝 Kontaktdaten: ${seat.firstName} ${seat.lastName} (${seat.email})`);
+        
+        const reservationType = voucherCode ? 'voucher' : 'user';
+        
+        await prisma.seat.upsert({
+          where: {
+            row_number: { row: seat.row, number: seat.number }
+          },
+          update: {
+            status: 'paid',
+            userId: userId,
+            firstName: seat.firstName || '',
+            lastName: seat.lastName || '',
+            email: seat.email || '',
+            reservationType: reservationType,
+          },
+          create: {
+            row: seat.row,
+            number: seat.number,
+            status: 'paid',
+            userId: userId,
+            firstName: seat.firstName || '',
+            lastName: seat.lastName || '',
+            email: seat.email || '',
+            reservationType: reservationType,
+          },
+        });
         console.log(`✅ ${seat.row}${seat.number} → PAID mit Kontaktdaten gespeichert`);
       }
       
-      // ✅ EMAIL-BESTÄTIGUNG SENDEN
-      try {
-        const { sendTicketConfirmation } = await import('@/lib/email');
-        
-        const customerEmail = seats[0]?.email || session.customer_details?.email || '';
-        const customerName = `${seats[0]?.firstName || ''} ${seats[0]?.lastName || ''}`.trim();
-        
-        if (customerEmail) {
-          const emailResult = await sendTicketConfirmation({
-            customerEmail: customerEmail,
-            customerName: customerName || 'Kunde',
-            seats: seats.map((s: any) => ({
-              row: s.row,
-              number: s.number,
-              firstName: s.firstName || '',
-              lastName: s.lastName || '',
-            })),
-            totalAmount: session.amount_total || 0,
-            paymentDate: new Date().toLocaleDateString('de-DE', {
-              day: '2-digit',
-              month: '2-digit',
-              year: 'numeric',
-              hour: '2-digit',
-              minute: '2-digit'
-            }),
-          });
+      // ✅ EMAIL NUR SENDEN WENN NOCH NICHT GESENDET
+      if (shouldSendEmail) {
+        try {
+          const { sendTicketConfirmation } = await import('@/lib/email');
           
-          if (emailResult.success) {
-            console.log('✅ Ticket-Email gesendet an:', customerEmail);
+          const customerEmail = seats[0]?.email || session.customer_details?.email || '';
+          const customerName = `${seats[0]?.firstName || ''} ${seats[0]?.lastName || ''}`.trim();
+          
+          if (customerEmail) {
+            const emailResult = await sendTicketConfirmation({
+              customerEmail: customerEmail,
+              customerName: customerName || 'Kunde',
+              seats: seats.map((s: any) => ({
+                row: s.row,
+                number: s.number,
+                firstName: s.firstName || '',
+                lastName: s.lastName || '',
+              })),
+              totalAmount: session.amount_total || 0,
+              paymentDate: new Date().toLocaleDateString('de-DE', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+              }),
+            });
+            
+            if (emailResult.success) {
+              console.log('✅ Ticket-Email gesendet an:', customerEmail);
+            } else {
+              console.error('❌ Email konnte nicht gesendet werden:', emailResult.error);
+            }
           } else {
-            console.error('❌ Email konnte nicht gesendet werden:', emailResult.error);
+            console.error('❌ Keine Email-Adresse gefunden!');
           }
-        } else {
-          console.error('❌ Keine Email-Adresse gefunden!');
+        } catch (emailError) {
+          console.error('❌ Email-Fehler:', emailError);
         }
-      } catch (emailError) {
-        console.error('❌ Email-Fehler:', emailError);
+      } else {
+        console.log('ℹ️ Email wurde bereits gesendet - wird nicht erneut gesendet');
       }
       
       console.log('=== FERTIG ===');
@@ -134,85 +149,100 @@ export async function POST(request: NextRequest) {
     
     console.log('Payment Status:', session.payment_status);
     
-if (session.payment_status === 'paid') {
-  const seats = JSON.parse(session.metadata?.seats || '[]');
-  const userId = parseInt(session.metadata?.userId || '0');
-  const voucherCode = session.metadata?.voucherCode || null;  // ⬅️ NEU!
-  
-  console.log('Sitze:', seats);
-  console.log('User ID:', userId);
-  console.log('Voucher Code:', voucherCode);  // ⬅️ NEU!
-  
-  for (const seat of seats) {
-    console.log(`Erstelle/Update Sitz ${seat.row}${seat.number}...`);
-    console.log(`📝 Kontaktdaten: ${seat.firstName} ${seat.lastName} (${seat.email})`);
-    
-    // BESTIMME TYP BASIEREND AUF VOUCHER
-    const reservationType = voucherCode ? 'voucher' : 'user';  // ⬅️ NEU!
-    
-    await prisma.seat.upsert({
-      where: {
-        row_number: { row: seat.row, number: seat.number }
-      },
-      update: {
-        status: 'paid',
-        userId: userId,
-        firstName: seat.firstName || '',
-        lastName: seat.lastName || '',
-        email: seat.email || '',
-        reservationType: reservationType,  // ⬅️ ÄNDERN!
-      },
-      create: {
-        row: seat.row,
-        number: seat.number,
-        status: 'paid',
-        userId: userId,
-        firstName: seat.firstName || '',
-        lastName: seat.lastName || '',
-        email: seat.email || '',
-        reservationType: reservationType,  // ⬅️ ÄNDERN!
-      },
-    });
+    if (session.payment_status === 'paid') {
+      const seats = JSON.parse(session.metadata?.seats || '[]');
+      const userId = parseInt(session.metadata?.userId || '0');
+      const voucherCode = session.metadata?.voucherCode || null;
+      
+      console.log('Sitze:', seats);
+      console.log('User ID:', userId);
+      console.log('Voucher Code:', voucherCode);
+      
+      // ⭐ CHECK OB EMAIL SCHON GESENDET - wenn alle Sitze schon "paid" sind, wurde Email schon gesendet
+      const allSeatsAlreadyPaid = await Promise.all(
+        seats.map(async (seat: any) => {
+          const existingSeat = await prisma.seat.findUnique({
+            where: { row_number: { row: seat.row, number: seat.number } }
+          });
+          return existingSeat?.status === 'paid';
+        })
+      );
+
+      const shouldSendEmail = !allSeatsAlreadyPaid.every(Boolean);
+      
+      for (const seat of seats) {
+        console.log(`Erstelle/Update Sitz ${seat.row}${seat.number}...`);
+        console.log(`📝 Kontaktdaten: ${seat.firstName} ${seat.lastName} (${seat.email})`);
+        
+        const reservationType = voucherCode ? 'voucher' : 'user';
+        
+        await prisma.seat.upsert({
+          where: {
+            row_number: { row: seat.row, number: seat.number }
+          },
+          update: {
+            status: 'paid',
+            userId: userId,
+            firstName: seat.firstName || '',
+            lastName: seat.lastName || '',
+            email: seat.email || '',
+            reservationType: reservationType,
+          },
+          create: {
+            row: seat.row,
+            number: seat.number,
+            status: 'paid',
+            userId: userId,
+            firstName: seat.firstName || '',
+            lastName: seat.lastName || '',
+            email: seat.email || '',
+            reservationType: reservationType,
+          },
+        });
         console.log(`✅ ${seat.row}${seat.number} → PAID mit Kontaktdaten gespeichert`);
       }
       
-      // ✅ EMAIL-BESTÄTIGUNG SENDEN
-      try {
-        const { sendTicketConfirmation } = await import('@/lib/email');
-        
-        const customerEmail = seats[0]?.email || session.customer_details?.email || '';
-        const customerName = `${seats[0]?.firstName || ''} ${seats[0]?.lastName || ''}`.trim();
-        
-        if (customerEmail) {
-          const emailResult = await sendTicketConfirmation({
-            customerEmail: customerEmail,
-            customerName: customerName || 'Kunde',
-            seats: seats.map((s: any) => ({
-              row: s.row,
-              number: s.number,
-              firstName: s.firstName || '',
-              lastName: s.lastName || '',
-            })),
-            totalAmount: session.amount_total || 0,
-            paymentDate: new Date().toLocaleDateString('de-DE', {
-              day: '2-digit',
-              month: '2-digit',
-              year: 'numeric',
-              hour: '2-digit',
-              minute: '2-digit'
-            }),
-          });
+      // ✅ EMAIL NUR SENDEN WENN NOCH NICHT GESENDET
+      if (shouldSendEmail) {
+        try {
+          const { sendTicketConfirmation } = await import('@/lib/email');
           
-          if (emailResult.success) {
-            console.log('✅ Ticket-Email gesendet an:', customerEmail);
+          const customerEmail = seats[0]?.email || session.customer_details?.email || '';
+          const customerName = `${seats[0]?.firstName || ''} ${seats[0]?.lastName || ''}`.trim();
+          
+          if (customerEmail) {
+            const emailResult = await sendTicketConfirmation({
+              customerEmail: customerEmail,
+              customerName: customerName || 'Kunde',
+              seats: seats.map((s: any) => ({
+                row: s.row,
+                number: s.number,
+                firstName: s.firstName || '',
+                lastName: s.lastName || '',
+              })),
+              totalAmount: session.amount_total || 0,
+              paymentDate: new Date().toLocaleDateString('de-DE', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+              }),
+            });
+            
+            if (emailResult.success) {
+              console.log('✅ Ticket-Email gesendet an:', customerEmail);
+            } else {
+              console.error('❌ Email konnte nicht gesendet werden:', emailResult.error);
+            }
           } else {
-            console.error('❌ Email konnte nicht gesendet werden:', emailResult.error);
+            console.error('❌ Keine Email-Adresse gefunden!');
           }
-        } else {
-          console.error('❌ Keine Email-Adresse gefunden!');
+        } catch (emailError) {
+          console.error('❌ Email-Fehler:', emailError);
         }
-      } catch (emailError) {
-        console.error('❌ Email-Fehler:', emailError);
+      } else {
+        console.log('ℹ️ Email wurde bereits gesendet - wird nicht erneut gesendet');
       }
       
       console.log('=== FERTIG ===');
