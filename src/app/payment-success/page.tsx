@@ -44,39 +44,29 @@ function PaymentSuccessContent() {
     updateSeats();
   }, [sessionId]);
 
-  const downloadTicket = (seat: SeatInfo) => {
-    const content = `
-JOSEFI KONZERT 2026
-Bürgerkapelle Untermais
+  const downloadTicket = async (seat: SeatInfo) => {
+    try {
+      const response = await fetch('/api/download-ticket', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ seat }),
+      });
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🎫 TICKET
+      if (!response.ok) {
+        throw new Error('Download failed');
+      }
 
-Veranstaltung:  Josefi Konzert 2026
-Datum:          15. März 2026
-Ort:            Kursaal Meran
-
-Reihe:          ${seat.row}
-Platz:          ${seat.number}
-
-Besucher:       ${seat.firstName} ${seat.lastName}
-E-Mail:         ${seat.email}
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-Bitte dieses Ticket am Eingang vorzeigen.
-
-Bei Problemen:
-📞 +39 0473 123 456
-✉️ info@bku.it
-    `.trim();
-
-    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `Ticket_${seat.row}${seat.number}_JosefiKonzert2026.txt`;
-    a.click();
-    URL.revokeObjectURL(url);
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Ticket_${seat.row}${seat.number}_JosefiKonzert2026.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Download error:', error);
+      alert('Fehler beim Download. Bitte E-Mail prüfen.');
+    }
   };
 
   if (loading) {
