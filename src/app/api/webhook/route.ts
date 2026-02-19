@@ -26,7 +26,6 @@ export async function POST(request: NextRequest) {
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object as Stripe.Checkout.Session;
     
-    // ⭐ KRITISCH: NUR WENN WIRKLICH BEZAHLT!
     console.log('💳 Session completed - Payment Status:', session.payment_status);
     
     if (session.payment_status !== 'paid') {
@@ -39,10 +38,8 @@ export async function POST(request: NextRequest) {
     const userId = parseInt(session.metadata?.userId || '0');
     const seatsData = JSON.parse(session.metadata?.seats || '[]');
 
-    console.log('💳 Webhook: Speichere Sitze mit Kontaktdaten...');
-    
     for (const seat of seatsData) {
-      console.log(`📝 ${seat.row}${seat.number}: ${seat.firstName} ${seat.lastName} (${seat.email})`);
+      console.log(`📝 ${seat.row}${seat.number}: ${seat.firstName} ${seat.lastName}`);
       
       await prisma.seat.upsert({
         where: {
@@ -67,9 +64,8 @@ export async function POST(request: NextRequest) {
       });
     }
     
-    console.log('✅ Webhook: Alle Sitze gespeichert!');
+    console.log('✅ Alle Sitze gespeichert!');
 
-    // ✅ Email-Bestätigung senden
     try {
       const metadata = session.metadata!;
       const paymentDate = new Date().toLocaleDateString('de-DE', {
@@ -94,9 +90,7 @@ export async function POST(request: NextRequest) {
       });
 
       if (emailResult.success) {
-        console.log('✅ Bestätigungs-Email gesendet an:', metadata.customerEmail);
-      } else {
-        console.error('❌ Email konnte nicht gesendet werden:', emailResult.error);
+        console.log('✅ Email gesendet');
       }
     } catch (emailError) {
       console.error('❌ Email-Fehler:', emailError);
