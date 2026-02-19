@@ -10,11 +10,10 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
 
 export async function POST(request: NextRequest) {
-
-  console.log('🔔 🔔 🔔 WEBHOOK WURDE AUFGERUFEN!!! 🔔 🔔 🔔'); // ⬅️ HIER!
+  console.log('🔔 WEBHOOK AUFGERUFEN');
+  
   const body = await request.text();
   const signature = request.headers.get('stripe-signature')!;
-
   let event: Stripe.Event;
 
   try {
@@ -26,11 +25,22 @@ export async function POST(request: NextRequest) {
 
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object as Stripe.Checkout.Session;
+    
+    // ⭐ KRITISCH: NUR WENN WIRKLICH BEZAHLT!
+    console.log('💳 Session completed - Payment Status:', session.payment_status);
+    
+    if (session.payment_status !== 'paid') {
+      console.log('⚠️ Payment not completed - skipping seat reservation');
+      return NextResponse.json({ received: true, skipped: 'payment not completed' });
+    }
+    
+    console.log('✅ Payment confirmed - marking seats as paid');
+    
     const userId = parseInt(session.metadata?.userId || '0');
     const seatsData = JSON.parse(session.metadata?.seats || '[]');
 
     console.log('💳 Webhook: Speichere Sitze mit Kontaktdaten...');
-
+    
     for (const seat of seatsData) {
       console.log(`📝 ${seat.row}${seat.number}: ${seat.firstName} ${seat.lastName} (${seat.email})`);
       
@@ -56,7 +66,7 @@ export async function POST(request: NextRequest) {
         },
       });
     }
-
+    
     console.log('✅ Webhook: Alle Sitze gespeichert!');
 
     // ✅ Email-Bestätigung senden

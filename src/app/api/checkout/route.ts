@@ -2,14 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { auth } from '@/auth';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-    // ⭐ GEÄNDERT
-});
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
 export async function POST(request: NextRequest) {
   try {
     const session = await auth();
-    
     if (!session?.user) {
       return NextResponse.json({ error: 'Nicht angemeldet' }, { status: 401 });
     }
@@ -38,7 +35,7 @@ export async function POST(request: NextRequest) {
       payment_method_types: ['card'],
       line_items: lineItems,
       mode: 'payment',
-      success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/success?session_id={CHECKOUT_SESSION_ID}`,
+      success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/dashboard`,
       metadata: {
         userId: userId,
@@ -49,6 +46,9 @@ export async function POST(request: NextRequest) {
           lastName: s.lastName,
           email: s.email 
         }))),
+        // ⭐ EMAIL-DATEN FÜR WEBHOOK
+        customerEmail: seats[0]?.email || '',
+        customerName: `${seats[0]?.firstName || ''} ${seats[0]?.lastName || ''}`.trim(),
       },
     });
 
