@@ -141,16 +141,8 @@ const handleCheckoutButtonClick = async () => {
       // ⭐ KEINE Voucher → Normale Stripe-Zahlung für ALLE Sitze
       console.log('💳 Normale Zahlung - Keine Freikarten');
       
-      const reserveResponse = await fetch('/api/seats', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ seats: seatsWithData }),
-      });
 
-      if (!reserveResponse.ok) {
-        throw new Error('Reservierung fehlgeschlagen');
-      }
-
+      // ⭐ DIREKT ZU STRIPE - KEIN /api/seats!
       const checkoutResponse = await fetch('/api/create-checkout-session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

@@ -161,15 +161,6 @@ onOpenCheckout(); // ⭐ CHECKOUT MODAL ÖFFNEN!
       // Keine Freikarten - normale Zahlung
       console.log('💳 Normale Zahlung');
       
-      const reserveResponse = await fetch('/api/seats', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ seats: seatsWithData }),
-      });
-
-      if (!reserveResponse.ok) {
-        throw new Error('Reservierung fehlgeschlagen');
-      }
 
       const checkoutResponse = await fetch('/api/create-checkout-session', {
         method: 'POST',
