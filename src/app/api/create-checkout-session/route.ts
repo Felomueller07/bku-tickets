@@ -6,18 +6,14 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await auth();
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Nicht angemeldet' }, { status: 401 });
-    }
-
     const { seats } = await request.json();
 
     if (!seats || seats.length === 0) {
       return NextResponse.json({ error: 'Keine Sitze ausgewählt' }, { status: 400 });
     }
 
-    const userId = String((session.user as any).id);
+    const session = await auth();
+    const userId = session?.user ? String((session.user as any).id) : '0';
 
     const lineItems = seats.map((seat: any) => ({
       price_data: {
