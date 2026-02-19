@@ -273,7 +273,25 @@ export default function SeatMap() {
           reservationType: seat.reservationType,
         }));
 
-        setOccupiedSeats(mappedSeats);
+ setOccupiedSeats(mappedSeats);
+        
+        // ⭐ EIGENE LOCKED SITZE AUTOMATISCH WIEDERHERSTELLEN
+        const myLockedSeats = mappedSeats.filter((seat: any) => 
+          seat.status === 'locked' && 
+          seat.sessionId === sessionId &&
+          seat.lockExpiry && 
+          new Date(seat.lockExpiry) > new Date()
+        );
+
+        if (myLockedSeats.length > 0) {
+          setSelectedSeats(myLockedSeats.map((s: any) => ({ 
+            row: s.row, 
+            number: s.number,
+            id: s.id 
+          })));
+          console.log('🔄 Deine gesperrten Sitze wiederhergestellt:', myLockedSeats.length);
+        }
+        
         setLoading(false);
       } else {
         setLoading(false);
