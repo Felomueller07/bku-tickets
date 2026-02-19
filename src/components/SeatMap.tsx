@@ -534,55 +534,61 @@ const isSeatOccupied = (row: string, number: number) => {
     }
   };
 
-  const handleCheckout = async (seatsWithData: any[], voucherCodes?: string[]) => {
+const handleCheckout = async (seatsWithData: any[], voucherCodes?: string[]) => {
     try {
+      // ⭐ VOUCHER-LOGIK
       if (voucherCodes && voucherCodes.length > 0) {
+        // Sitze mit Vouchers direkt reservieren (kostenlos)
         const seatsWithVouchers = seatsWithData.map((seat, index) => ({
           ...seat,
           voucherCode: voucherCodes[index] || undefined,
         }));
 
-        const reserveResponse = await fetch('/api/seats', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ seats: seatsWithVouchers }),
-        });
-
-        if (!reserveResponse.ok) throw new Error('Reservierung fehlgeschlagen');
-
-        for (const code of voucherCodes) {
-          await fetch('/api/voucher/use', {
+        // NUR für Voucher-Sitze reservieren
+        const voucherSeats = seatsWithVouchers.filter(s => s.voucherCode);
+        
+        if (voucherSeats.length > 0) {
+          const reserveResponse = await fetch('/api/seats', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ code }),
+            body: JSON.stringify({ seats: voucherSeats }),
           });
+          if (!reserveResponse.ok) throw new Error('Voucher-Reservierung fehlgeschlagen');
+
+          // Voucher als verwendet markieren
+          for (const seat of voucherSeats) {
+            if (seat.voucherCode) {
+              await fetch('/api/voucher/use', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ code: seat.voucherCode }),
+              });
+            }
+          }
         }
 
+        // Wenn ALLE Sitze mit Vouchers bezahlt sind → direkt zu Dashboard
         if (voucherCodes.length >= seatsWithData.length) {
           window.location.href = '/dashboard';
           return;
         }
 
+        // Ansonsten: restliche Sitze zu Stripe
         const seatsToPayFor = seatsWithData.slice(voucherCodes.length);
+        
+        // ⭐ KEIN /api/seats CALL - Sitze bleiben nur hard-locked!
         const checkoutResponse = await fetch('/api/create-checkout-session', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ seats: seatsToPayFor }),
         });
-
         const { url } = await checkoutResponse.json();
         if (url) window.location.href = url;
         return;
       }
 
-      const reserveResponse = await fetch('/api/seats', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ seats: seatsWithData }),
-      });
-
-      if (!reserveResponse.ok) throw new Error('Reservierung fehlgeschlagen');
-
+      // ⭐ NORMALE ZAHLUNG - KEIN /api/seats CALL MEHR!
+      // Sitze bleiben nur hard-locked, werden erst bei payment-success auf 'paid' gesetzt
       const checkoutResponse = await fetch('/api/create-checkout-session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -590,9 +596,11 @@ const isSeatOccupied = (row: string, number: number) => {
       });
 
       const { url } = await checkoutResponse.json();
-      if (url) window.location.href = url;
+      if (url) {
+        window.location.href = url;
+      }
     } catch (error) {
-      console.error('❌ Checkout Fehler:', error);
+      console.error('Checkout error:', error);
       toast.error('Fehler beim Checkout');
     }
   };
