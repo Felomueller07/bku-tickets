@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
     
     if (session.payment_status === 'paid') {
       const seats = JSON.parse(session.metadata?.seats || '[]');
-      const userId = parseInt(session.metadata?.userId || '0');
+      const userId = session.metadata?.userId && session.metadata.userId !== "0" ? parseInt(session.metadata.userId) : null;
       const voucherCode = session.metadata?.voucherCode || null;
       
       console.log('Sitze:', seats);
@@ -151,7 +151,7 @@ export async function POST(request: NextRequest) {
     
     if (session.payment_status === 'paid') {
       const seats = JSON.parse(session.metadata?.seats || '[]');
-      const userId = parseInt(session.metadata?.userId || '0');
+      const userId = session.metadata?.userId && session.metadata.userId !== "0" ? parseInt(session.metadata.userId) : null;
       const voucherCode = session.metadata?.voucherCode || null;
       
       console.log('Sitze:', seats);
