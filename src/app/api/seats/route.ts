@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
           firstName: seat.firstName || '',
           lastName: seat.lastName || '',
           email: seat.email || '',
-          reservationType: voucherCode ? 'voucher' : 'admin',  // ⬅️ ÄNDERUNG!
+          reservationType: voucherCode ? 'voucher' : 'user',
         },
         create: {
           row: seat.row,
@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
           firstName: seat.firstName || '',
           lastName: seat.lastName || '',
           note: seat.note || '',
-          reservationType: voucherCode ? 'voucher' : 'admin',  // ⬅️ ÄNDERUNG!
+          reservationType: voucherCode ? 'voucher' : 'user',
         },
       });
     }
