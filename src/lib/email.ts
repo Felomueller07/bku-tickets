@@ -25,7 +25,13 @@ export async function sendTicketConfirmation(data: TicketEmailData) {
     number: seat.number,
     firstName: seat.firstName,
     lastName: seat.lastName,
-    ticketId: Date.now() + index // Eindeutige ID generieren
+    ticketId: (() => {
+  let rowNum = 0;
+  for (let i = 0; i < seat.row.length; i++) {
+    rowNum = rowNum * 26 + (seat.row.charCodeAt(i) - 64);
+  }
+  return rowNum * 1000 + seat.number;
+})()
   }));
 
   const pdfBuffer = await generateTicketPDF({

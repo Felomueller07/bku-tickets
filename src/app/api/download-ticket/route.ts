@@ -10,8 +10,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing seat data' }, { status: 400 });
     }
 
-    // Ticket-ID generieren (eindeutig basierend auf Reihe + Platz + Timestamp)
-    const ticketId = Date.now() + parseInt(seat.row.charCodeAt(0)) + parseInt(seat.number);
+  let rowNum = 0;
+for (let i = 0; i < seat.row.length; i++) {
+  rowNum = rowNum * 26 + (seat.row.charCodeAt(i) - 64);
+}
+const ticketId = rowNum * 1000 + seat.number;
 
     const pdfBuffer = await generateTicketPDF({
       seats: [{
