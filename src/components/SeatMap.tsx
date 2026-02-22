@@ -181,18 +181,25 @@ export default function SeatMap() {
   const isAdmin = (session?.user as any)?.role === 'admin';
 
 const [sessionId] = useState(() => {
+  // NUR im Browser, nicht beim Server-Rendering!
+  if (typeof window === 'undefined') {
+    return generateSessionId();
+  }
+  
   // Check ob SessionId schon in localStorage existiert
   const stored = localStorage.getItem('bku-session-id');
   if (stored) {
     console.log('🔄 Bestehende Session wiederhergestellt:', stored);
     return stored;
   }
+  
   // Neue Session generieren und speichern
   const newId = generateSessionId();
   localStorage.setItem('bku-session-id', newId);
-  console.log('✨ Neue Session erstelslt:', newId);
+  console.log('✨ Neue Session erstellt:', newId);
   return newId;
 });
+
   const [selectedSeats, setSelectedSeats] = useState<Array<{ row: string; number: number; id?: number }>>([]);
 
   const [occupiedSeats, setOccupiedSeats] = useState<Array<{
