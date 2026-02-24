@@ -218,13 +218,16 @@ export default function ScannerPage() {
             overflow: 'hidden',
             background: '#000'
           }}>
-            <video
-              ref={videoRef}
-              style={{
-                width: '100%',
-                display: 'block'
-              }}
-            />
+<video
+  ref={videoRef}
+  autoPlay
+  playsInline
+  muted
+  style={{
+    width: '100%',
+    display: 'block'
+  }}
+/>
             <canvas ref={canvasRef} style={{ display: 'none' }} />
             
             <button
