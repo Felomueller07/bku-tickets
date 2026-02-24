@@ -14,7 +14,7 @@ export default function ScannerPage() {
   const streamRef = useRef<MediaStream | null>(null);
   const animationRef = useRef<number | null>(null);
   
-  const [scanning, setScanning] = useState(false);
+  const [cameraReady, setCameraReady] = useState(false);
   const [result, setResult] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
   const [stats, setStats] = useState({ total: 0, checkedIn: 0 });
@@ -48,57 +48,67 @@ export default function ScannerPage() {
 
   const startCamera = async () => {
     setError(null);
+    setCameraReady(false);
     
     try {
-      console.log('🎥 Starte Kamera...');
+      console.log('🎥 Requesting camera...');
       
-      // Request camera with specific constraints
-      const constraints = {
-        video: {
-          facingMode: { ideal: 'environment' },
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { 
+          facingMode: 'environment',
           width: { ideal: 1280 },
           height: { ideal: 720 }
         },
         audio: false
-      };
+      });
 
-      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      console.log('✅ Stream obtained');
       streamRef.current = stream;
-      
-      console.log('✅ Stream erhalten');
 
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        
-        // Wait for video to be ready
-        videoRef.current.onloadedmetadata = () => {
-          console.log('📹 Video metadata geladen');
-          videoRef.current?.play().then(() => {
-            console.log('▶️ Video spielt');
-            setScanning(true);
-            requestAnimationFrame(tick);
-          }).catch(err => {
-            console.error('Play error:', err);
-            setError('Video konnte nicht gestartet werden: ' + err.message);
-          });
-        };
-
-        videoRef.current.onerror = (e) => {
-          console.error('Video error:', e);
-          setError('Video-Fehler aufgetreten');
-        };
+      const video = videoRef.current;
+      if (!video) {
+        console.error('❌ Video ref is null');
+        throw new Error('Video element not found');
       }
 
+      // Set attributes directly
+      video.setAttribute('playsinline', '');
+      video.setAttribute('autoplay', '');
+      video.setAttribute('muted', '');
+      
+      // Bind stream
+      video.srcObject = stream;
+      console.log('📹 Stream bound to video');
+
+      // Wait for loadedmetadata
+      const metadataPromise = new Promise((resolve) => {
+        video.onloadedmetadata = () => {
+          console.log('✅ Metadata loaded');
+          resolve(true);
+        };
+      });
+
+      await metadataPromise;
+
+      // Explicitly play
+      await video.play();
+      console.log('▶️ Video playing');
+
+      setCameraReady(true);
+      requestAnimationFrame(tick);
+
     } catch (err: any) {
-      console.error('❌ Kamera-Fehler:', err);
-      let errorMsg = 'Kamera-Zugriff fehlgeschlagen';
+      console.error('❌ Camera error:', err);
+      let errorMsg = 'Kamera-Fehler: ';
       
       if (err.name === 'NotAllowedError') {
-        errorMsg = 'Kamera-Berechtigung verweigert. Bitte erlaube den Zugriff in den Browser-Einstellungen.';
+        errorMsg += 'Berechtigung verweigert';
       } else if (err.name === 'NotFoundError') {
-        errorMsg = 'Keine Kamera gefunden';
+        errorMsg += 'Keine Kamera gefunden';
       } else if (err.name === 'NotReadableError') {
-        errorMsg = 'Kamera wird bereits verwendet';
+        errorMsg += 'Kamera bereits in Benutzung';
+      } else {
+        errorMsg += err.message;
       }
       
       setError(errorMsg);
@@ -106,18 +116,13 @@ export default function ScannerPage() {
   };
 
   const stopCamera = () => {
-    console.log('🛑 Stoppe Kamera');
-    
     if (animationRef.current) {
       cancelAnimationFrame(animationRef.current);
       animationRef.current = null;
     }
 
     if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => {
-        track.stop();
-        console.log('Track gestoppt:', track.label);
-      });
+      streamRef.current.getTracks().forEach(track => track.stop());
       streamRef.current = null;
     }
 
@@ -125,21 +130,17 @@ export default function ScannerPage() {
       videoRef.current.srcObject = null;
     }
 
-    setScanning(false);
+    setCameraReady(false);
   };
 
   const tick = () => {
     const video = videoRef.current;
     const canvas = canvasRef.current;
 
-    if (!video || !canvas || !scanning) {
-      console.log('Tick abgebrochen:', { video: !!video, canvas: !!canvas, scanning });
-      return;
-    }
+    if (!video || !canvas || !cameraReady) return;
 
     if (video.readyState === video.HAVE_ENOUGH_DATA) {
       const ctx = canvas.getContext('2d', { willReadFrequently: true });
-      
       if (!ctx) {
         animationRef.current = requestAnimationFrame(tick);
         return;
@@ -147,18 +148,15 @@ export default function ScannerPage() {
 
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
-
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
       
       const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      const code = jsQR(imageData.data, imageData.width, imageData.height, {
-        inversionAttempts: "dontInvert",
-      });
+      const code = jsQR(imageData.data, imageData.width, imageData.height);
 
-      if (code && code.data) {
-        console.log('✅ QR Code gefunden:', code.data);
+      if (code?.data) {
+        console.log('✅ QR found:', code.data);
         validateTicket(code.data);
-        return; // Stop scanning
+        return;
       }
     }
 
@@ -166,11 +164,9 @@ export default function ScannerPage() {
   };
 
   const validateTicket = async (qrData: string) => {
-    console.log('🎫 Validiere:', qrData);
     stopCamera();
     setResult(null);
     setError(null);
-    setManualInput('');
 
     try {
       const res = await fetch('/api/validate-ticket', {
@@ -180,7 +176,6 @@ export default function ScannerPage() {
       });
 
       const data = await res.json();
-      console.log('📋 Ergebnis:', data);
       setResult(data);
       fetchStats();
 
@@ -190,7 +185,6 @@ export default function ScannerPage() {
       }, 3000);
 
     } catch (err: any) {
-      console.error('Validierungs-Fehler:', err);
       setError('Validierungs-Fehler: ' + err.message);
     }
   };
@@ -215,9 +209,6 @@ export default function ScannerPage() {
         }}>
           Ticket Scanner
         </h1>
-        <p style={{ color: 'rgba(255,255,255,0.7)', marginBottom: '1rem' }}>
-          Josefi Konzert 2026
-        </p>
 
         {/* Stats */}
         <div style={{
@@ -226,158 +217,165 @@ export default function ScannerPage() {
           borderRadius: '12px',
           padding: '1rem',
           marginBottom: '1rem',
-          display: 'flex',
-          justifyContent: 'space-around'
+          display: 'grid',
+          gridTemplateColumns: '1fr 1fr 1fr',
+          gap: '1rem'
         }}>
           <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: '2rem', fontWeight: '700', color: '#d4af37' }}>
+            <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#d4af37' }}>
               {stats.checkedIn}
             </div>
-            <div style={{ fontSize: '0.875rem', color: 'rgba(255,255,255,0.6)' }}>
+            <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.6)' }}>
               Eingecheckt
             </div>
           </div>
           <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: '2rem', fontWeight: '700', color: 'white' }}>
+            <div style={{ fontSize: '1.5rem', fontWeight: '700', color: 'white' }}>
               {stats.total}
             </div>
-            <div style={{ fontSize: '0.875rem', color: 'rgba(255,255,255,0.6)' }}>
+            <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.6)' }}>
               Verkauft
             </div>
           </div>
           <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: '2rem', fontWeight: '700', color: '#4ade80' }}>
+            <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#4ade80' }}>
               {Math.round((stats.checkedIn / stats.total) * 100) || 0}%
             </div>
-            <div style={{ fontSize: '0.875rem', color: 'rgba(255,255,255,0.6)' }}>
+            <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.6)' }}>
               Anwesend
             </div>
           </div>
         </div>
 
-        {/* Scanner */}
-        {!scanning && !result && (
-          <>
-            <button
-              onClick={startCamera}
-              style={{
-                width: '100%',
-                padding: '1.5rem',
-                background: 'linear-gradient(135deg, #d4af37 0%, #f4d03f 100%)',
-                border: 'none',
-                borderRadius: '12px',
-                color: '#0a0a0a',
-                fontSize: '1.25rem',
-                fontWeight: '700',
-                cursor: 'pointer',
-                marginBottom: '1rem'
-              }}
-            >
-              📷 Scanner starten
-            </button>
-
-            {/* Manual Input */}
-            <div style={{
-              background: 'rgba(255,255,255,0.05)',
+        {/* Camera Button */}
+        {!cameraReady && !result && (
+          <button
+            onClick={startCamera}
+            style={{
+              width: '100%',
+              padding: '1.5rem',
+              background: 'linear-gradient(135deg, #d4af37 0%, #f4d03f 100%)',
+              border: 'none',
               borderRadius: '12px',
-              padding: '1rem'
-            }}>
-              <div style={{ 
-                fontSize: '0.875rem', 
-                color: 'rgba(255,255,255,0.7)',
-                marginBottom: '0.5rem'
-              }}>
-                Manuelle Eingabe:
-              </div>
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
-                <input
-                  type="text"
-                  value={manualInput}
-                  onChange={(e) => setManualInput(e.target.value)}
-                  placeholder="z.B. 5014-abc123"
-                  style={{
-                    flex: 1,
-                    padding: '0.75rem',
-                    background: 'rgba(255,255,255,0.1)',
-                    border: '1px solid rgba(255,255,255,0.2)',
-                    borderRadius: '8px',
-                    color: 'white',
-                    fontSize: '1rem'
-                  }}
-                />
-                <button
-                  onClick={() => validateTicket(manualInput)}
-                  disabled={!manualInput}
-                  style={{
-                    padding: '0.75rem 1.5rem',
-                    background: manualInput ? '#d4af37' : 'rgba(212,175,55,0.3)',
-                    border: 'none',
-                    borderRadius: '8px',
-                    color: '#000',
-                    fontWeight: '600',
-                    cursor: manualInput ? 'pointer' : 'not-allowed'
-                  }}
-                >
-                  Prüfen
-                </button>
-              </div>
-            </div>
-          </>
+              color: '#0a0a0a',
+              fontSize: '1.25rem',
+              fontWeight: '700',
+              cursor: 'pointer',
+              marginBottom: '1rem'
+            }}
+          >
+            📷 Scanner starten
+          </button>
         )}
 
-        {scanning && (
-          <div style={{ marginBottom: '1rem' }}>
+        {/* VIDEO CONTAINER - IMMER SICHTBAR */}
+        <div style={{
+          width: '100%',
+          minHeight: cameraReady ? '400px' : '0px',
+          background: '#000',
+          borderRadius: '12px',
+          overflow: 'hidden',
+          marginBottom: '1rem',
+          position: 'relative',
+          transition: 'min-height 0.3s'
+        }}>
+          <video
+            ref={videoRef}
+            playsInline
+            autoPlay
+            muted
+            style={{
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+              display: 'block'
+            }}
+          />
+          
+          {cameraReady && (
             <div style={{
-              position: 'relative',
+              position: 'absolute',
+              top: '50%',
+              left: '50%',
+              transform: 'translate(-50%, -50%)',
+              width: '250px',
+              height: '250px',
+              border: '3px solid #d4af37',
               borderRadius: '12px',
-              overflow: 'hidden',
-              background: '#000'
+              pointerEvents: 'none'
+            }} />
+          )}
+        </div>
+
+        <canvas ref={canvasRef} style={{ display: 'none' }} />
+
+        {/* Stop Button */}
+        {cameraReady && !result && (
+          <button
+            onClick={stopCamera}
+            style={{
+              width: '100%',
+              padding: '1rem',
+              background: 'rgba(239, 68, 68, 0.9)',
+              border: 'none',
+              borderRadius: '8px',
+              color: 'white',
+              fontWeight: '600',
+              cursor: 'pointer',
+              marginBottom: '1rem'
+            }}
+          >
+            ⏹ Stoppen
+          </button>
+        )}
+
+        {/* Manual Input */}
+        {!result && (
+          <div style={{
+            background: 'rgba(255,255,255,0.05)',
+            borderRadius: '12px',
+            padding: '1rem',
+            marginBottom: '1rem'
+          }}>
+            <div style={{ 
+              fontSize: '0.875rem', 
+              color: 'rgba(255,255,255,0.7)',
+              marginBottom: '0.5rem'
             }}>
-              <video
-                ref={videoRef}
-                autoPlay
-                playsInline
-                muted
+              Manuelle Eingabe:
+            </div>
+            <div style={{ display: 'flex', gap: '0.5rem' }}>
+              <input
+                type="text"
+                value={manualInput}
+                onChange={(e) => setManualInput(e.target.value)}
+                placeholder="z.B. 5014-abc123"
                 style={{
-                  width: '100%',
-                  maxHeight: '60vh',
-                  display: 'block',
-                  objectFit: 'cover'
+                  flex: 1,
+                  padding: '0.75rem',
+                  background: 'rgba(255,255,255,0.1)',
+                  border: '1px solid rgba(255,255,255,0.2)',
+                  borderRadius: '8px',
+                  color: 'white',
+                  fontSize: '1rem'
                 }}
               />
-              
-              {/* Scan Frame Overlay */}
-              <div style={{
-                position: 'absolute',
-                top: '50%',
-                left: '50%',
-                transform: 'translate(-50%, -50%)',
-                width: '250px',
-                height: '250px',
-                border: '3px solid #d4af37',
-                borderRadius: '12px',
-                boxShadow: '0 0 0 9999px rgba(0,0,0,0.5)'
-              }} />
+              <button
+                onClick={() => validateTicket(manualInput)}
+                disabled={!manualInput}
+                style={{
+                  padding: '0.75rem 1.5rem',
+                  background: manualInput ? '#d4af37' : 'rgba(212,175,55,0.3)',
+                  border: 'none',
+                  borderRadius: '8px',
+                  color: '#000',
+                  fontWeight: '600',
+                  cursor: manualInput ? 'pointer' : 'not-allowed'
+                }}
+              >
+                OK
+              </button>
             </div>
-            
-            <canvas ref={canvasRef} style={{ display: 'none' }} />
-            
-            <button
-              onClick={stopCamera}
-              style={{
-                width: '100%',
-                padding: '1rem',
-                background: 'rgba(239, 68, 68, 0.9)',
-                border: 'none',
-                borderRadius: '8px',
-                color: 'white',
-                fontWeight: '600',
-                cursor: 'pointer',
-                marginTop: '1rem'
-              }}
-            >
-              ⏹ Stoppen
-            </button>
           </div>
         )}
 
@@ -390,7 +388,8 @@ export default function ScannerPage() {
               : 'linear-gradient(135deg, rgba(239, 68, 68, 0.2) 0%, rgba(239, 68, 68, 0.1) 100%)',
             border: `2px solid ${result.valid ? '#22c55e' : '#ef4444'}`,
             borderRadius: '12px',
-            textAlign: 'center'
+            textAlign: 'center',
+            marginBottom: '1rem'
           }}>
             <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>
               {result.valid ? '✅' : '❌'}
