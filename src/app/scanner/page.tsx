@@ -3,12 +3,17 @@
 import { useState, useEffect, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { Html5Qrcode } from 'html5-qrcode';
+// @ts-ignore
+import jsQR from 'jsqr';
 
 export default function ScannerPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const scannerRef = useRef<Html5Qrcode | null>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const animationRef = useRef<number | null>(null);
+  
   const [scanning, setScanning] = useState(false);
   const [result, setResult] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
@@ -25,9 +30,7 @@ export default function ScannerPage() {
   useEffect(() => {
     fetchStats();
     return () => {
-      if (scannerRef.current) {
-        scannerRef.current.stop().catch(() => {});
-      }
+      stopCamera();
     };
   }, []);
 
@@ -43,71 +46,128 @@ export default function ScannerPage() {
     }
   };
 
-  const startScanner = async () => {
+  const startCamera = async () => {
+    setError(null);
+    
     try {
-      // Check if already initialized
-      if (scannerRef.current) {
-        await scannerRef.current.stop();
-        scannerRef.current.clear();
-      }
-
-      const scanner = new Html5Qrcode('qr-reader');
-      scannerRef.current = scanner;
-
-      // Get available cameras first
-      const devices = await Html5Qrcode.getCameras();
+      console.log('🎥 Starte Kamera...');
       
-      if (!devices || devices.length === 0) {
-        throw new Error('Keine Kamera gefunden');
+      // Request camera with specific constraints
+      const constraints = {
+        video: {
+          facingMode: { ideal: 'environment' },
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        },
+        audio: false
+      };
+
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      streamRef.current = stream;
+      
+      console.log('✅ Stream erhalten');
+
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        
+        // Wait for video to be ready
+        videoRef.current.onloadedmetadata = () => {
+          console.log('📹 Video metadata geladen');
+          videoRef.current?.play().then(() => {
+            console.log('▶️ Video spielt');
+            setScanning(true);
+            requestAnimationFrame(tick);
+          }).catch(err => {
+            console.error('Play error:', err);
+            setError('Video konnte nicht gestartet werden: ' + err.message);
+          });
+        };
+
+        videoRef.current.onerror = (e) => {
+          console.error('Video error:', e);
+          setError('Video-Fehler aufgetreten');
+        };
       }
 
-      // Use back camera (usually index 0 or last)
-      const cameraId = devices[devices.length - 1].id;
-
-      await scanner.start(
-        cameraId,
-        {
-          fps: 10,
-          qrbox: { width: 250, height: 250 },
-          aspectRatio: 1.0
-        },
-        (decodedText) => {
-          console.log('QR gefunden:', decodedText);
-          validateTicket(decodedText);
-        },
-        (errorMessage) => {
-          // Scan errors ignorieren (passiert ständig)
-        }
-      );
-
-      setScanning(true);
-      setError(null);
     } catch (err: any) {
-      console.error('Scanner Error:', err);
-      setError('Kamera-Zugriff fehlgeschlagen. Bitte erlaube Kamera-Zugriff in den Browser-Einstellungen.');
+      console.error('❌ Kamera-Fehler:', err);
+      let errorMsg = 'Kamera-Zugriff fehlgeschlagen';
+      
+      if (err.name === 'NotAllowedError') {
+        errorMsg = 'Kamera-Berechtigung verweigert. Bitte erlaube den Zugriff in den Browser-Einstellungen.';
+      } else if (err.name === 'NotFoundError') {
+        errorMsg = 'Keine Kamera gefunden';
+      } else if (err.name === 'NotReadableError') {
+        errorMsg = 'Kamera wird bereits verwendet';
+      }
+      
+      setError(errorMsg);
     }
   };
 
-  const stopScanner = async () => {
-    if (scannerRef.current) {
-      try {
-        await scannerRef.current.stop();
-        scannerRef.current.clear();
-        scannerRef.current = null;
-      } catch (err) {
-        console.error('Stop error:', err);
-      }
+  const stopCamera = () => {
+    console.log('🛑 Stoppe Kamera');
+    
+    if (animationRef.current) {
+      cancelAnimationFrame(animationRef.current);
+      animationRef.current = null;
     }
+
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => {
+        track.stop();
+        console.log('Track gestoppt:', track.label);
+      });
+      streamRef.current = null;
+    }
+
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+
     setScanning(false);
   };
 
-  const validateTicket = async (qrData: string) => {
-    if (!scanning && !qrData) return;
-    
-    if (scanning) {
-      await stopScanner();
+  const tick = () => {
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+
+    if (!video || !canvas || !scanning) {
+      console.log('Tick abgebrochen:', { video: !!video, canvas: !!canvas, scanning });
+      return;
     }
-    
+
+    if (video.readyState === video.HAVE_ENOUGH_DATA) {
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
+      
+      if (!ctx) {
+        animationRef.current = requestAnimationFrame(tick);
+        return;
+      }
+
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const code = jsQR(imageData.data, imageData.width, imageData.height, {
+        inversionAttempts: "dontInvert",
+      });
+
+      if (code && code.data) {
+        console.log('✅ QR Code gefunden:', code.data);
+        validateTicket(code.data);
+        return; // Stop scanning
+      }
+    }
+
+    animationRef.current = requestAnimationFrame(tick);
+  };
+
+  const validateTicket = async (qrData: string) => {
+    console.log('🎫 Validiere:', qrData);
+    stopCamera();
     setResult(null);
     setError(null);
     setManualInput('');
@@ -120,17 +180,18 @@ export default function ScannerPage() {
       });
 
       const data = await res.json();
+      console.log('📋 Ergebnis:', data);
       setResult(data);
       fetchStats();
 
       setTimeout(() => {
         setResult(null);
-        if (scanning) startScanner();
+        startCamera();
       }, 3000);
 
-    } catch (err) {
-      setError('Validierungs-Fehler');
-      console.error(err);
+    } catch (err: any) {
+      console.error('Validierungs-Fehler:', err);
+      setError('Validierungs-Fehler: ' + err.message);
     }
   };
 
@@ -198,7 +259,7 @@ export default function ScannerPage() {
         {!scanning && !result && (
           <>
             <button
-              onClick={startScanner}
+              onClick={startCamera}
               style={{
                 width: '100%',
                 padding: '1.5rem',
@@ -219,22 +280,21 @@ export default function ScannerPage() {
             <div style={{
               background: 'rgba(255,255,255,0.05)',
               borderRadius: '12px',
-              padding: '1rem',
-              marginTop: '1rem'
+              padding: '1rem'
             }}>
               <div style={{ 
                 fontSize: '0.875rem', 
                 color: 'rgba(255,255,255,0.7)',
                 marginBottom: '0.5rem'
               }}>
-                Manuelle Eingabe (z.B. 5014-abc123):
+                Manuelle Eingabe:
               </div>
               <div style={{ display: 'flex', gap: '0.5rem' }}>
                 <input
                   type="text"
                   value={manualInput}
                   onChange={(e) => setManualInput(e.target.value)}
-                  placeholder="Ticket-ID eingeben..."
+                  placeholder="z.B. 5014-abc123"
                   style={{
                     flex: 1,
                     padding: '0.75rem',
@@ -267,15 +327,43 @@ export default function ScannerPage() {
 
         {scanning && (
           <div style={{ marginBottom: '1rem' }}>
-            <div 
-              id="qr-reader" 
-              style={{
+            <div style={{
+              position: 'relative',
+              borderRadius: '12px',
+              overflow: 'hidden',
+              background: '#000'
+            }}>
+              <video
+                ref={videoRef}
+                autoPlay
+                playsInline
+                muted
+                style={{
+                  width: '100%',
+                  maxHeight: '60vh',
+                  display: 'block',
+                  objectFit: 'cover'
+                }}
+              />
+              
+              {/* Scan Frame Overlay */}
+              <div style={{
+                position: 'absolute',
+                top: '50%',
+                left: '50%',
+                transform: 'translate(-50%, -50%)',
+                width: '250px',
+                height: '250px',
+                border: '3px solid #d4af37',
                 borderRadius: '12px',
-                overflow: 'hidden'
-              }}
-            />
+                boxShadow: '0 0 0 9999px rgba(0,0,0,0.5)'
+              }} />
+            </div>
+            
+            <canvas ref={canvasRef} style={{ display: 'none' }} />
+            
             <button
-              onClick={stopScanner}
+              onClick={stopCamera}
               style={{
                 width: '100%',
                 padding: '1rem',
@@ -288,7 +376,7 @@ export default function ScannerPage() {
                 marginTop: '1rem'
               }}
             >
-              Stoppen
+              ⏹ Stoppen
             </button>
           </div>
         )}
@@ -342,7 +430,8 @@ export default function ScannerPage() {
             border: '1px solid rgba(239, 68, 68, 0.5)',
             borderRadius: '8px',
             color: '#ef4444',
-            textAlign: 'center'
+            textAlign: 'center',
+            fontSize: '0.875rem'
           }}>
             {error}
           </div>
