@@ -13,6 +13,7 @@ export default function ScannerPage() {
   const [result, setResult] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
   const [stats, setStats] = useState({ total: 0, checkedIn: 0 });
+  const [manualInput, setManualInput] = useState('');
 
   useEffect(() => {
     if (status === 'loading') return;
@@ -44,28 +45,46 @@ export default function ScannerPage() {
 
   const startScanner = async () => {
     try {
+      // Check if already initialized
+      if (scannerRef.current) {
+        await scannerRef.current.stop();
+        scannerRef.current.clear();
+      }
+
       const scanner = new Html5Qrcode('qr-reader');
       scannerRef.current = scanner;
 
+      // Get available cameras first
+      const devices = await Html5Qrcode.getCameras();
+      
+      if (!devices || devices.length === 0) {
+        throw new Error('Keine Kamera gefunden');
+      }
+
+      // Use back camera (usually index 0 or last)
+      const cameraId = devices[devices.length - 1].id;
+
       await scanner.start(
-        { facingMode: 'environment' },
+        cameraId,
         {
           fps: 10,
-          qrbox: { width: 250, height: 250 }
+          qrbox: { width: 250, height: 250 },
+          aspectRatio: 1.0
         },
         (decodedText) => {
+          console.log('QR gefunden:', decodedText);
           validateTicket(decodedText);
         },
-        () => {
-          // Scan error - ignorieren
+        (errorMessage) => {
+          // Scan errors ignorieren (passiert ständig)
         }
       );
 
       setScanning(true);
       setError(null);
     } catch (err: any) {
-      setError('Kamera konnte nicht gestartet werden: ' + err.message);
-      console.error(err);
+      console.error('Scanner Error:', err);
+      setError('Kamera-Zugriff fehlgeschlagen. Bitte erlaube Kamera-Zugriff in den Browser-Einstellungen.');
     }
   };
 
@@ -83,11 +102,15 @@ export default function ScannerPage() {
   };
 
   const validateTicket = async (qrData: string) => {
-    if (!scanning) return;
+    if (!scanning && !qrData) return;
     
-    await stopScanner();
+    if (scanning) {
+      await stopScanner();
+    }
+    
     setResult(null);
     setError(null);
+    setManualInput('');
 
     try {
       const res = await fetch('/api/validate-ticket', {
@@ -102,7 +125,7 @@ export default function ScannerPage() {
 
       setTimeout(() => {
         setResult(null);
-        startScanner();
+        if (scanning) startScanner();
       }, 3000);
 
     } catch (err) {
@@ -173,23 +196,73 @@ export default function ScannerPage() {
 
         {/* Scanner */}
         {!scanning && !result && (
-          <button
-            onClick={startScanner}
-            style={{
-              width: '100%',
-              padding: '1.5rem',
-              background: 'linear-gradient(135deg, #d4af37 0%, #f4d03f 100%)',
-              border: 'none',
+          <>
+            <button
+              onClick={startScanner}
+              style={{
+                width: '100%',
+                padding: '1.5rem',
+                background: 'linear-gradient(135deg, #d4af37 0%, #f4d03f 100%)',
+                border: 'none',
+                borderRadius: '12px',
+                color: '#0a0a0a',
+                fontSize: '1.25rem',
+                fontWeight: '700',
+                cursor: 'pointer',
+                marginBottom: '1rem'
+              }}
+            >
+              📷 Scanner starten
+            </button>
+
+            {/* Manual Input */}
+            <div style={{
+              background: 'rgba(255,255,255,0.05)',
               borderRadius: '12px',
-              color: '#0a0a0a',
-              fontSize: '1.25rem',
-              fontWeight: '700',
-              cursor: 'pointer',
-              marginBottom: '1rem'
-            }}
-          >
-            📷 Scanner starten
-          </button>
+              padding: '1rem',
+              marginTop: '1rem'
+            }}>
+              <div style={{ 
+                fontSize: '0.875rem', 
+                color: 'rgba(255,255,255,0.7)',
+                marginBottom: '0.5rem'
+              }}>
+                Manuelle Eingabe (z.B. 5014-abc123):
+              </div>
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <input
+                  type="text"
+                  value={manualInput}
+                  onChange={(e) => setManualInput(e.target.value)}
+                  placeholder="Ticket-ID eingeben..."
+                  style={{
+                    flex: 1,
+                    padding: '0.75rem',
+                    background: 'rgba(255,255,255,0.1)',
+                    border: '1px solid rgba(255,255,255,0.2)',
+                    borderRadius: '8px',
+                    color: 'white',
+                    fontSize: '1rem'
+                  }}
+                />
+                <button
+                  onClick={() => validateTicket(manualInput)}
+                  disabled={!manualInput}
+                  style={{
+                    padding: '0.75rem 1.5rem',
+                    background: manualInput ? '#d4af37' : 'rgba(212,175,55,0.3)',
+                    border: 'none',
+                    borderRadius: '8px',
+                    color: '#000',
+                    fontWeight: '600',
+                    cursor: manualInput ? 'pointer' : 'not-allowed'
+                  }}
+                >
+                  Prüfen
+                </button>
+              </div>
+            </div>
+          </>
         )}
 
         {scanning && (
