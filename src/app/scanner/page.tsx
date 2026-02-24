@@ -3,20 +3,17 @@
 import { useState, useEffect, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import jsQR from 'jsqr';
+import { Html5Qrcode } from 'html5-qrcode';
 
 export default function ScannerPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  
+  const scannerRef = useRef<Html5Qrcode | null>(null);
   const [scanning, setScanning] = useState(false);
   const [result, setResult] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
   const [stats, setStats] = useState({ total: 0, checkedIn: 0 });
 
-  // Admin Check
   useEffect(() => {
     if (status === 'loading') return;
     if (!session || (session.user as any)?.role !== 'admin') {
@@ -24,9 +21,13 @@ export default function ScannerPage() {
     }
   }, [session, status, router]);
 
-  // Stats laden
   useEffect(() => {
     fetchStats();
+    return () => {
+      if (scannerRef.current) {
+        scannerRef.current.stop().catch(() => {});
+      }
+    };
   }, []);
 
   const fetchStats = async () => {
@@ -41,68 +42,50 @@ export default function ScannerPage() {
     }
   };
 
-const startCamera = async () => {
-  try {
-    const stream = await navigator.mediaDevices.getUserMedia({
-      video: { 
-        facingMode: 'environment',
-        width: { ideal: 1280 },
-        height: { ideal: 720 }
-      }
-    });
-    if (videoRef.current) {
-      videoRef.current.srcObject = stream;
-      
-      // Warte bis Video ready ist!
-      videoRef.current.onloadedmetadata = () => {
-        videoRef.current?.play();
-        setScanning(true);
-        setTimeout(() => scanQRCode(), 500); // 500ms Verzögerung
-      };
-    }
-  } catch (err) {
-    setError('Kamera-Zugriff verweigert');
-    console.error(err);
-  }
-};
+  const startScanner = async () => {
+    try {
+      const scanner = new Html5Qrcode('qr-reader');
+      scannerRef.current = scanner;
 
-  const stopCamera = () => {
-    if (videoRef.current?.srcObject) {
-      const stream = videoRef.current.srcObject as MediaStream;
-      stream.getTracks().forEach(track => track.stop());
-      videoRef.current.srcObject = null;
+      await scanner.start(
+        { facingMode: 'environment' },
+        {
+          fps: 10,
+          qrbox: { width: 250, height: 250 }
+        },
+        (decodedText) => {
+          validateTicket(decodedText);
+        },
+        () => {
+          // Scan error - ignorieren
+        }
+      );
+
+      setScanning(true);
+      setError(null);
+    } catch (err: any) {
+      setError('Kamera konnte nicht gestartet werden: ' + err.message);
+      console.error(err);
+    }
+  };
+
+  const stopScanner = async () => {
+    if (scannerRef.current) {
+      try {
+        await scannerRef.current.stop();
+        scannerRef.current.clear();
+        scannerRef.current = null;
+      } catch (err) {
+        console.error('Stop error:', err);
+      }
     }
     setScanning(false);
   };
 
-  const scanQRCode = () => {
-    if (!scanning || !videoRef.current || !canvasRef.current) return;
-
-    const video = videoRef.current;
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
-
-    if (!ctx || video.readyState !== video.HAVE_ENOUGH_DATA) {
-      requestAnimationFrame(scanQRCode);
-      return;
-    }
-
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    const code = jsQR(imageData.data, imageData.width, imageData.height);
-
-    if (code) {
-      validateTicket(code.data);
-    } else {
-      requestAnimationFrame(scanQRCode);
-    }
-  };
-
   const validateTicket = async (qrData: string) => {
-    stopCamera();
+    if (!scanning) return;
+    
+    await stopScanner();
     setResult(null);
     setError(null);
 
@@ -117,10 +100,9 @@ const startCamera = async () => {
       setResult(data);
       fetchStats();
 
-      // Auto-reset nach 3 Sekunden
       setTimeout(() => {
         setResult(null);
-        startCamera();
+        startScanner();
       }, 3000);
 
     } catch (err) {
@@ -137,15 +119,10 @@ const startCamera = async () => {
     <div style={{
       minHeight: '100vh',
       background: 'linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%)',
-      padding: '2rem',
+      padding: '1rem',
       color: 'white'
     }}>
-      {/* Header */}
-      <div style={{
-        maxWidth: '600px',
-        margin: '0 auto',
-        marginBottom: '2rem'
-      }}>
+      <div style={{ maxWidth: '600px', margin: '0 auto' }}>
         <h1 style={{
           fontSize: '2rem',
           fontWeight: '700',
@@ -154,8 +131,8 @@ const startCamera = async () => {
         }}>
           Ticket Scanner
         </h1>
-        <p style={{ color: 'rgba(255,255,255,0.7)' }}>
-          Josefi Konzert 2026 - Einlasskontrolle
+        <p style={{ color: 'rgba(255,255,255,0.7)', marginBottom: '1rem' }}>
+          Josefi Konzert 2026
         </p>
 
         {/* Stats */}
@@ -164,11 +141,11 @@ const startCamera = async () => {
           border: '1px solid rgba(212, 175, 55, 0.3)',
           borderRadius: '12px',
           padding: '1rem',
-          marginTop: '1rem',
+          marginBottom: '1rem',
           display: 'flex',
           justifyContent: 'space-around'
         }}>
-          <div>
+          <div style={{ textAlign: 'center' }}>
             <div style={{ fontSize: '2rem', fontWeight: '700', color: '#d4af37' }}>
               {stats.checkedIn}
             </div>
@@ -176,7 +153,7 @@ const startCamera = async () => {
               Eingecheckt
             </div>
           </div>
-          <div>
+          <div style={{ textAlign: 'center' }}>
             <div style={{ fontSize: '2rem', fontWeight: '700', color: 'white' }}>
               {stats.total}
             </div>
@@ -184,7 +161,7 @@ const startCamera = async () => {
               Verkauft
             </div>
           </div>
-          <div>
+          <div style={{ textAlign: 'center' }}>
             <div style={{ fontSize: '2rem', fontWeight: '700', color: '#4ade80' }}>
               {Math.round((stats.checkedIn / stats.total) * 100) || 0}%
             </div>
@@ -193,16 +170,11 @@ const startCamera = async () => {
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Scanner */}
-      <div style={{
-        maxWidth: '600px',
-        margin: '0 auto'
-      }}>
+        {/* Scanner */}
         {!scanning && !result && (
           <button
-            onClick={startCamera}
+            onClick={startScanner}
             style={{
               width: '100%',
               padding: '1.5rem',
@@ -212,48 +184,35 @@ const startCamera = async () => {
               color: '#0a0a0a',
               fontSize: '1.25rem',
               fontWeight: '700',
-              cursor: 'pointer'
+              cursor: 'pointer',
+              marginBottom: '1rem'
             }}
           >
-            📷 Kamera starten
+            📷 Scanner starten
           </button>
         )}
 
         {scanning && (
-          <div style={{
-            position: 'relative',
-            borderRadius: '12px',
-            overflow: 'hidden',
-            background: '#000'
-          }}>
-<video
-  ref={videoRef}
-  autoPlay
-  playsInline
-  muted
-  style={{
-    width: '100%',
-    minHeight: '400px',
-    display: 'block',
-    objectFit: 'cover'
-  }}
-/>
-            <canvas ref={canvasRef} style={{ display: 'none' }} />
-            
-            <button
-              onClick={stopCamera}
+          <div style={{ marginBottom: '1rem' }}>
+            <div 
+              id="qr-reader" 
               style={{
-                position: 'absolute',
-                bottom: '1rem',
-                left: '50%',
-                transform: 'translateX(-50%)',
-                padding: '0.75rem 1.5rem',
+                borderRadius: '12px',
+                overflow: 'hidden'
+              }}
+            />
+            <button
+              onClick={stopScanner}
+              style={{
+                width: '100%',
+                padding: '1rem',
                 background: 'rgba(239, 68, 68, 0.9)',
                 border: 'none',
                 borderRadius: '8px',
                 color: 'white',
                 fontWeight: '600',
-                cursor: 'pointer'
+                cursor: 'pointer',
+                marginTop: '1rem'
               }}
             >
               Stoppen
@@ -272,10 +231,7 @@ const startCamera = async () => {
             borderRadius: '12px',
             textAlign: 'center'
           }}>
-            <div style={{
-              fontSize: '4rem',
-              marginBottom: '1rem'
-            }}>
+            <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>
               {result.valid ? '✅' : '❌'}
             </div>
             <div style={{
