@@ -41,22 +41,30 @@ export default function ScannerPage() {
     }
   };
 
-  const startCamera = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment' }
-      });
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        videoRef.current.play();
-        setScanning(true);
-        scanQRCode();
+const startCamera = async () => {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: { 
+        facingMode: 'environment',
+        width: { ideal: 1280 },
+        height: { ideal: 720 }
       }
-    } catch (err) {
-      setError('Kamera-Zugriff verweigert');
-      console.error(err);
+    });
+    if (videoRef.current) {
+      videoRef.current.srcObject = stream;
+      
+      // Warte bis Video ready ist!
+      videoRef.current.onloadedmetadata = () => {
+        videoRef.current?.play();
+        setScanning(true);
+        setTimeout(() => scanQRCode(), 500); // 500ms Verzögerung
+      };
     }
-  };
+  } catch (err) {
+    setError('Kamera-Zugriff verweigert');
+    console.error(err);
+  }
+};
 
   const stopCamera = () => {
     if (videoRef.current?.srcObject) {
@@ -225,7 +233,9 @@ export default function ScannerPage() {
   muted
   style={{
     width: '100%',
-    display: 'block'
+    minHeight: '400px',
+    display: 'block',
+    objectFit: 'cover'
   }}
 />
             <canvas ref={canvasRef} style={{ display: 'none' }} />
