@@ -32,7 +32,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
           console.log('✅ User gefunden! ID:', user.id, 'Role:', user.role);
 
-          if (!user.emailVerified) {
+         if (!user.emailVerified && user.role !== 'admin') {
             console.log('❌ Email nicht verifiziert');
             throw new Error('Bitte bestätige zuerst deine Email-Adresse');
           }
