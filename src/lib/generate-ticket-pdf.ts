@@ -3,6 +3,8 @@ import QRCode from 'qrcode';
 import fs from 'fs';
 import path from 'path';
 
+ import { generateSecureQRData } from './generate-ticket-signature';
+
 interface TicketData {
   seats: Array<{
     row: string;
@@ -103,8 +105,10 @@ export async function generateTicketPDF(data: TicketData): Promise<Buffer> {
     const bereich = ['BA', 'BB', 'BC', 'BD', 'BM'].includes(seat.row) ? 'Galerie' : 'Parkett';
     doc.text(bereich, ticketX + 10, yPos + 17);
 
+   
+
     // QR-Code RECHTS
-    const qrCodeData = `BKU-2026-${String(seat.ticketId).padStart(5, '0')}`;
+   const qrCodeData = generateSecureQRData(seat.ticketId);
     const qrCodeImage = await QRCode.toDataURL(qrCodeData, {
       width: 400,
       margin: 1,
