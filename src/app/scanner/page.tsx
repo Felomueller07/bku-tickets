@@ -19,7 +19,8 @@ export default function ScannerPage() {
   const [error, setError] = useState<string | null>(null);
   const [stats, setStats] = useState({ total: 0, checkedIn: 0 });
   const [manualInput, setManualInput] = useState('');
-  const [debugInfo, setDebugInfo] = useState('');
+  const [scanCount, setScanCount] = useState(0);
+  const [lastScanTime, setLastScanTime] = useState(0);
 
   useEffect(() => {
     if (status === 'loading') return;
@@ -50,7 +51,7 @@ export default function ScannerPage() {
   const startCamera = async () => {
     setError(null);
     setCameraReady(false);
-    setDebugInfo('');
+    setScanCount(0);
     
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -76,12 +77,9 @@ export default function ScannerPage() {
       });
 
       await video.play();
-      
-      // Wait a bit for dimensions to stabilize
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await new Promise(resolve => setTimeout(resolve, 1000));
 
-      console.log('📹 Video dimensions:', video.videoWidth, 'x', video.videoHeight);
-      setDebugInfo(`Video: ${video.videoWidth}x${video.videoHeight}`);
+      console.log('📹 Video ready:', video.videoWidth, 'x', video.videoHeight);
 
       if (video.videoWidth === 0 || video.videoHeight === 0) {
         throw new Error('Video hat keine Dimensionen');
@@ -112,7 +110,7 @@ export default function ScannerPage() {
     }
 
     setCameraReady(false);
-    setDebugInfo('');
+    setScanCount(0);
   };
 
   const tick = () => {
@@ -121,10 +119,7 @@ export default function ScannerPage() {
     const video = videoRef.current;
     const canvas = canvasRef.current;
 
-    if (!video || !canvas) {
-      console.error('Missing refs');
-      return;
-    }
+    if (!video || !canvas) return;
 
     if (video.readyState !== video.HAVE_ENOUGH_DATA) {
       animationRef.current = requestAnimationFrame(tick);
@@ -137,28 +132,35 @@ export default function ScannerPage() {
       return;
     }
 
-    // Set canvas dimensions to match video
+    // Update canvas dimensions
     if (canvas.width !== video.videoWidth || canvas.height !== video.videoHeight) {
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
-      console.log('📐 Canvas resized to:', canvas.width, 'x', canvas.height);
     }
 
-    // Draw current video frame
+    // Draw video frame
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
     
     // Get image data
     const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
     
-    // Try to decode QR code with multiple inversion attempts
+    // Increment scan counter
+    const now = Date.now();
+    if (now - lastScanTime > 1000) {
+      setLastScanTime(now);
+      setScanCount(prev => prev + 1);
+    }
+    
+    // Try to decode QR with BOTH inversions
     const code = jsQR(imageData.data, imageData.width, imageData.height, {
       inversionAttempts: "attemptBoth",
     });
 
     if (code && code.data) {
-      console.log('🎯 QR CODE GEFUNDEN:', code.data);
+      console.log('🎯🎯🎯 QR ERKANNT:', code.data);
+      console.log('Position:', code.location);
       validateTicket(code.data);
-      return; // Stop scanning
+      return;
     }
 
     // Continue scanning
@@ -215,15 +217,17 @@ export default function ScannerPage() {
           Ticket Scanner
         </h1>
 
-        {/* Debug Info */}
-        {debugInfo && (
+        {/* Live Scan Counter */}
+        {cameraReady && (
           <div style={{
-            fontSize: '0.75rem',
-            color: '#4ade80',
+            fontSize: '1rem',
+            color: scanCount > 0 ? '#4ade80' : '#ef4444',
             marginBottom: '0.5rem',
-            fontFamily: 'monospace'
+            fontFamily: 'monospace',
+            fontWeight: '700',
+            animation: 'pulse 1s infinite'
           }}>
-            {debugInfo} | Scanning...
+            🔄 Scanning... {scanCount} Sekunden
           </div>
         )}
 
@@ -287,7 +291,7 @@ export default function ScannerPage() {
         {/* VIDEO CONTAINER */}
         <div style={{
           width: '100%',
-          minHeight: cameraReady ? '400px' : '0px',
+          minHeight: cameraReady ? '500px' : '0px',
           background: '#000',
           borderRadius: '12px',
           overflow: 'hidden',
@@ -315,32 +319,46 @@ export default function ScannerPage() {
                 top: '50%',
                 left: '50%',
                 transform: 'translate(-50%, -50%)',
-                width: '280px',
-                height: '280px',
+                width: '300px',
+                height: '300px',
                 border: '4px solid #d4af37',
-                borderRadius: '16px',
+                borderRadius: '20px',
                 pointerEvents: 'none',
-                boxShadow: '0 0 0 9999px rgba(0,0,0,0.5)'
+                boxShadow: '0 0 0 9999px rgba(0,0,0,0.6)',
+                animation: 'scan-pulse 2s ease-in-out infinite'
               }} />
               <div style={{
                 position: 'absolute',
-                bottom: '1rem',
+                top: '20px',
                 left: '50%',
                 transform: 'translateX(-50%)',
-                background: 'rgba(212, 175, 55, 0.9)',
-                padding: '0.5rem 1rem',
+                background: 'rgba(74, 222, 128, 0.9)',
+                padding: '0.75rem 1.5rem',
                 borderRadius: '8px',
-                fontSize: '0.875rem',
-                fontWeight: '600',
+                fontSize: '1rem',
+                fontWeight: '700',
                 color: '#000'
               }}>
-                QR-Code in den Rahmen halten
+                📸 Halte QR-Code ruhig in den Rahmen
               </div>
             </>
           )}
         </div>
 
         <canvas ref={canvasRef} style={{ display: 'none' }} />
+
+        <style jsx>{`
+          @keyframes scan-pulse {
+            0%, 100% {
+              border-color: #d4af37;
+              box-shadow: 0 0 0 9999px rgba(0,0,0,0.6);
+            }
+            50% {
+              border-color: #4ade80;
+              box-shadow: 0 0 0 9999px rgba(0,0,0,0.6), 0 0 20px #4ade80;
+            }
+          }
+        `}</style>
 
         {cameraReady && !result && (
           <button
@@ -374,14 +392,14 @@ export default function ScannerPage() {
               color: 'rgba(255,255,255,0.7)',
               marginBottom: '0.5rem'
             }}>
-              Manuelle Eingabe:
+              Manuelle Eingabe (falls Scan nicht funktioniert):
             </div>
             <div style={{ display: 'flex', gap: '0.5rem' }}>
               <input
                 type="text"
                 value={manualInput}
                 onChange={(e) => setManualInput(e.target.value)}
-                placeholder="z.B. 5014-abc123"
+                placeholder="QR-Code Inhalt..."
                 style={{
                   flex: 1,
                   padding: '0.75rem',
@@ -389,7 +407,7 @@ export default function ScannerPage() {
                   border: '1px solid rgba(255,255,255,0.2)',
                   borderRadius: '8px',
                   color: 'white',
-                  fontSize: '1rem'
+                  fontSize: '0.875rem'
                 }}
               />
               <button
@@ -405,7 +423,7 @@ export default function ScannerPage() {
                   cursor: manualInput ? 'pointer' : 'not-allowed'
                 }}
               >
-                OK
+                ✓
               </button>
             </div>
           </div>
@@ -418,16 +436,16 @@ export default function ScannerPage() {
             background: result.valid 
               ? 'linear-gradient(135deg, rgba(34, 197, 94, 0.2) 0%, rgba(34, 197, 94, 0.1) 100%)'
               : 'linear-gradient(135deg, rgba(239, 68, 68, 0.2) 0%, rgba(239, 68, 68, 0.1) 100%)',
-            border: `2px solid ${result.valid ? '#22c55e' : '#ef4444'}`,
+            border: `3px solid ${result.valid ? '#22c55e' : '#ef4444'}`,
             borderRadius: '12px',
             textAlign: 'center',
             marginBottom: '1rem'
           }}>
-            <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>
+            <div style={{ fontSize: '5rem', marginBottom: '1rem' }}>
               {result.valid ? '✅' : '❌'}
             </div>
             <div style={{
-              fontSize: '1.5rem',
+              fontSize: '1.75rem',
               fontWeight: '700',
               color: result.valid ? '#22c55e' : '#ef4444',
               marginBottom: '1rem'
@@ -436,17 +454,18 @@ export default function ScannerPage() {
             </div>
             {result.customer && (
               <div style={{
-                fontSize: '1.125rem',
+                fontSize: '1.25rem',
                 color: 'white',
-                marginBottom: '0.5rem'
+                marginBottom: '0.5rem',
+                fontWeight: '600'
               }}>
                 {result.customer}
               </div>
             )}
             {result.seat && (
               <div style={{
-                fontSize: '1rem',
-                color: 'rgba(255,255,255,0.7)'
+                fontSize: '1.125rem',
+                color: 'rgba(255,255,255,0.8)'
               }}>
                 {result.seat}
               </div>
