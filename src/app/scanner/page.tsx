@@ -19,6 +19,7 @@ export default function ScannerPage() {
   const [error, setError] = useState<string | null>(null);
   const [stats, setStats] = useState({ total: 0, checkedIn: 0 });
   const [manualInput, setManualInput] = useState('');
+  const [debugInfo, setDebugInfo] = useState('');
 
   useEffect(() => {
     if (status === 'loading') return;
@@ -49,69 +50,49 @@ export default function ScannerPage() {
   const startCamera = async () => {
     setError(null);
     setCameraReady(false);
+    setDebugInfo('');
     
     try {
-      console.log('🎥 Requesting camera...');
-      
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { 
           facingMode: 'environment',
-          width: { ideal: 1280 },
-          height: { ideal: 720 }
+          width: { ideal: 1920 },
+          height: { ideal: 1080 }
         },
         audio: false
       });
 
-      console.log('✅ Stream obtained');
       streamRef.current = stream;
-
       const video = videoRef.current;
-      if (!video) {
-        console.error('❌ Video ref is null');
-        throw new Error('Video element not found');
-      }
+      if (!video) throw new Error('Video element not found');
 
-      // Set attributes directly
       video.setAttribute('playsinline', '');
       video.setAttribute('autoplay', '');
       video.setAttribute('muted', '');
-      
-      // Bind stream
       video.srcObject = stream;
-      console.log('📹 Stream bound to video');
 
-      // Wait for loadedmetadata
-      const metadataPromise = new Promise((resolve) => {
-        video.onloadedmetadata = () => {
-          console.log('✅ Metadata loaded');
-          resolve(true);
-        };
+      await new Promise((resolve) => {
+        video.onloadedmetadata = resolve;
       });
 
-      await metadataPromise;
-
-      // Explicitly play
       await video.play();
-      console.log('▶️ Video playing');
+      
+      // Wait a bit for dimensions to stabilize
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      console.log('📹 Video dimensions:', video.videoWidth, 'x', video.videoHeight);
+      setDebugInfo(`Video: ${video.videoWidth}x${video.videoHeight}`);
+
+      if (video.videoWidth === 0 || video.videoHeight === 0) {
+        throw new Error('Video hat keine Dimensionen');
+      }
 
       setCameraReady(true);
-      requestAnimationFrame(tick);
+      tick();
 
     } catch (err: any) {
       console.error('❌ Camera error:', err);
-      let errorMsg = 'Kamera-Fehler: ';
-      
-      if (err.name === 'NotAllowedError') {
-        errorMsg += 'Berechtigung verweigert';
-      } else if (err.name === 'NotFoundError') {
-        errorMsg += 'Keine Kamera gefunden';
-      } else if (err.name === 'NotReadableError') {
-        errorMsg += 'Kamera bereits in Benutzung';
-      } else {
-        errorMsg += err.message;
-      }
-      
-      setError(errorMsg);
+      setError('Kamera-Fehler: ' + err.message);
     }
   };
 
@@ -131,39 +112,61 @@ export default function ScannerPage() {
     }
 
     setCameraReady(false);
+    setDebugInfo('');
   };
 
   const tick = () => {
+    if (!cameraReady) return;
+
     const video = videoRef.current;
     const canvas = canvasRef.current;
 
-    if (!video || !canvas || !cameraReady) return;
-
-    if (video.readyState === video.HAVE_ENOUGH_DATA) {
-      const ctx = canvas.getContext('2d', { willReadFrequently: true });
-      if (!ctx) {
-        animationRef.current = requestAnimationFrame(tick);
-        return;
-      }
-
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-      
-      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      const code = jsQR(imageData.data, imageData.width, imageData.height);
-
-      if (code?.data) {
-        console.log('✅ QR found:', code.data);
-        validateTicket(code.data);
-        return;
-      }
+    if (!video || !canvas) {
+      console.error('Missing refs');
+      return;
     }
 
+    if (video.readyState !== video.HAVE_ENOUGH_DATA) {
+      animationRef.current = requestAnimationFrame(tick);
+      return;
+    }
+
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    if (!ctx) {
+      animationRef.current = requestAnimationFrame(tick);
+      return;
+    }
+
+    // Set canvas dimensions to match video
+    if (canvas.width !== video.videoWidth || canvas.height !== video.videoHeight) {
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      console.log('📐 Canvas resized to:', canvas.width, 'x', canvas.height);
+    }
+
+    // Draw current video frame
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    
+    // Get image data
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    
+    // Try to decode QR code with multiple inversion attempts
+    const code = jsQR(imageData.data, imageData.width, imageData.height, {
+      inversionAttempts: "attemptBoth",
+    });
+
+    if (code && code.data) {
+      console.log('🎯 QR CODE GEFUNDEN:', code.data);
+      validateTicket(code.data);
+      return; // Stop scanning
+    }
+
+    // Continue scanning
     animationRef.current = requestAnimationFrame(tick);
   };
 
   const validateTicket = async (qrData: string) => {
+    console.log('🎫 Validiere:', qrData);
     stopCamera();
     setResult(null);
     setError(null);
@@ -176,6 +179,7 @@ export default function ScannerPage() {
       });
 
       const data = await res.json();
+      console.log('📋 Ergebnis:', data);
       setResult(data);
       fetchStats();
 
@@ -185,6 +189,7 @@ export default function ScannerPage() {
       }, 3000);
 
     } catch (err: any) {
+      console.error('Validierungs-Fehler:', err);
       setError('Validierungs-Fehler: ' + err.message);
     }
   };
@@ -209,6 +214,18 @@ export default function ScannerPage() {
         }}>
           Ticket Scanner
         </h1>
+
+        {/* Debug Info */}
+        {debugInfo && (
+          <div style={{
+            fontSize: '0.75rem',
+            color: '#4ade80',
+            marginBottom: '0.5rem',
+            fontFamily: 'monospace'
+          }}>
+            {debugInfo} | Scanning...
+          </div>
+        )}
 
         {/* Stats */}
         <div style={{
@@ -247,7 +264,6 @@ export default function ScannerPage() {
           </div>
         </div>
 
-        {/* Camera Button */}
         {!cameraReady && !result && (
           <button
             onClick={startCamera}
@@ -268,7 +284,7 @@ export default function ScannerPage() {
           </button>
         )}
 
-        {/* VIDEO CONTAINER - IMMER SICHTBAR */}
+        {/* VIDEO CONTAINER */}
         <div style={{
           width: '100%',
           minHeight: cameraReady ? '400px' : '0px',
@@ -293,23 +309,39 @@ export default function ScannerPage() {
           />
           
           {cameraReady && (
-            <div style={{
-              position: 'absolute',
-              top: '50%',
-              left: '50%',
-              transform: 'translate(-50%, -50%)',
-              width: '250px',
-              height: '250px',
-              border: '3px solid #d4af37',
-              borderRadius: '12px',
-              pointerEvents: 'none'
-            }} />
+            <>
+              <div style={{
+                position: 'absolute',
+                top: '50%',
+                left: '50%',
+                transform: 'translate(-50%, -50%)',
+                width: '280px',
+                height: '280px',
+                border: '4px solid #d4af37',
+                borderRadius: '16px',
+                pointerEvents: 'none',
+                boxShadow: '0 0 0 9999px rgba(0,0,0,0.5)'
+              }} />
+              <div style={{
+                position: 'absolute',
+                bottom: '1rem',
+                left: '50%',
+                transform: 'translateX(-50%)',
+                background: 'rgba(212, 175, 55, 0.9)',
+                padding: '0.5rem 1rem',
+                borderRadius: '8px',
+                fontSize: '0.875rem',
+                fontWeight: '600',
+                color: '#000'
+              }}>
+                QR-Code in den Rahmen halten
+              </div>
+            </>
           )}
         </div>
 
         <canvas ref={canvasRef} style={{ display: 'none' }} />
 
-        {/* Stop Button */}
         {cameraReady && !result && (
           <button
             onClick={stopCamera}
