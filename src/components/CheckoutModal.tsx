@@ -403,20 +403,21 @@ export default function CheckoutModal({
             backgroundColor: 'rgba(16,185,129,0.08)',
             border: '1px solid rgba(16,185,129,0.2)',
             borderRadius: '14px',
-            overflow: 'hidden',
+            flexShrink: 0,
           }}>
-            <button
-              type="button"
+            <div
+              role="button"
+              tabIndex={0}
               onClick={() => setShowVouchers(!showVouchers)}
+              onKeyDown={e => e.key === 'Enter' && setShowVouchers(!showVouchers)}
               style={{
                 width: '100%',
                 padding: '14px 16px',
-                background: 'none',
-                border: 'none',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
                 cursor: 'pointer',
+                boxSizing: 'border-box',
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -441,7 +442,7 @@ export default function CheckoutModal({
                 ? <ChevronUp style={{ width: '16px', height: '16px', color: '#10b981' }} />
                 : <ChevronDown style={{ width: '16px', height: '16px', color: '#10b981' }} />
               }
-            </button>
+            </div>
 
             {showVouchers && (
               <div style={{ padding: '0 14px 14px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
