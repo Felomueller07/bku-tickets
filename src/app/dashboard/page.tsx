@@ -2,7 +2,7 @@
 
 import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { LogOut, User, Ticket, ChevronDown } from 'lucide-react';
 import SeatMap from '@/components/SeatMap';
@@ -229,7 +229,9 @@ export default function DashboardPage() {
               </>
             )}
 
-            <SeatMap />
+            <Suspense fallback={<div style={{ color: 'white', textAlign: 'center', padding: '2rem' }}>Lade Sitzplan...</div>}>
+              <SeatMap />
+            </Suspense>
           </motion.div>
         </div>
       </div>
