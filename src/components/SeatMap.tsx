@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, Fragment, useEffect } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import { useSession } from 'next-auth/react';
@@ -179,6 +180,8 @@ function EmptySeat() {
 export default function SeatMap() {
   const { data: session } = useSession();
   const isAdmin = (session?.user as any)?.role === 'admin';
+  const searchParams = useSearchParams();
+  const router = useRouter();
 
 const [sessionId] = useState(() => {
   // NUR im Browser, nicht beim Server-Rendering!
@@ -558,8 +561,7 @@ const isSeatOccupied = (row: string, number: number) => {
   // ⭐ CHECKOUT MODAL HANDLER - HIER IM SEATMAP!
   const handleModalClose = async () => {
     setIsCheckoutOpen(false);
-    setSelectedSeats([]);
-
+    // Sitze behalten, damit User nochmal versuchen kann
     try {
       await fetch('/api/seats/unlock', {
         method: 'POST',
@@ -584,6 +586,14 @@ const isSeatOccupied = (row: string, number: number) => {
     } catch (e) {}
     loadSeats();
   };
+
+  // Stripe-Abbruch erkennen: ?cancelled=true → Auswahl leeren + URL bereinigen
+  useEffect(() => {
+    if (searchParams.get('cancelled') === 'true') {
+      handleClearSeats();
+      router.replace('/dashboard');
+    }
+  }, [searchParams]);
 
   const handleCheckout = async (seatsWithData: any[], voucherCodes?: string[]) => {
     try {
