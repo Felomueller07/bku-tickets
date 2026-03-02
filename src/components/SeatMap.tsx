@@ -558,7 +558,8 @@ const isSeatOccupied = (row: string, number: number) => {
   // ⭐ CHECKOUT MODAL HANDLER - HIER IM SEATMAP!
   const handleModalClose = async () => {
     setIsCheckoutOpen(false);
-    
+    setSelectedSeats([]);
+
     try {
       await fetch('/api/seats/unlock', {
         method: 'POST',
@@ -568,6 +569,20 @@ const isSeatOccupied = (row: string, number: number) => {
     } catch (error) {
       console.error('❌ Unlock Fehler:', error);
     }
+    loadSeats();
+  };
+
+  const handleClearSeats = async () => {
+    setSelectedSeats([]);
+    setCheckoutPanelOpen(false);
+    try {
+      await fetch('/api/seats/unlock', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId })
+      });
+    } catch (e) {}
+    loadSeats();
   };
 
   const handleCheckout = async (seatsWithData: any[], voucherCodes?: string[]) => {
@@ -1257,7 +1272,7 @@ const isSeatOccupied = (row: string, number: number) => {
                 isOpen={checkoutPanelOpen}
                 onClose={() => setCheckoutPanelOpen(false)}
                 selectedSeats={selectedSeats}
-                onClearSeats={() => setSelectedSeats([])}
+                onClearSeats={handleClearSeats}
                 sessionId={sessionId}
                 isAdmin={isAdmin}
                 onReserve={handleReserveClick}
