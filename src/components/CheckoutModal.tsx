@@ -301,7 +301,9 @@ export default function CheckoutModal({
           onSubmit={handleSubmit}
           style={{
             flex: 1,
+            minHeight: 0,
             overflowY: 'auto',
+            overflowX: 'hidden',
             padding: '16px',
             display: 'flex',
             flexDirection: 'column',
