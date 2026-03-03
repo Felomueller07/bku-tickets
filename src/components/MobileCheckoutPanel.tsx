@@ -161,11 +161,14 @@ if (voucherCodes.length >= seatsWithData.length) {
         
         const seatsToPayFor = seatsWithData.slice(voucherCodes.length);
         
-        const checkoutResponse = await fetch('/api/create-checkout-session', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ seats: seatsToPayFor }),
-        });
+const checkoutResponse = await fetch('/api/create-checkout-session', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ 
+    seats: seatsToPayFor,  // Nur diese werden berechnet
+    allSeats: seatsWithVouchers  // ALLE Sitze (inkl. Voucher) für Email!
+  }),
+});
 
         const { url } = await checkoutResponse.json();
         
