@@ -4,8 +4,8 @@ import { prisma } from '@/lib/prisma';
 
 function generateCode(): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  let code = 'JOSEFI-';
-  for (let i = 0; i < 8; i++) {
+  let code = 'JOSEFI2026-';
+  for (let i = 0; i < 6; i++) {
     code += chars.charAt(Math.floor(Math.random() * chars.length));
   }
   return code;
@@ -19,7 +19,7 @@ export async function GET() {
       return NextResponse.json({ error: 'Nicht autorisiert' }, { status: 403 });
     }
 
-    const tickets = await prisma.freeTicket.findMany({
+    const tickets = await prisma.voucherCode.findMany({
       orderBy: { createdAt: 'desc' },
     });
 
@@ -39,7 +39,7 @@ export async function POST() {
 
     const code = generateCode();
 
-    const ticket = await prisma.freeTicket.create({
+    const ticket = await prisma.voucherCode.create({
       data: { code },
     });
 
