@@ -160,6 +160,9 @@ if (voucherCodes.length >= seatsWithData.length) {
         console.log(`💳 ${seatsWithData.length - voucherCodes.length} Sitze zu bezahlen`);
         
         const seatsToPayFor = seatsWithData.slice(voucherCodes.length);
+
+        console.log('🔍 seatsWithVouchers:', seatsWithVouchers);
+console.log('🔍 seatsToPayFor:', seatsToPayFor);
         
 const checkoutResponse = await fetch('/api/create-checkout-session', {
   method: 'POST',
