@@ -623,9 +623,6 @@ const isSeatOccupied = (row: string, number: number) => {
         
         // Wenn ALLE Sitze mit Vouchers bezahlt → zur Erfolgsseite
         if (voucherCodes.length >= seatsWithData.length) {
-          // Seat-Daten für Erfolgsseite speichern
-          sessionStorage.setItem('voucherSeats', JSON.stringify(voucherSeats));
-
           // Bestätigungs-Email senden
           const firstSeat = voucherSeats[0];
           if (firstSeat?.email) {
@@ -640,7 +637,9 @@ const isSeatOccupied = (row: string, number: number) => {
             }).catch(console.error);
           }
 
-          window.location.href = '/success?voucher=true';
+          // Seat-Daten direkt in URL encodieren (zuverlässiger als sessionStorage)
+          const encoded = btoa(encodeURIComponent(JSON.stringify(voucherSeats)));
+          window.location.href = `/success?voucher=true&data=${encoded}`;
           return;
         }
         

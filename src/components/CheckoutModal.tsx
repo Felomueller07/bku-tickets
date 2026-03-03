@@ -679,7 +679,7 @@ export default function CheckoutModal({
             }}
           >
             {totalPrice === 0
-              ? '🎟 Kostenlos reservieren'
+              ? 'Kostenlos reservieren'
               : validVouchersCount > 0
                 ? `Jetzt bezahlen · ${totalPrice.toFixed(2)} €`
                 : `Zur Zahlung · ${totalPrice.toFixed(2)} €`

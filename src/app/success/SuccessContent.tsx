@@ -17,20 +17,18 @@ export default function SuccessContent() {
   const searchParams = useSearchParams();
   const sessionId = searchParams?.get('session_id');
   const isVoucher = searchParams?.get('voucher') === 'true';
+  const dataParam = searchParams?.get('data');
   const [seats, setSeats] = useState<SeatInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
   useEffect(() => {
     const updateSeats = async () => {
-      // Voucher-Buchung: Daten aus sessionStorage lesen
-      if (isVoucher) {
+      // Voucher-Buchung: Daten direkt aus URL-Parameter lesen
+      if (isVoucher && dataParam) {
         try {
-          const stored = sessionStorage.getItem('voucherSeats');
-          if (stored) {
-            setSeats(JSON.parse(stored));
-            sessionStorage.removeItem('voucherSeats');
-          }
+          const decoded = JSON.parse(decodeURIComponent(atob(dataParam)));
+          setSeats(decoded);
         } catch {
           setError(true);
         } finally {
@@ -56,7 +54,7 @@ export default function SuccessContent() {
       }
     };
     updateSeats();
-  }, [sessionId, isVoucher]);
+  }, [sessionId, isVoucher, dataParam]);
 
   // PDF DOWNLOAD - einfaches Ticket-PDF
   const downloadTicket = (seat: SeatInfo) => {
