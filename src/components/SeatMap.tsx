@@ -599,51 +599,39 @@ const isSeatOccupied = (row: string, number: number) => {
     try {
       // ⭐ VOUCHER-LOGIK
       if (voucherCodes && voucherCodes.length > 0) {
-        const voucherSeats = seatsWithData.slice(0, voucherCodes.length);
-        
-        // Voucher-Sitze direkt reservieren (kostenlos)
-        const reserveResponse = await fetch('/api/seats', {
+        const voucherSeats = seatsWithData.slice(0, voucherCodes.length).map((s: any, i: number) => ({
+          ...s,
+          voucherCode: voucherCodes[i],
+        }));
+
+        toast.loading('Plätze werden reserviert...', { id: 'voucher-booking' });
+
+        // Alles in einem einzigen API-Call: Plätze buchen + Voucher markieren + Email senden
+        const bookResponse = await fetch('/api/book-free-tickets', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
-            seats: voucherSeats.map((s, i) => ({ ...s, voucherCode: voucherCodes[i] }))
+          body: JSON.stringify({
+            seats: voucherSeats,
+            customerEmail: voucherSeats[0]?.email,
+            customerName: `${voucherSeats[0]?.firstName || ''} ${voucherSeats[0]?.lastName || ''}`.trim(),
           }),
         });
-        
-        if (!reserveResponse.ok) throw new Error('Voucher-Reservierung fehlgeschlagen');
-        
-        // Voucher als verwendet markieren
-        for (const code of voucherCodes) {
-          await fetch('/api/voucher/use', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ code }),
-          });
+
+        toast.dismiss('voucher-booking');
+
+        if (!bookResponse.ok) {
+          const errData = await bookResponse.json().catch(() => ({}));
+          throw new Error(errData.error || `Buchung fehlgeschlagen (${bookResponse.status})`);
         }
-        
+
         // Wenn ALLE Sitze mit Vouchers bezahlt → zur Erfolgsseite
         if (voucherCodes.length >= seatsWithData.length) {
-          // Bestätigungs-Email senden
-          const firstSeat = voucherSeats[0];
-          if (firstSeat?.email) {
-            fetch('/api/voucher-success', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                seats: voucherSeats,
-                customerEmail: firstSeat.email,
-                customerName: `${firstSeat.firstName || ''} ${firstSeat.lastName || ''}`.trim(),
-              }),
-            }).catch(console.error);
-          }
-
-          // Seat-Daten direkt in URL encodieren (zuverlässiger als sessionStorage)
           const encoded = btoa(encodeURIComponent(JSON.stringify(voucherSeats)));
           window.location.href = `/payment-success?voucher=true&data=${encoded}`;
           return;
         }
-        
-        // Rest geht zu Stripe (ohne /api/seats!)
+
+        // Rest geht zu Stripe
         const seatsToPayFor = seatsWithData.slice(voucherCodes.length);
         const checkoutResponse = await fetch('/api/create-checkout-session', {
           method: 'POST',
@@ -654,20 +642,21 @@ const isSeatOccupied = (row: string, number: number) => {
         if (url) window.location.href = url;
         return;
       }
-      
-      // ⭐ NORMALE ZAHLUNG - DIREKT ZU STRIPE, KEIN /api/seats!
+
+      // ⭐ NORMALE ZAHLUNG - DIREKT ZU STRIPE
       const checkoutResponse = await fetch('/api/create-checkout-session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ seats: seatsWithData }),
       });
-      
+
       const { url } = await checkoutResponse.json();
       if (url) window.location.href = url;
-      
-    } catch (error) {
+
+    } catch (error: any) {
+      toast.dismiss('voucher-booking');
       console.error('Checkout error:', error);
-      toast.error('Fehler beim Checkout');
+      toast.error(error?.message || 'Fehler beim Checkout');
     }
   };
 
