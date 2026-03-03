@@ -13,6 +13,8 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
+    console.log('🎫 Validiere QR:', qrData);
+
     // QR Format: "ticketId-signature"
     const parts = qrData.split('-');
     if (parts.length !== 2) {
@@ -27,7 +29,7 @@ export async function POST(request: NextRequest) {
 
     // 1. SIGNATUR PRÜFEN
     if (!verifyTicketSignature(ticketId, signature)) {
-      console.log('❌ Ungültige Signatur:', qrData);
+      console.log('❌ Ungültige Signatur');
       return NextResponse.json({ 
         valid: false, 
         message: '🚫 GEFÄLSCHT - Ungültige Signatur!' 
@@ -35,7 +37,6 @@ export async function POST(request: NextRequest) {
     }
 
     // 2. TICKET IN DB SUCHEN
-    // ticketId Format: RRRNNN (z.B. 5014 = E14)
     const rowNum = Math.floor(ticketId / 1000);
     const seatNum = ticketId % 1000;
     
@@ -60,24 +61,27 @@ export async function POST(request: NextRequest) {
       }, { status: 404 });
     }
 
-    // 3. STATUS PRÜFEN
-// 3. STATUS PRÜFEN
-if (seat.status !== 'paid' && seat.status !== 'reserved') {
-  return NextResponse.json({ 
-    valid: false, 
-    message: `❌ Ticket ungültig (Status: ${seat.status})` 
-  }, { status: 400 });
-}
+    // 3. STATUS PRÜFEN - BEIDE SIND OK!
+    if (seat.status !== 'paid' && seat.status !== 'reserved') {
+      return NextResponse.json({ 
+        valid: false, 
+        message: `❌ Ticket ungültig (Status: ${seat.status})` 
+      }, { status: 400 });
+    }
 
-// Check ob Freikarte oder bezahlt
-if (seat.status === 'reserved' && seat.reservationType !== 'voucher') {
-  return NextResponse.json({ 
-    valid: false, 
-    message: `❌ Ticket noch nicht bezahlt` 
-  }, { status: 400 });
-}
+    // 4. CHECK OB FREIKARTE ODER BEZAHLT
+    const isVoucher = seat.status === 'reserved' && seat.reservationType === 'voucher';
+    const isPaid = seat.status === 'paid';
 
-    // 4. CHECK-IN STATUS PRÜFEN
+    // Nur wenn NICHT bezahlt UND NICHT Voucher → Fehler
+    if (!isPaid && !isVoucher) {
+      return NextResponse.json({ 
+        valid: false, 
+        message: `❌ Ticket noch nicht bezahlt` 
+      }, { status: 400 });
+    }
+
+    // 5. CHECK-IN STATUS PRÜFEN
     if (seat.checkedIn) {
       return NextResponse.json({ 
         valid: false, 
@@ -88,7 +92,7 @@ if (seat.status === 'reserved' && seat.reservationType !== 'voucher') {
       }, { status: 400 });
     }
 
-    // 5. CHECK-IN DURCHFÜHREN
+    // 6. CHECK-IN DURCHFÜHREN
     await prisma.seat.update({
       where: { id: seat.id },
       data: {
@@ -97,15 +101,20 @@ if (seat.status === 'reserved' && seat.reservationType !== 'voucher') {
       }
     });
 
-    console.log('✅ Check-in erfolgreich:', row, seatNum, seat.firstName, seat.lastName);
+    console.log(`✅ Check-in erfolgreich: ${row}${seatNum} - ${seat.firstName} ${seat.lastName}`);
 
-    // 6. SUCCESS
+    // 7. SUCCESS - UNTERSCHIEDLICHE MESSAGES
+    const successMessage = isVoucher 
+      ? '🎫 FREIKARTE - GÜLTIG' 
+      : '✅ TICKET BEZAHLT - GÜLTIG';
+
     return NextResponse.json({ 
       valid: true,
-      message: '✅ GÜLTIGES TICKET',
+      message: successMessage,
       customer: `${seat.firstName} ${seat.lastName}`,
       seat: `Reihe ${row}, Platz ${seatNum}`,
-      email: seat.email
+      email: seat.email,
+      isVoucher: isVoucher
     });
 
   } catch (error) {
