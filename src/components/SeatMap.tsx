@@ -621,9 +621,26 @@ const isSeatOccupied = (row: string, number: number) => {
           });
         }
         
-        // Wenn ALLE Sitze mit Vouchers bezahlt → zurück zu Dashboard
+        // Wenn ALLE Sitze mit Vouchers bezahlt → zur Erfolgsseite
         if (voucherCodes.length >= seatsWithData.length) {
-          window.location.href = '/dashboard';
+          // Seat-Daten für Erfolgsseite speichern
+          sessionStorage.setItem('voucherSeats', JSON.stringify(voucherSeats));
+
+          // Bestätigungs-Email senden
+          const firstSeat = voucherSeats[0];
+          if (firstSeat?.email) {
+            fetch('/api/voucher-success', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                seats: voucherSeats,
+                customerEmail: firstSeat.email,
+                customerName: `${firstSeat.firstName || ''} ${firstSeat.lastName || ''}`.trim(),
+              }),
+            }).catch(console.error);
+          }
+
+          window.location.href = '/success?voucher=true';
           return;
         }
         

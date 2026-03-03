@@ -16,12 +16,30 @@ interface SeatInfo {
 export default function SuccessContent() {
   const searchParams = useSearchParams();
   const sessionId = searchParams?.get('session_id');
+  const isVoucher = searchParams?.get('voucher') === 'true';
   const [seats, setSeats] = useState<SeatInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
   useEffect(() => {
     const updateSeats = async () => {
+      // Voucher-Buchung: Daten aus sessionStorage lesen
+      if (isVoucher) {
+        try {
+          const stored = sessionStorage.getItem('voucherSeats');
+          if (stored) {
+            setSeats(JSON.parse(stored));
+            sessionStorage.removeItem('voucherSeats');
+          }
+        } catch {
+          setError(true);
+        } finally {
+          setLoading(false);
+        }
+        return;
+      }
+
+      // Stripe-Buchung: Daten vom Server laden
       if (!sessionId) { setLoading(false); return; }
       try {
         const response = await fetch(`/api/payment-success?session_id=${sessionId}`);
@@ -38,7 +56,7 @@ export default function SuccessContent() {
       }
     };
     updateSeats();
-  }, [sessionId]);
+  }, [sessionId, isVoucher]);
 
   // PDF DOWNLOAD - einfaches Ticket-PDF
   const downloadTicket = (seat: SeatInfo) => {
