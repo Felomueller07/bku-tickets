@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
           const existingSeat = await prisma.seat.findUnique({
             where: { row_number: { row: seat.row, number: seat.number } }
           });
-          return existingSeat?.status === 'paid';
+          return existingSeat?.status === 'paid' || existingSeat?.status === 'reserved';
         })
       );
 
@@ -164,7 +164,7 @@ export async function POST(request: NextRequest) {
           const existingSeat = await prisma.seat.findUnique({
             where: { row_number: { row: seat.row, number: seat.number } }
           });
-          return existingSeat?.status === 'paid';
+          return existingSeat?.status === 'paid' || existingSeat?.status === 'reserved';
         })
       );
 
