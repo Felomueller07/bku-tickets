@@ -133,11 +133,28 @@ onOpenCheckout(); // ⭐ CHECKOUT MODAL ÖFFNEN!
         }
 
         // Wenn ALLE Tickets Freikarten sind → Dashboard
-        if (voucherCodes.length >= seatsWithData.length) {
-          console.log('✅ Alle Sitze mit Freikarten');
-          window.location.href = '/dashboard';
-          return;
-        }
+if (voucherCodes.length >= seatsWithData.length) {
+  console.log('✅ Alle Sitze mit Freikarten');
+  
+  // Email versenden + Success-Seite
+  const emailResponse = await fetch('/api/send-ticket-email', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ 
+      seats: seatsWithVouchers,
+      customerEmail: seatsWithData[0].email 
+    }),
+  });
+  
+  if (!emailResponse.ok) {
+    console.error('Email-Versand fehlgeschlagen');
+  }
+  
+  // Redirect zur Success-Seite mit Sitzdaten
+  const seatIds = seatsWithVouchers.map(s => `${s.row}${s.number}`).join(',');
+  window.location.href = `/payment-success?seats=${encodeURIComponent(seatIds)}&voucher=true`;
+  return;
+}
 
         // Teilweise Freikarten → Stripe für Rest
         console.log(`💳 ${seatsWithData.length - voucherCodes.length} Sitze zu bezahlen`);
