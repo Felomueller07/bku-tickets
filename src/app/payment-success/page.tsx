@@ -16,6 +16,8 @@ interface SeatInfo {
 function PaymentSuccessContent() {
   const searchParams = useSearchParams();
   const sessionId = searchParams?.get('session_id');
+  const isVoucher = searchParams?.get('voucher') === 'true';
+  const dataParam = searchParams?.get('data');
   const [seats, setSeats] = useState<SeatInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -23,6 +25,20 @@ function PaymentSuccessContent() {
 
   useEffect(() => {
     const updateSeats = async () => {
+      // Voucher-Buchung: Seat-Daten direkt aus URL lesen
+      if (isVoucher && dataParam) {
+        try {
+          const decoded = JSON.parse(decodeURIComponent(atob(dataParam)));
+          setSeats(decoded);
+        } catch {
+          setError(true);
+        } finally {
+          setLoading(false);
+        }
+        return;
+      }
+
+      // Stripe-Buchung
       if (!sessionId) { setLoading(false); return; }
       try {
         const response = await fetch('/api/payment-success', {
@@ -43,7 +59,7 @@ function PaymentSuccessContent() {
       }
     };
     updateSeats();
-  }, [sessionId]);
+  }, [sessionId, isVoucher, dataParam]);
 
   const downloadTicket = async (seat: SeatInfo) => {
     try {

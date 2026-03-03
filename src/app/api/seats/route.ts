@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
       await prisma.seat.upsert({
         where: { row_number: { row: seat.row, number: seat.number } },
         update: {
-          status: 'reserved',
+          status: voucherCode ? 'paid' : 'reserved',
           userId: userId,
           firstName: seat.firstName || '',
           lastName: seat.lastName || '',
@@ -63,10 +63,11 @@ export async function POST(request: NextRequest) {
         create: {
           row: seat.row,
           number: seat.number,
-          status: 'reserved',
+          status: voucherCode ? 'paid' : 'reserved',
           userId: userId,
           firstName: seat.firstName || '',
           lastName: seat.lastName || '',
+          email: seat.email || '',
           note: seat.note || '',
           reservationType: voucherCode ? 'voucher' : 'user',
         },

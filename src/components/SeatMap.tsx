@@ -639,7 +639,7 @@ const isSeatOccupied = (row: string, number: number) => {
 
           // Seat-Daten direkt in URL encodieren (zuverlässiger als sessionStorage)
           const encoded = btoa(encodeURIComponent(JSON.stringify(voucherSeats)));
-          window.location.href = `/success?voucher=true&data=${encoded}`;
+          window.location.href = `/payment-success?voucher=true&data=${encoded}`;
           return;
         }
         
