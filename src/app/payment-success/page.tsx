@@ -17,19 +17,29 @@ function PaymentSuccessContent() {
   const searchParams = useSearchParams();
   const sessionId = searchParams?.get('session_id');
   const isVoucher = searchParams?.get('voucher') === 'true';
-  const dataParam = searchParams?.get('data');
   const [seats, setSeats] = useState<SeatInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [resending, setResending] = useState(false);
 
-  useEffect(() => {
+useEffect(() => {
     const updateSeats = async () => {
-      // Voucher-Buchung: Seat-Daten direkt aus URL lesen
-      if (isVoucher && dataParam) {
+      // Voucher-Buchung: Seat-IDs aus URL
+      const seatsParam = searchParams?.get('seats');
+      if (isVoucher && seatsParam) {
         try {
-          const decoded = JSON.parse(decodeURIComponent(atob(dataParam)));
-          setSeats(decoded);
+          const seatIds = seatsParam.split(',');
+          const response = await fetch('/api/get-seats-by-ids', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ seatIds }),
+          });
+          const data = await response.json();
+          if (response.ok) {
+            setSeats(data.seats || []);
+          } else {
+            setError(true);
+          }
         } catch {
           setError(true);
         } finally {
@@ -58,8 +68,9 @@ function PaymentSuccessContent() {
         setLoading(false);
       }
     };
+
     updateSeats();
-  }, [sessionId, isVoucher, dataParam]);
+  }, [sessionId, isVoucher, searchParams]);
 
   const downloadTicket = async (seat: SeatInfo) => {
     try {
