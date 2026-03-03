@@ -134,25 +134,31 @@ onOpenCheckout(); // ⭐ CHECKOUT MODAL ÖFFNEN!
 
         // Wenn ALLE Tickets Freikarten sind → Dashboard
 if (voucherCodes.length >= seatsWithData.length) {
-  console.log('✅ Alle Sitze mit Freikarten');
+  console.log('✅ Alle Sitze mit Freikarten - sende Email');
   
-  // Email versenden + Success-Seite
-  const emailResponse = await fetch('/api/send-ticket-email', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ 
-      seats: seatsWithVouchers,
-      customerEmail: seatsWithData[0].email 
-    }),
-  });
-  
-  if (!emailResponse.ok) {
-    console.error('Email-Versand fehlgeschlagen');
+  try {
+    // Email senden via API
+    const emailResponse = await fetch('/api/complete-voucher-booking', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ seats: seatsWithVouchers }),
+    });
+    
+    if (!emailResponse.ok) {
+      throw new Error('Email konnte nicht gesendet werden');
+    }
+    
+    const result = await emailResponse.json();
+    
+    // Redirect zur Success-Seite mit Sitz-IDs
+    const seatIds = seatsWithVouchers.map(s => `${s.row}${s.number}`).join(',');
+    window.location.href = `/payment-success?seats=${encodeURIComponent(seatIds)}&voucher=true`;
+    
+  } catch (error) {
+    console.error('❌ Fehler:', error);
+    alert('Fehler beim Versenden der Tickets. Bitte kontaktiere uns.');
   }
   
-  // Redirect zur Success-Seite mit Sitzdaten
-  const seatIds = seatsWithVouchers.map(s => `${s.row}${s.number}`).join(',');
-  window.location.href = `/payment-success?seats=${encodeURIComponent(seatIds)}&voucher=true`;
   return;
 }
 
