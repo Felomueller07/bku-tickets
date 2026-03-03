@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, Fragment, useEffect } from 'react';
+import { useState, Fragment, useEffect, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
@@ -203,6 +203,8 @@ const [sessionId] = useState(() => {
   return newId;
 });
 
+const hasAutoRestored = useRef(false);
+
   const [selectedSeats, setSelectedSeats] = useState<Array<{ row: string; number: number; id?: number }>>([]);
 
   const [occupiedSeats, setOccupiedSeats] = useState<Array<{
@@ -304,14 +306,15 @@ const [sessionId] = useState(() => {
           new Date(seat.lockExpiry) > new Date()
         );
 
-        if (myLockedSeats.length > 0) {
-          setSelectedSeats(myLockedSeats.map((s: any) => ({ 
-            row: s.row, 
-            number: s.number,
-            id: s.id 
-          })));
-          console.log('🔄 Deine gesperrten Sitze wiederhergestellt:', myLockedSeats.length);
-        }
+if (myLockedSeats.length > 0 && !hasAutoRestored.current) {
+  setSelectedSeats(myLockedSeats.map((s: any) => ({ 
+    row: s.row, 
+    number: s.number,
+    id: s.id 
+  })));
+  hasAutoRestored.current = true; // Nur 1x ausführen!
+  console.log('🔄 Deine gesperrten Sitze wiederhergestellt:', myLockedSeats.length);
+}
         
         setLoading(false);
       } else {
