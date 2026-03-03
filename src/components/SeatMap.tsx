@@ -332,7 +332,7 @@ const [sessionId] = useState(() => {
                                 seat.lockExpiry && 
                                 new Date(seat.lockExpiry) > new Date();
 
-    if (!isAdmin && (seat?.status === 'reserved' || seat?.status === 'marked' || isHardLockedByOther)) {
+    if (!isAdmin && (seat?.status === 'reserved' || seat?.status === 'paid' || seat?.status === 'marked' || isHardLockedByOther)) {
       if (isHardLockedByOther) {
         toast.error(`Sitz ${row}${number} ist bereits im Checkout`, { duration: 2000 });
       } else {
