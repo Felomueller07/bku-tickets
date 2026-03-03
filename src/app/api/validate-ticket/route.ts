@@ -61,12 +61,21 @@ export async function POST(request: NextRequest) {
     }
 
     // 3. STATUS PRÜFEN
-    if (seat.status !== 'paid') {
-      return NextResponse.json({ 
-        valid: false, 
-        message: `❌ Ticket nicht bezahlt (Status: ${seat.status})` 
-      }, { status: 400 });
-    }
+// 3. STATUS PRÜFEN
+if (seat.status !== 'paid' && seat.status !== 'reserved') {
+  return NextResponse.json({ 
+    valid: false, 
+    message: `❌ Ticket ungültig (Status: ${seat.status})` 
+  }, { status: 400 });
+}
+
+// Check ob Freikarte oder bezahlt
+if (seat.status === 'reserved' && seat.reservationType !== 'voucher') {
+  return NextResponse.json({ 
+    valid: false, 
+    message: `❌ Ticket noch nicht bezahlt` 
+  }, { status: 400 });
+}
 
     // 4. CHECK-IN STATUS PRÜFEN
     if (seat.checkedIn) {
