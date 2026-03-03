@@ -30,7 +30,7 @@ export default function ScannerPage() {
   useEffect(() => {
     if (status === 'loading') return;
     if (!session || (session.user as any)?.role !== 'admin') {
-      router.push('/admin');
+      router.push('/admin?callbackUrl=/scanner');
     }
   }, [session, status, router]);
 

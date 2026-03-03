@@ -4,24 +4,26 @@ import { signIn, useSession } from 'next-auth/react';
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Eye, EyeOff } from 'lucide-react';
 
 export default function AdminLoginPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const callbackUrl = searchParams.get('callbackUrl') || '/dashboard';
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  // ⭐ Wenn eingeloggt → redirect zu /dashboard
+  // ⭐ Wenn eingeloggt → redirect zu callbackUrl
   useEffect(() => {
     if (status === 'authenticated') {
-      router.push('/dashboard');
+      router.push(callbackUrl);
     }
-  }, [status, router]);
+  }, [status, router, callbackUrl]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,8 +41,7 @@ export default function AdminLoginPage() {
         setError('Ungültige Anmeldedaten');
         setLoading(false);
       } else {
-        // ⭐ Nach erfolgreichem Login → redirect zu /dashboard
-        router.push('/dashboard');
+        router.push(callbackUrl);
       }
     } catch (err) {
       setError('Ein Fehler ist aufgetreten');
