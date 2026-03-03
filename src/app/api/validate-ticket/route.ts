@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 4. CHECK OB FREIKARTE ODER BEZAHLT
-    const isVoucher = seat.status === 'reserved' && seat.reservationType === 'voucher';
+    const isVoucher = seat.status === 'reserved';
     const isPaid = seat.status === 'paid';
 
     // Nur wenn NICHT bezahlt UND NICHT Voucher → Fehler
