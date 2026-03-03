@@ -7,6 +7,10 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 export async function POST(request: NextRequest) {
   try {
     const { seats, allSeats } = await request.json();
+
+    console.log('📦 Received seats:', seats.length);
+console.log('📦 Received allSeats:', allSeats?.length || 0);
+console.log('📦 allSeats content:', JSON.stringify(allSeats, null, 2));
     
     if (!seats || seats.length === 0) {
       return NextResponse.json({ error: 'Keine Sitze ausgewählt' }, { status: 400 });
