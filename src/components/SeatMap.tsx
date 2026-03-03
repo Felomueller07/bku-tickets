@@ -626,8 +626,9 @@ const isSeatOccupied = (row: string, number: number) => {
 
         // Wenn ALLE Sitze mit Vouchers bezahlt → zur Erfolgsseite
         if (voucherCodes.length >= seatsWithData.length) {
+          toast.success('Buchung erfolgreich! ✓', { duration: 3000 });
           const encoded = btoa(encodeURIComponent(JSON.stringify(voucherSeats)));
-          window.location.href = `/payment-success?voucher=true&data=${encoded}`;
+          router.push(`/payment-success?voucher=true&data=${encoded}`);
           return;
         }
 

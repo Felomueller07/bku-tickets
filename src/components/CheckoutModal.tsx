@@ -639,8 +639,7 @@ export default function CheckoutModal({
         }}>
           <motion.button
             whileTap={{ scale: 0.97 }}
-            type="submit"
-            form=""
+            type="button"
             onClick={(e) => {
               e.preventDefault();
               if (!contactData.firstName.trim() || !contactData.lastName.trim() || !contactData.email.trim()) {
