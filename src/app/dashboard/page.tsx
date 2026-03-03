@@ -277,7 +277,11 @@ export default function DashboardPage() {
 
             {/* FREIKARTEN PANEL - nur für Admins */}
             {isAdmin && (
-              <div style={{ marginTop: '2rem', marginBottom: '2rem' }}>
+              <div style={{
+                marginTop: '1.5rem',
+                marginBottom: isMobile ? '2rem' : '2rem',
+                padding: isMobile ? '0 1rem' : '0',
+              }}>
                 <button
                   onClick={toggleFreeTickets}
                   style={{
@@ -285,33 +289,37 @@ export default function DashboardPage() {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
-                    padding: '1rem 1.5rem',
+                    padding: isMobile ? '1rem 1.25rem' : '1rem 1.5rem',
                     background: 'rgba(212, 175, 55, 0.08)',
                     border: '1px solid rgba(212, 175, 55, 0.3)',
-                    borderRadius: showFreeTickets ? '0.75rem 0.75rem 0 0' : '0.75rem',
+                    borderRadius: showFreeTickets ? '0.875rem 0.875rem 0 0' : '0.875rem',
                     cursor: 'pointer',
                     color: '#d4af37',
-                    fontSize: '1rem',
+                    fontSize: isMobile ? '0.9375rem' : '1rem',
                     fontWeight: '600',
                   }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                    <Gift size={20} />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
+                    <Gift size={isMobile ? 18 : 20} />
                     Freikarten verwalten
-                    <span style={{
-                      background: 'rgba(212, 175, 55, 0.2)',
-                      borderRadius: '9999px',
-                      padding: '0.125rem 0.625rem',
-                      fontSize: '0.75rem',
-                    }}>
-                      {freeTickets.length > 0 ? `${freeTickets.filter(t => !t.used).length} verfügbar` : ''}
-                    </span>
+                    {freeTickets.length > 0 && (
+                      <span style={{
+                        background: 'rgba(212, 175, 55, 0.2)',
+                        borderRadius: '9999px',
+                        padding: '0.15rem 0.625rem',
+                        fontSize: '0.75rem',
+                        fontWeight: '700',
+                      }}>
+                        {freeTickets.filter(t => !t.used).length} verfügbar
+                      </span>
+                    )}
                   </div>
                   <ChevronDown
                     size={20}
                     style={{
                       transition: 'transform 0.2s',
                       transform: showFreeTickets ? 'rotate(180deg)' : 'rotate(0deg)',
+                      flexShrink: 0,
                     }}
                   />
                 </button>
@@ -329,9 +337,58 @@ export default function DashboardPage() {
                         background: 'rgba(255, 255, 255, 0.03)',
                         border: '1px solid rgba(212, 175, 55, 0.3)',
                         borderTop: 'none',
-                        borderRadius: '0 0 0.75rem 0.75rem',
-                        padding: '1.5rem',
+                        borderRadius: '0 0 0.875rem 0.875rem',
+                        padding: isMobile ? '1.25rem' : '1.5rem',
                       }}>
+                        {/* Summary row on mobile */}
+                        {isMobile && freeTickets.length > 0 && (
+                          <div style={{
+                            display: 'flex',
+                            gap: '0.625rem',
+                            marginBottom: '1.25rem',
+                          }}>
+                            <div style={{
+                              flex: 1,
+                              background: 'rgba(74,222,128,0.08)',
+                              border: '1px solid rgba(74,222,128,0.25)',
+                              borderRadius: '0.75rem',
+                              padding: '0.75rem',
+                              textAlign: 'center',
+                            }}>
+                              <div style={{ color: '#4ade80', fontSize: '1.375rem', fontWeight: '800' }}>
+                                {freeTickets.filter(t => !t.used).length}
+                              </div>
+                              <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.6875rem', marginTop: '0.25rem' }}>Verfügbar</div>
+                            </div>
+                            <div style={{
+                              flex: 1,
+                              background: 'rgba(239,68,68,0.08)',
+                              border: '1px solid rgba(239,68,68,0.25)',
+                              borderRadius: '0.75rem',
+                              padding: '0.75rem',
+                              textAlign: 'center',
+                            }}>
+                              <div style={{ color: '#ef4444', fontSize: '1.375rem', fontWeight: '800' }}>
+                                {freeTickets.filter(t => t.used).length}
+                              </div>
+                              <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.6875rem', marginTop: '0.25rem' }}>Verwendet</div>
+                            </div>
+                            <div style={{
+                              flex: 1,
+                              background: 'rgba(212,175,55,0.08)',
+                              border: '1px solid rgba(212,175,55,0.25)',
+                              borderRadius: '0.75rem',
+                              padding: '0.75rem',
+                              textAlign: 'center',
+                            }}>
+                              <div style={{ color: '#d4af37', fontSize: '1.375rem', fontWeight: '800' }}>
+                                {freeTickets.length}
+                              </div>
+                              <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.6875rem', marginTop: '0.25rem' }}>Gesamt</div>
+                            </div>
+                          </div>
+                        )}
+
                         {/* Neue Freikarte generieren */}
                         <button
                           onClick={generateTicket}
@@ -339,16 +396,18 @@ export default function DashboardPage() {
                           style={{
                             display: 'flex',
                             alignItems: 'center',
+                            justifyContent: 'center',
                             gap: '0.5rem',
-                            padding: '0.625rem 1.25rem',
+                            width: isMobile ? '100%' : 'auto',
+                            padding: isMobile ? '0.875rem 1.25rem' : '0.625rem 1.25rem',
                             background: generating ? 'rgba(212,175,55,0.3)' : 'linear-gradient(135deg, #d4af37 0%, #f4e7c3 100%)',
                             border: 'none',
-                            borderRadius: '0.5rem',
+                            borderRadius: '0.625rem',
                             color: '#1a1a1a',
-                            fontWeight: '600',
-                            fontSize: '0.875rem',
+                            fontWeight: '700',
+                            fontSize: isMobile ? '0.9375rem' : '0.875rem',
                             cursor: generating ? 'not-allowed' : 'pointer',
-                            marginBottom: '1.25rem',
+                            marginBottom: '1rem',
                           }}
                         >
                           <Plus size={16} />
@@ -357,15 +416,15 @@ export default function DashboardPage() {
 
                         {/* Liste */}
                         {freeTicketsLoading ? (
-                          <div style={{ color: 'rgba(255,255,255,0.5)', textAlign: 'center', padding: '1rem' }}>
+                          <div style={{ color: 'rgba(255,255,255,0.5)', textAlign: 'center', padding: '1.5rem' }}>
                             Lädt...
                           </div>
                         ) : freeTickets.length === 0 ? (
-                          <div style={{ color: 'rgba(255,255,255,0.4)', textAlign: 'center', padding: '1rem', fontSize: '0.875rem' }}>
+                          <div style={{ color: 'rgba(255,255,255,0.4)', textAlign: 'center', padding: '1.5rem', fontSize: '0.875rem' }}>
                             Noch keine Freikarten vorhanden.
                           </div>
                         ) : (
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
                             {freeTickets.map((ticket) => (
                               <div
                                 key={ticket.id}
@@ -373,22 +432,25 @@ export default function DashboardPage() {
                                   display: 'flex',
                                   alignItems: 'center',
                                   justifyContent: 'space-between',
-                                  padding: '0.75rem 1rem',
+                                  padding: isMobile ? '0.875rem 1rem' : '0.75rem 1rem',
                                   background: ticket.used
                                     ? 'rgba(239, 68, 68, 0.06)'
                                     : 'rgba(74, 222, 128, 0.06)',
                                   border: `1px solid ${ticket.used ? 'rgba(239,68,68,0.2)' : 'rgba(74,222,128,0.2)'}`,
-                                  borderRadius: '0.5rem',
-                                  flexWrap: 'wrap',
-                                  gap: '0.5rem',
+                                  borderRadius: '0.625rem',
+                                  gap: '0.75rem',
                                 }}
                               >
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', flex: 1, minWidth: 0 }}>
                                   <span style={{
                                     fontFamily: 'monospace',
-                                    fontSize: '0.95rem',
-                                    color: ticket.used ? 'rgba(255,255,255,0.4)' : 'white',
+                                    fontSize: isMobile ? '1rem' : '0.95rem',
+                                    fontWeight: '600',
+                                    color: ticket.used ? 'rgba(255,255,255,0.35)' : 'white',
                                     textDecoration: ticket.used ? 'line-through' : 'none',
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis',
+                                    whiteSpace: 'nowrap',
                                   }}>
                                     {ticket.code}
                                   </span>
@@ -397,29 +459,36 @@ export default function DashboardPage() {
                                       onClick={() => copyCode(ticket.code)}
                                       title="Code kopieren"
                                       style={{
-                                        background: 'none',
-                                        border: 'none',
+                                        background: copiedCode === ticket.code ? 'rgba(74,222,128,0.15)' : 'rgba(255,255,255,0.08)',
+                                        border: `1px solid ${copiedCode === ticket.code ? 'rgba(74,222,128,0.4)' : 'rgba(255,255,255,0.15)'}`,
+                                        borderRadius: '0.375rem',
                                         cursor: 'pointer',
-                                        color: copiedCode === ticket.code ? '#4ade80' : 'rgba(255,255,255,0.4)',
-                                        padding: '0',
+                                        color: copiedCode === ticket.code ? '#4ade80' : 'rgba(255,255,255,0.5)',
+                                        padding: isMobile ? '0.375rem 0.5rem' : '0.25rem 0.375rem',
                                         display: 'flex',
                                         alignItems: 'center',
+                                        flexShrink: 0,
+                                        transition: 'all 0.15s',
                                       }}
                                     >
-                                      {copiedCode === ticket.code ? <Check size={15} /> : <Copy size={15} />}
+                                      {copiedCode === ticket.code ? <Check size={isMobile ? 16 : 15} /> : <Copy size={isMobile ? 16 : 15} />}
                                     </button>
                                   )}
                                 </div>
                                 <span style={{
                                   fontSize: '0.75rem',
                                   fontWeight: '600',
-                                  padding: '0.2rem 0.6rem',
+                                  padding: '0.25rem 0.625rem',
                                   borderRadius: '9999px',
                                   background: ticket.used ? 'rgba(239,68,68,0.15)' : 'rgba(74,222,128,0.15)',
                                   color: ticket.used ? '#ef4444' : '#4ade80',
+                                  whiteSpace: 'nowrap',
+                                  flexShrink: 0,
                                 }}>
                                   {ticket.used
-                                    ? `Verwendet ${ticket.usedAt ? new Date(ticket.usedAt).toLocaleDateString('de-DE') : ''}`
+                                    ? (isMobile
+                                        ? (ticket.usedAt ? new Date(ticket.usedAt).toLocaleDateString('de-DE') : 'Verwendet')
+                                        : `Verwendet ${ticket.usedAt ? new Date(ticket.usedAt).toLocaleDateString('de-DE') : ''}`)
                                     : 'Verfügbar'}
                                 </span>
                               </div>

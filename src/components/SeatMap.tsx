@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import { useSession } from 'next-auth/react';
+import { BarChart3 } from 'lucide-react';
 import SeatDetailsModal from './SeatDetailsModal';
 import AdminSidebar from './AdminSidebar';
 import UserSidebar from './UserSidebar';
@@ -1251,6 +1252,55 @@ const isSeatOccupied = (row: string, number: number) => {
             </div>
           </div>
         </div>
+
+        {/* MOBILE ADMIN STATS */}
+        {isMobile && isAdmin && (
+          <div style={{ padding: '1rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
+              <BarChart3 size={16} color="#d4af37" />
+              <span style={{ color: '#d4af37', fontSize: '0.875rem', fontWeight: '700', letterSpacing: '0.5px' }}>
+                STATISTIK
+              </span>
+            </div>
+            {(() => {
+              const totalSeats = 751;
+              const userSeats = occupiedSeats.filter(s => s.reservationType === 'user').length;
+              const adminSeats = occupiedSeats.filter(s => s.reservationType === 'admin').length;
+              const voucherSeats = occupiedSeats.filter(s => s.reservationType === 'voucher').length;
+              const markedSeats = occupiedSeats.filter(s => s.reservationType === 'marked').length;
+              const availableSeats = totalSeats - occupiedSeats.length;
+              const occupiedPct = (((totalSeats - availableSeats) / totalSeats) * 100).toFixed(0);
+              return (
+                <>
+                  <div style={{ marginBottom: '1rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.375rem' }}>
+                      <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.75rem' }}>Belegung gesamt</span>
+                      <span style={{ color: '#d4af37', fontSize: '0.75rem', fontWeight: '700' }}>{occupiedPct}%</span>
+                    </div>
+                    <div style={{ width: '100%', height: '8px', background: 'rgba(255,255,255,0.1)', borderRadius: '4px', overflow: 'hidden' }}>
+                      <div style={{ width: `${occupiedPct}%`, height: '100%', background: 'linear-gradient(90deg, #10b981, #ef4444)', borderRadius: '4px', transition: 'width 0.5s ease' }} />
+                    </div>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem' }}>
+                    {[
+                      { label: 'Gesamt', value: totalSeats, color: '#d4af37', bg: 'rgba(212,175,55,0.1)', border: 'rgba(212,175,55,0.3)' },
+                      { label: 'Verfügbar', value: availableSeats, color: '#10b981', bg: 'rgba(16,185,129,0.08)', border: 'rgba(16,185,129,0.3)' },
+                      { label: 'Verkauft', value: userSeats, color: '#ef4444', bg: 'rgba(239,68,68,0.08)', border: 'rgba(239,68,68,0.3)' },
+                      { label: 'Admin', value: adminSeats, color: '#f97316', bg: 'rgba(249,115,22,0.08)', border: 'rgba(249,115,22,0.3)' },
+                      { label: 'Freikarten', value: voucherSeats, color: '#089383', bg: 'rgba(8,147,131,0.08)', border: 'rgba(8,147,131,0.3)' },
+                      { label: 'Vorgemerkt', value: markedSeats, color: '#facc15', bg: 'rgba(250,204,21,0.08)', border: 'rgba(250,204,21,0.3)' },
+                    ].map(stat => (
+                      <div key={stat.label} style={{ background: stat.bg, border: `1px solid ${stat.border}`, borderRadius: '0.75rem', padding: '0.75rem 0.5rem', textAlign: 'center' }}>
+                        <div style={{ color: stat.color, fontSize: '1.5rem', fontWeight: '800', lineHeight: '1' }}>{stat.value}</div>
+                        <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.625rem', marginTop: '0.375rem', fontWeight: '500' }}>{stat.label}</div>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              );
+            })()}
+          </div>
+        )}
 
         {/* DESKTOP SIDEBAR */}
         {!isMobile && (
