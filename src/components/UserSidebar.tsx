@@ -113,9 +113,30 @@ const handleCheckoutButtonClick = async () => {
 
         // ⭐ Wenn ALLE Sitze mit Voucher → Direkt zu Success
         if (voucherCodes.length >= seatsWithData.length) {
-          console.log('✅ Alle Sitze mit Freikarten - Keine Zahlung nötig');
-          window.location.href = '/dashboard';
-          return;
+console.log('✅ Alle Sitze mit Freikarten - sende Email');
+
+try {
+  // Email senden via API
+  const emailResponse = await fetch('/api/complete-voucher-booking', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ seats: seatsWithVouchers }),
+  });
+  
+  if (!emailResponse.ok) {
+    throw new Error('Email konnte nicht gesendet werden');
+  }
+  
+  // Redirect zur Success-Seite mit Sitz-IDs
+  const seatIds = seatsWithVouchers.map(s => `${s.row}${s.number}`).join(',');
+  window.location.href = `/payment-success?seats=${encodeURIComponent(seatIds)}&voucher=true`;
+  
+} catch (error) {
+  console.error('❌ Fehler:', error);
+  alert('Fehler beim Versenden der Tickets. Bitte kontaktiere uns.');
+}
+
+return;
         }
 
         // ⭐ Wenn nur TEILWEISE Voucher → Weiter zu Stripe für restliche Sitze
