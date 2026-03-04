@@ -28,9 +28,12 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
+
 export async function POST(request: NextRequest) {
   try {
     const { sessionId } = await request.json();
+    
+    console.log('=== PAYMENT SUCCESS POST ===');
     
     if (!sessionId) {
       return NextResponse.json({ error: 'No session ID' }, { status: 400 });
@@ -39,59 +42,40 @@ export async function POST(request: NextRequest) {
     const session = await stripe.checkout.sessions.retrieve(sessionId);
     
     if (session.payment_status === 'paid') {
-      const seats = JSON.parse(session.metadata?.seats || '[]');
-      const userId = session.metadata?.userId && session.metadata.userId !== "0" ? parseInt(session.metadata.userId) : null;
+      const seatsFromMetadata = JSON.parse(session.metadata?.seats || '[]');
+      const customerEmail = seatsFromMetadata[0]?.email || '';
       
-      // UPDATE SITZE AUF 'PAID'
-      const paidSeats = seats.filter((s: any) => !s.voucherCode);
+      console.log('Email:', customerEmail);
       
-      for (const seat of paidSeats) {
-        await prisma.seat.upsert({
-          where: { row_number: { row: seat.row, number: seat.number } },
-          update: {
-            status: 'paid',
-            userId: userId,
-            firstName: seat.firstName || '',
-            lastName: seat.lastName || '',
-            email: seat.email || '',
-            reservationType: 'user',
-          },
-          create: {
-            row: seat.row,
-            number: seat.number,
-            status: 'paid',
-            userId: userId,
-            firstName: seat.firstName || '',
-            lastName: seat.lastName || '',
-            email: seat.email || '',
-            reservationType: 'user',
-          },
-        });
-      }
+      // HOLE ALLE SITZE (paid + reserved) MIT DIESER EMAIL AUS DEN LETZTEN 15 MINUTEN
+      const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000);
       
-      // EMAIL SENDEN
-      try {
-        const { sendTicketConfirmation } = await import('@/lib/email');
-        await sendTicketConfirmation({
-          customerEmail: seats[0].email,
-          customerName: `${seats[0].firstName} ${seats[0].lastName}`,
-          seats: seats.map((s: any) => ({
-            row: s.row,
-            number: s.number,
-            firstName: s.firstName,
-            lastName: s.lastName,
-          })),
-          totalAmount: session.amount_total || 0,
-          paymentDate: new Date().toLocaleDateString('de-DE'),
-        });
-        console.log('✅ Email gesendet');
-      } catch (emailError) {
-        console.error('❌ Email-Fehler:', emailError);
-      }
+      const allSeats = await prisma.seat.findMany({
+        where: {
+          email: customerEmail,
+          updatedAt: { gte: fifteenMinutesAgo },
+          OR: [
+            { status: 'paid' },
+            { status: 'reserved' }
+          ]
+        },
+        orderBy: { updatedAt: 'desc' }
+      });
+      
+      console.log(`✅ Gefunden: ${allSeats.length} Sitze für ${customerEmail}`);
+      
+      // Formatiere für Frontend
+      const formattedSeats = allSeats.map(s => ({
+        row: s.row,
+        number: s.number,
+        firstName: s.firstName || '',
+        lastName: s.lastName || '',
+        email: s.email || ''
+      }));
       
       return NextResponse.json({ 
         success: true, 
-        seats: seats  // NUR diese Sitze!
+        seats: formattedSeats
       });
     }
     
