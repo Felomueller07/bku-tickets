@@ -106,6 +106,83 @@ export default function DashboardPage() {
               </p>
             </div>
 
+            {/* EVENT INFO BANNER */}
+            <div style={{
+              display: 'flex',
+              gap: '2rem',
+              marginTop: '1.5rem',
+              padding: '1.25rem 1.5rem',
+              background: 'linear-gradient(135deg, rgba(212,175,55,0.08) 0%, rgba(212,175,55,0.03) 100%)',
+              border: '1px solid rgba(212,175,55,0.2)',
+              borderRadius: '12px',
+            }}>
+              <div style={{ flex: 1 }}>
+                <div style={{
+                  color: 'rgba(255,255,255,0.5)',
+                  fontSize: '0.75rem',
+                  fontWeight: '600',
+                  textTransform: 'uppercase',
+                  letterSpacing: '1px',
+                  marginBottom: '0.25rem',
+                }}>
+                  Datum & Uhrzeit
+                </div>
+                <div style={{ color: 'white', fontSize: '1rem', fontWeight: '600' }}>
+                  Samstag, 15. März 2026
+                </div>
+                <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.875rem' }}>
+                  19:00 Uhr
+                </div>
+              </div>
+
+              <div style={{ width: '1px', background: 'rgba(255,255,255,0.1)' }} />
+
+              <div style={{ flex: 1 }}>
+                <div style={{
+                  color: 'rgba(255,255,255,0.5)',
+                  fontSize: '0.75rem',
+                  fontWeight: '600',
+                  textTransform: 'uppercase',
+                  letterSpacing: '1px',
+                  marginBottom: '0.25rem',
+                }}>
+                  Veranstaltungsort
+                </div>
+                <div style={{ color: 'white', fontSize: '1rem', fontWeight: '600' }}>
+                  Kursaal Meran
+                </div>
+                <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.875rem' }}>
+                  Südtirol
+                </div>
+              </div>
+
+              <div style={{ width: '1px', background: 'rgba(255,255,255,0.1)' }} />
+
+              <div style={{ flex: 1 }}>
+                <div style={{
+                  color: 'rgba(255,255,255,0.5)',
+                  fontSize: '0.75rem',
+                  fontWeight: '600',
+                  textTransform: 'uppercase',
+                  letterSpacing: '1px',
+                  marginBottom: '0.25rem',
+                }}>
+                  Ticketpreis
+                </div>
+                <div style={{ 
+                  color: '#d4af37', 
+                  fontSize: '1.5rem', 
+                  fontWeight: '800',
+                  lineHeight: 1,
+                }}>
+                  20,00 €
+                </div>
+                <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.875rem' }}>
+                  pro Ticket
+                </div>
+              </div>
+            </div>
+
             <div style={{
               display: 'flex',
               alignItems: 'center',
