@@ -145,11 +145,14 @@ return;
         // NUR die Sitze OHNE Voucher an Stripe senden
         const seatsToPayFor = seatsWithData.slice(voucherCodes.length);
         
-        const checkoutResponse = await fetch('/api/create-checkout-session', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ seats: seatsToPayFor }),
-        });
+const checkoutResponse = await fetch('/api/create-checkout-session', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ 
+    seats: seatsToPayFor,        // Nur bezahlte für Stripe Line Items
+    allSeats: seatsWithVouchers  // ALLE für Metadata & Email!
+  }),
+});
 
         const { url } = await checkoutResponse.json();
         
