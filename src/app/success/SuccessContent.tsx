@@ -66,7 +66,7 @@ Bürgerkapelle Untermais
 🎫 TICKET
 
 Veranstaltung:  Josefi Konzert 2026
-Datum:          15. März 2026
+Datum:          22. März 2026
 Ort:            Kursaal Meran
 
 Reihe:          ${seat.row}
@@ -196,7 +196,7 @@ Bei Problemen:
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <Calendar style={{ width: '16px', height: '16px', color: '#d4af37', flexShrink: 0 }} />
             <span style={{ color: 'rgba(255,255,255,0.7)', fontSize: '13px' }}>
-              <strong style={{ color: 'white' }}>Samstag, 15. März 2026</strong>
+              <strong style={{ color: 'white' }}>Samstag, 22. März 2026</strong>
             </span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>

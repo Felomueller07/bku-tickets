@@ -128,7 +128,7 @@ export default function DashboardPage() {
                   Datum & Uhrzeit
                 </div>
                 <div style={{ color: 'white', fontSize: '1rem', fontWeight: '600' }}>
-                  Samstag, 15. März 2026
+                  Samstag, 22. März 2026
                 </div>
                 <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.875rem' }}>
                   19:00 Uhr
@@ -181,7 +181,7 @@ export default function DashboardPage() {
                   pro Ticket
                 </div>
               </div>
-            </div>
+            </div>  
 
             <div style={{
               display: 'flex',
