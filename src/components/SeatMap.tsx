@@ -665,7 +665,7 @@ const isSeatOccupied = (row: string, number: number) => {
     }
   };
 
-  const mainRowLetters = ['E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y'];
+  const mainRowLetters = ['E', 'F', 'G', 'H', 'J', 'K', 'L', 'M', 'N', 'P', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y'];
 
   const mainRows = mainRowLetters.map(letter => ({
     letter,
