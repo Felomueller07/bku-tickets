@@ -697,6 +697,14 @@ const isSeatOccupied = (row: string, number: number) => {
     [3, 2, 1],
   ];
 
+  const bmSeats = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22];
+  const totalSeats =
+    mainRows.reduce((acc, row) => acc + row.leftSeats.length + row.rightSeats.length, 0) +
+    backRows.reduce((acc, row) => acc + row.leftActual.length + row.rightActual.length, 0) +
+    veryBackRows.reduce((acc, row) => acc + row.leftActual.length + row.rightActual.length, 0) +
+    4 * sideRowsLeft.flat().length + // Galerien BA, BB, BC, BD
+    bmSeats.length;
+
   const getModalLabel = () => {
     if (modalMode === 'edit' && currentEditSeat) {
       return `${currentEditSeat.row}${currentEditSeat.number}`;
@@ -1315,6 +1323,7 @@ const isSeatOccupied = (row: string, number: number) => {
                 onMark={handleMarkClick}
                 onSeatClick={handleSidebarSeatClick}
                 onAddDataClick={handleAddDataClick}
+                totalSeats={totalSeats}
               />
             ) : (
               <UserSidebar

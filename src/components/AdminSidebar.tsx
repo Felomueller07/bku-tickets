@@ -22,10 +22,11 @@ interface AdminSidebarProps {
   isSeatOccupied: (row: string, number: number) => boolean;
   onReserve: () => void;
   onRelease: () => void;
-  onMark: () => void; 
+  onMark: () => void;
   onSeatClick: (row: string, number: number) => void;
   onAddDataClick: (row: string, number: number) => void;
   isMobile?: boolean;
+  totalSeats: number;
 }
 
 export default function AdminSidebar({
@@ -38,6 +39,7 @@ export default function AdminSidebar({
   onSeatClick,
   onAddDataClick,
   isMobile = false,
+  totalSeats,
 }: AdminSidebarProps) {
 
   const selectedFreeCount = selectedSeats.filter(s => !isSeatOccupied(s.row, s.number)).length;
@@ -106,8 +108,6 @@ export default function AdminSidebar({
           </div>
           
           {(() => {
-            // GESAMTANZAHL SITZE - Ändere diese Zahl falls nötig!
-            const totalSeats = 751;
             
             // BERECHNE STATISTIK
             const userSeats = occupiedSeats.filter(s => s.reservationType === 'user').length;
