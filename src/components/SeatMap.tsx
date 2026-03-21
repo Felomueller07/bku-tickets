@@ -705,6 +705,16 @@ const isSeatOccupied = (row: string, number: number) => {
     4 * sideRowsLeft.flat().length + // Galerien BA, BB, BC, BD
     bmSeats.length;
 
+  // Nur Sitze zählen die wirklich in der aktuellen Sitzkarte existieren (entfernte Reihen ausschließen)
+  const validSeatIds = new Set<string>([
+    ...mainRows.flatMap(row => [...row.leftSeats, ...row.rightSeats].map(n => `${row.letter}-${n}`)),
+    ...backRows.flatMap(row => [...row.leftActual, ...row.rightActual].map(n => `${row.letter}-${n}`)),
+    ...veryBackRows.flatMap(row => [...row.leftActual, ...row.rightActual].map(n => `${row.letter}-${n}`)),
+    ...(['BA', 'BB', 'BC', 'BD'] as const).flatMap(col => sideRowsLeft.flat().map(n => `${col}-${n}`)),
+    ...bmSeats.map(n => `BM-${n}`),
+  ]);
+  const occupiedSeatsInMap = occupiedSeats.filter(s => validSeatIds.has(`${s.row}-${s.number}`));
+
   const getModalLabel = () => {
     if (modalMode === 'edit' && currentEditSeat) {
       return `${currentEditSeat.row}${currentEditSeat.number}`;
@@ -1271,12 +1281,11 @@ const isSeatOccupied = (row: string, number: number) => {
               </span>
             </div>
             {(() => {
-              const totalSeats = 751;
-              const userSeats = occupiedSeats.filter(s => s.reservationType === 'user').length;
-              const adminSeats = occupiedSeats.filter(s => s.reservationType === 'admin').length;
-              const voucherSeats = occupiedSeats.filter(s => s.reservationType === 'voucher').length;
-              const markedSeats = occupiedSeats.filter(s => s.reservationType === 'marked').length;
-              const availableSeats = totalSeats - occupiedSeats.length;
+              const userSeats = occupiedSeatsInMap.filter(s => s.reservationType === 'user').length;
+              const adminSeats = occupiedSeatsInMap.filter(s => s.reservationType === 'admin').length;
+              const voucherSeats = occupiedSeatsInMap.filter(s => s.reservationType === 'voucher').length;
+              const markedSeats = occupiedSeatsInMap.filter(s => s.reservationType === 'marked').length;
+              const availableSeats = totalSeats - occupiedSeatsInMap.length;
               const occupiedPct = (((totalSeats - availableSeats) / totalSeats) * 100).toFixed(0);
               return (
                 <>
@@ -1316,7 +1325,7 @@ const isSeatOccupied = (row: string, number: number) => {
             {isAdmin ? (
               <AdminSidebar
                 selectedSeats={selectedSeats}
-                occupiedSeats={occupiedSeats}
+                occupiedSeats={occupiedSeatsInMap}
                 isSeatOccupied={isSeatOccupied}
                 onReserve={handleReserveClick}
                 onRelease={handleAdminReleaseClick}
